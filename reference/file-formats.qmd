@@ -1,0 +1,25 @@
+---
+title: "File Formats"
+description: "Status of OPALX input, field-map, distribution, diagnostic, and statistics formats."
+audience: user
+status: planned
+last-reviewed: "2026-07-22"
+---
+
+OPALX consumes statement-oriented `.in` files plus model-specific field maps
+and particle distributions. It produces statistics, particle, field, loss,
+and diagnostic data through several writer paths.
+
+This reference remains **planned** until each format is traced to its current
+OPALX reader or writer. The historical OPAL storage-format pages are not copied
+here because they may describe fields, ordering, or compatibility behavior
+that OPALX no longer guarantees.
+
+Each completed format page will specify:
+
+- File extension and text or binary encoding.
+- Units, coordinate frame, and column ordering.
+- Required and optional metadata.
+- Parallel write behavior.
+- Versioning and backward-compatibility policy.
+- A minimal reader and writer example.

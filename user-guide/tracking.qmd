@@ -1,0 +1,29 @@
+---
+title: "Tracking"
+description: "Configure and run the time-based parallel tracking path."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+---
+
+The current OPALX executable uses the time-based `ParallelTracker` path. A
+tracking block selects the line, beam, time-step schedule, maximum-step
+schedule, and field solver before `RUN` starts the simulation.
+
+At each step the tracker performs a half position push, assembles space-charge
+and external fields, emits particles, applies the Boris momentum update and
+second half push, advances time, and updates the reference state. The
+[Physics Overview](../physics/overview/index.qmd) describes the split in detail.
+
+## Choosing a time step
+
+The time step must resolve the shortest relevant field, geometry, emission,
+and collective-effect scale. Establish convergence by repeating a calculation
+with smaller steps and comparing physical observables, not only successful
+completion.
+
+## Parallel execution
+
+OPALX combines MPI with the selected Kokkos backend. GPU runs normally use one
+MPI rank per GPU and pass `--kokkos-map-device-id-by=mpi_rank` so ranks select
+distinct devices.

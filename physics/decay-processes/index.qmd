@@ -1,0 +1,270 @@
+---
+title: "Decay Processes"
+description: "Relativistic decay timing and daughter sampling for charged pions and muons."
+audience: physics
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+This section describes how *OPALX* models the spontaneous decay of
+unstable charged particles along the trajectory. Two channels are
+currently implemented: charged pion decay
+$\pi^\pm \to \mu^\pm + \nu_\mu$ (two-body, [@sec-pion-decay]) and
+muon decay $\mu^\pm \to e^\pm + \nu + \bar\nu$ (three-body, polarized,
+[@sec-muon-decay]). Both samplers share a common timing kernel
+([@sec-decay-timing]) and a common Lorentz boost to the lab frame
+([@sec-decay-boost]).
+
+Decay is implemented as a *global process* applied once per tracker
+step, after the momentum kick. Particles flagged for decay in a given
+step are marked for deletion from the parent container and replaced by
+daughters created in a paired container; downstream tracking continues
+on the daughters with their new species mass, charge, and, where
+applicable, polarization vector defined as in the spin-tracking section.
+
+## Decay timing: relativistic Markov law {#sec-decay-timing}
+
+For each particle, the per-step decay probability follows the
+relativistic Markov law: time dilation extends the rest-frame lifetime
+$\tau_0$ to a lab-frame lifetime $\gamma\tau_0$, and the exponential
+survival function gives
+$$
+  p_{\text{decay}}(\Delta t)
+  = 1 - \exp\!\big({-\Delta t}\big/{\gamma\,\tau_0}\big),
+$$ {#eq-decay-prob}
+where $\gamma = \sqrt{1 + |\vec P|^2}$ is computed per-particle from
+the stored momentum $\vec P$ in $\beta\gamma$ units. Each step OPALX
+draws $u \sim U(0,1)$ and marks the particle for decay if
+$u < p_{\text{decay}}$; the parent is then collected into a compact
+view (alongside its position, momentum, and — when spin tracking is
+active — polarization) before daughters are sampled.
+
+Rest-frame lifetimes used in OPALX (`Physics.h`):
+
+| Species | $\tau_0$ [s] | Source |
+|---|---|---|
+| $\mu^\pm$ | $2.1969811\times 10^{-6}$ | [@pdgMuon2024] |
+| $\pi^\pm$ | $2.6033\times 10^{-8}$ | [@pdgPion2024] |
+
+Note that $\Delta t$ in [@eq-decay-prob] is the *tracker* step in lab
+time, not a proper-time interval; the time-dilation factor $\gamma$
+performs the conversion. For the small per-step decay probabilities
+typical in storage-ring or beamline applications,
+$1 - e^{-x} \approx x$, so this reduces to the familiar
+$p \approx \Delta t / (\gamma\tau_0)$ — but the exponential form
+remains correct for the rare large-$\Delta t$ steps near a stopper or
+beam dump.
+
+## Pion decay: $\pi^\pm \to \mu^\pm + \nu_\mu$ {#sec-pion-decay}
+
+### Two-body kinematics
+
+The pion is a pseudoscalar (spin $0$, parity $-$). In the pion rest
+frame, energy-momentum conservation in a two-body decay against a
+massless neutrino fixes the daughter muon momentum uniquely
+[@pdgKinematics2024]:
+$$
+  p^* = \frac{M_\pi^{\,2} - m_\mu^{\,2}}{2\,M_\pi},
+  \qquad
+  E^* = \frac{M_\pi^{\,2} + m_\mu^{\,2}}{2\,M_\pi}.
+$$ {#eq-pion-twobody}
+Numerically, with the PDG masses in `Physics.h`,
+$p^* \approx 29.79\;\mathrm{MeV}/c$ and
+$E^* \approx 109.78\;\mathrm{MeV}$.
+
+### Isotropic direction
+
+Since the parent pion is spin-$0$, the rest-frame decay direction is
+isotropic. OPALX samples
+$\cos\theta^* \sim U(-1, 1)$ and $\phi^* \sim U(0, 2\pi)$, then
+constructs the rest-frame momentum
+$\vec p^{\,*}_\mu = p^*\,(\sin\theta^*\cos\phi^*,
+\sin\theta^*\sin\phi^*, \cos\theta^*)$ before boosting.
+
+### V-A polarization of the daughter muon
+
+The decay $\pi \to \mu\,\nu_\mu$ proceeds through the V-A charged
+current. In the pion rest frame the neutrino is massless and emerges
+with definite helicity ($-$ for $\nu_\mu$, $+$ for $\bar\nu_\mu$);
+angular-momentum conservation with the spin-$0$ pion then forces the
+muon to carry the *opposite* helicity. The resulting muon polarization
+vector in the muon rest frame is therefore
+$$
+  \vec P_\mu = h\,\hat p^{\,*}_\mu,
+  \qquad
+  h = \begin{cases}
+    +1 & \text{for}\ \pi^- \to \mu^- \\
+    -1 & \text{for}\ \pi^+ \to \mu^+
+  \end{cases}
+$$ {#eq-pion-helicity}
+The convention follows the standard accelerator notation in which
+positive helicity means $\vec P$ parallel to the daughter momentum.
+
+A subtle but useful point: the boost that takes the muon from the
+pion rest frame to the lab is along $\hat p^{\,*}_\mu$ itself, so the
+projection of $\vec P_\mu$ along that axis is invariant under the
+boost. Writing the rest-frame unit vector $\hat p^{\,*}_\mu$
+directly into the per-particle polarization storage is therefore the
+exact lab-frame value of $\vec P_\mu$ — no additional spin rotation
+is required at boost time. This is what makes the daughter-muon
+polarization computation cheap.
+
+## Muon decay: $\mu^\pm \to e^\pm + \nu + \bar\nu$ {#sec-muon-decay}
+
+Muon decay is a three-body weak process. With two unobserved
+neutrinos, the daughter electron is described by a non-trivial joint
+energy-angle distribution. We use the standard Michel parameterization
+in the limit of an unpolarized electron with massless neutrinos
+[@pdgMuonDecayParams2024].
+
+### Energy marginal: Michel spectrum
+
+Define the reduced electron energy $x = 2\,E_e / m_\mu \in [0, 1]$.
+The energy marginal of the differential decay rate is the Michel
+spectrum,
+$$
+  f(x) = 2\,x^2\,(3 - 2x), \qquad x \in [x_{\min}, 1],
+$$ {#eq-michel-spectrum}
+with the kinematic threshold $x_{\min} = m_e / (m_\mu / 2)
+\approx 9.7\times 10^{-3}$. The spectrum peaks at $x = 1$ with
+$f_{\max} = 2$. OPALX samples $x$ by rejection against this upper
+bound.
+
+### Joint distribution and the V-A asymmetry
+
+For a muon with rest-frame polarization vector $\vec P$, the joint
+differential rate factorizes in the standard V-A form
+[@pdgMuonDecayParams2024]
+$$
+  \frac{d\Gamma}{dx\,d\!\cos\theta}
+  \;\propto\; f(x)\,\big[\,1 + \alpha(x)\,\cos\theta\,\big],
+$$ {#eq-muon-joint}
+where $\theta$ is the angle between the electron momentum and
+$\hat{\vec P}$ in the muon rest frame, and the asymmetry coefficient is
+$$
+  \alpha(x) = s\,|\vec P|\;\frac{2x - 1}{3 - 2x},
+  \qquad
+  s = \begin{cases} +1 & \text{for}\ \mu^- \\ -1 & \text{for}\ \mu^+ \end{cases}
+$$ {#eq-muon-asymmetry}
+The sign $s$ reflects the conventional V-A coupling — for $\mu^-$
+the high-energy electron is preferentially emitted *along*
+$\hat{\vec P}$, while for $\mu^+$ the high-energy positron prefers
+the opposite direction. This is the V-A signature that motivates
+spin-dependent muon decay tracking in the first place.
+
+### Inverse-CDF sampling of $\cos\theta$
+
+The conditional [@eq-muon-joint] is linear in $\cos\theta$, so the
+conditional CDF is quadratic and explicitly invertible. Writing
+$c \equiv \cos\theta$, the normalized conditional density on
+$[-1, 1]$ is
+$$
+  p(c \mid x, \vec P) = \tfrac{1}{2}\,(1 + \alpha\,c),
+$$ {#eq-muon-conditional}
+with CDF
+$$
+  F(c) = \tfrac{1}{2}(c + 1) + \tfrac{\alpha}{4}(c^2 - 1) .
+$$ {#eq-muon-cdf}
+For $u \sim U(0, 1)$, setting $F(c) = u$ gives the quadratic
+$$
+  \frac{\alpha}{4}\,c^{2} + \frac{1}{2}\,c
+  - \Big(\frac{\alpha}{4} + \frac{1}{2} - u\Big) = 0,
+$$ {#eq-muon-cosCDF}
+solved analytically and the root in $[-1, 1]$ selected. The degenerate
+limit $\alpha \to 0$ (unpolarized muon or zero V-A asymmetry at
+$x = \tfrac{1}{2}$) recovers the uniform sampling $c = 2u - 1$, as
+expected.
+
+The azimuth $\phi$ around $\hat{\vec P}$ is uniform on $[0, 2\pi)$,
+and the rest-frame electron momentum direction in the $\hat{\vec P}$-aligned
+local frame is
+$(\sin\theta\cos\phi, \sin\theta\sin\phi, \cos\theta)$. A single
+rotation taking $\hat z \to \hat{\vec P}$ then realigns this vector
+with the lab-frame Cartesian axes (which are the axes the
+polarization vector itself is referenced to, see the spin-tracking
+section); the rotated rest-frame momentum is fed to the Lorentz boost
+of the next section.
+
+## Lorentz boost to the lab frame {#sec-decay-boost}
+
+Both decay samplers share the same lab-frame boost. With the parent
+momentum stored as $\vec P_{parent}$ in $\beta\gamma$ (dimensionless)
+units,
+$$
+  \gamma = \sqrt{1 + |\vec P_{parent}|^{2}},
+  \qquad
+  \vec\beta = \frac{\vec P_{parent}}{\gamma},
+$$ {#eq-boost-prep}
+the spatial part of the daughter four-momentum boosts as
+$$
+  \vec p_{\,\text{lab}} = \vec p_{\,\text{RF}}
+  + \Bigg[
+      \frac{(\gamma - 1)\,\vec\beta \cdot \vec p_{\,\text{RF}}}{\beta^{\,2}}
+      + \gamma\,E_{\text{RF}}
+    \Bigg]\,\vec\beta .
+$$ {#eq-lorentz-boost}
+The energy $E_{\text{RF}}$ is the daughter rest-frame energy
+($E_e = x\,m_\mu/2$ for muon decay, $E^*$ from [@eq-pion-twobody]
+for pion decay). At storage, OPALX writes the daughter momentum back
+in $\beta\gamma$ units of the *daughter* species mass:
+$\vec P_{\,\text{daughter}} = \vec p_{\,\text{lab}} / m_d$, so that
+the downstream Boris pusher and T-BMT pusher consume it without unit
+conversion.
+
+The polarization vector of the daughter muon from pion decay is
+written directly in the rest frame ([@eq-pion-helicity]) and, as
+noted above, requires no boost rotation because the daughter
+momentum direction is the boost axis. For muon decay the daughter
+electron polarization is not stored — the rest of the simulation
+treats decay electrons as unpolarized — but the muon decay sampler
+needs the *parent* polarization, which is read from the muon
+container's polarization view at decay time.
+
+## Numerical implementation {#sec-decay-numerics}
+
+The runtime cost of the decay process is dominated by the rejection
+sampling of the Michel spectrum; everything else is closed-form.
+
+- **Decay flagging.** Per-particle Bernoulli draw against
+  [@eq-decay-prob]; survivors retain their state, marked particles
+  are compacted into a dense view of $(\vec R, \vec P,
+  \Delta t, \vec P_{\text{pol}})$ tuples by a Kokkos parallel scan.
+- **Michel $x$.** Rejection against $f_{\max} = 2$; average
+  acceptance is $\int_0^1 f(x)\,dx / f_{\max}\;\approx\;0.41$, so
+  the rejection loop is short and predictable.
+- **Muon $\cos\theta$.** Closed-form root of [@eq-muon-cosCDF] —
+  no rejection, no iteration.
+- **Pion $\cos\theta$.** A single uniform draw.
+- **Daughter momentum.** Stored as
+  $\vec P_{\text{daughter}} = \vec p_{\,\text{lab}} / m_d$,
+  consistent with the rest of OPALX's $\beta\gamma$ convention.
+
+Random numbers are sourced from a Kokkos `XorShift64_Pool` seeded
+per-container, so each rank's decay stream is reproducible and
+statistically independent across MPI ranks.
+
+## Validation {#sec-decay-validation}
+
+The samplers are verified by distribution-level unit tests that
+compare $10^{4}$–$10^{6}$ generated daughters against the analytic
+forms above.
+
+- **Pion decay.** [TestPionDecaySpectrum.cpp]({{< meta source-code-url >}}/blob/master/unit_tests/Physics/TestPionDecaySpectrum.cpp)
+  checks that every daughter muon has $|\vec p| = p^*$ from
+  [@eq-pion-twobody] within machine precision, that the
+  rest-frame $\cos\theta$ histogram is statistically uniform on
+  $[-1, 1]$ (verifying the spin-$0$ assumption), and that the
+  lab-frame energy spectrum after a boost along $\hat z$ is a
+  flat box on $[E_-, E_+]$ with endpoints
+  $E_\pm = \gamma E^* \pm \beta\gamma\,p^*$.
+
+- **Muon decay.** [TestMuonDecaySpectrum.cpp]({{< meta source-code-url >}}/blob/master/unit_tests/Physics/TestMuonDecaySpectrum.cpp)
+  fires fully-polarized muons at rest, fixes the reduced energy
+  $x$, and compares the daughter $\cos\theta$ histogram against the
+  analytic linear-in-$c$ slope $\alpha(x)$ from [@eq-muon-asymmetry].
+  The same test is run for $\mu^-$ and $\mu^+$ to confirm the V-A
+  sign flip.
+
+These tests are run automatically as part of the ctest suite and
+guard the kinematic and polarization correctness of the samplers
+against regressions.

@@ -1,0 +1,28 @@
+---
+title: "Beam and Distributions"
+description: "Define a beam, particle distribution, emission sources, and source lists."
+audience: user
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+An OPALX run separates the physical beam from the rule used to generate
+particles:
+
+1. `DISTRIBUTION` defines the phase-space sample.
+2. `EMISSIONSOURCE` associates emission behavior with a distribution.
+3. `EMISSIONSOURCELIST` groups one or more sources.
+4. `BEAM` specifies the species, reference momentum, charge, allocation, and
+   source list.
+
+This separation permits several source definitions to feed the same tracked
+beam. Distribution attributes and accepted species are undergoing a
+source-level audit; until that table is complete, use current regression inputs
+and confirm the selected attributes in the generated API reference.
+
+## Reproducibility
+
+Record the OPALX revision, distribution seed, macro-particle count, bunch
+charge, and all referenced external files with each production result. Large
+reference distributions and datasets belong in the separate OPALX documents
+repository rather than this text manual.

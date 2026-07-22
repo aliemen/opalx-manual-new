@@ -1,0 +1,40 @@
+---
+title: "Run a First Simulation"
+description: "Launch OPALX with an existing input file and identify the first outputs."
+audience: user
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+Start with an input file from the maintained OPALX regression suite. Those
+inputs are executable specifications and are checked continuously against the
+current parser and physics implementation.
+
+1. Choose a small serial regression case.
+2. Copy its `.in` file and required supporting files into a new working
+   directory.
+3. Run the executable from that directory.
+
+```bash
+mpirun -np 1 /path/to/build_serial/src/opalx example.in --info 2
+```
+
+For a multi-GPU run, map each MPI rank to a device:
+
+```bash
+srun /path/to/build_cuda/src/opalx example.in \
+  --info 2 --kokkos-map-device-id-by=mpi_rank
+```
+
+## What to check
+
+- The startup banner identifies the build and execution backend.
+- Parser errors name the statement and location that could not be read.
+- Statistics and particle outputs depend on the input-file options and output
+  commands.
+- A nonzero exit status means the run did not complete successfully.
+
+The [regression-test dashboard]({{< meta regression-tests-url >}}) shows which
+inputs currently pass. Input-file compatibility is still being cataloged, so a
+regression input is safer than copying an example from the historical OPAL
+manual.

@@ -1,0 +1,29 @@
+---
+title: "Adding Features"
+description: "Integrate commands, elements, physics, tests, and documentation coherently."
+audience: developer
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+## Parser-visible commands and elements
+
+1. Implement the object and its attributes in the appropriate OPALX module.
+2. Register a prototype in `opalx/src/OpalConfigure/Configure.cpp`.
+3. Add parser and behavior tests.
+4. Verify serial and accelerator builds.
+5. Add the object to the user and reference documentation in the same change.
+
+## Physics features
+
+Document the governing equations, units, coordinate frame, numerical method,
+step ordering, and known approximations. Add a manufactured solution,
+convergence study, or benchmark that makes failures observable.
+
+## Performance portability
+
+- Keep kernels valid for CPU and GPU execution.
+- Avoid host-only calls and non-device captures inside device lambdas.
+- Make required enclosing functions public for CUDA compilation.
+- Test MPI decomposition as well as single-rank behavior.
+- Document backend-specific constraints instead of silently falling back.

@@ -1,0 +1,23 @@
+---
+title: "Field Solvers"
+description: "Connect a field-solver definition to the tracked beam."
+audience: user
+status: planned
+last-reviewed: "2026-07-22"
+---
+
+`FIELDSOLVER` is registered by the current OPALX executable and is selected by
+the tracking `RUN` statement. Solver choices control mesh dimensions, boundary
+conditions, decomposition, Green functions, and optional debugging output.
+
+The complete attribute matrix is not yet verified for every execution backend.
+Until it is published here:
+
+- Start from a passing regression case using the intended solver.
+- Preserve its boundary-condition and parallel-decomposition settings.
+- Change one solver parameter at a time.
+- Check mesh and time-step convergence.
+- Confirm GPU support for any newly selected algorithm.
+
+The [Beam-Beam](../physics/beam-beam/index.qmd) chapter contains a documented
+open-boundary manufactured solution.

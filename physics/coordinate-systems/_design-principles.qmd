@@ -1,0 +1,138 @@
+## Geometry Design Principles
+
+### Forest-Hirata bundles versus differential geometry
+
+The Forest-Hirata appendix gives a clean abstract reformulation of local
+element placement [@foresthirata]. The lattice is treated as a fibre bundle
+over the machine loop; local neighbourhoods are element intervals; the fibres
+may be coordinate frames, particle coordinates, maps, or envelopes; and the
+matching block between local descriptions is a transition function
+$g_{ij}\in G$.
+
+The present OPALX note uses a more concrete differential-geometric language.
+Each element may carry a reference path $\Gamma_i(\ell)$, a moving orthonormal
+frame, marked interface charts, and a placed support region in laboratory
+space. This is closer to implementation because it directly supports field
+evaluation, aperture checks, and coordinate conversion inside an element.
+
+The two viewpoints answer different questions:
+
+1. use differential geometry locally inside an element whenever a curved or
+   adapted chart is numerically useful;
+2. use fibre-bundle-style transition maps to connect neighboring charts,
+   branches, anchors, and closures without pretending that there must be one
+   globally preferred frame.
+
+### Current OPALX implementation context
+
+The current tracker advances particles in physical time with a Boris-Buneman
+update. Elements have spatial placement and local field frames, and the
+orbit-threading layer queries active supports during field assembly. The design
+described here extends those implemented concepts into one geometry
+representation without importing a second machine model from historical
+documentation.
+
+### A geometry graph and placement tuple
+
+The cleanest generalization is to represent machine geometry by a directed
+placement graph
+
+$$
+\mathcal G=(\mathcal N,\mathcal E) .
+$$
+
+Here $\mathcal N$ is the set of named ports and free anchors, and
+$\mathcal E$ is the set of placed objects that span those ports. A placed
+object may be a physics element, a pure drift, or a tracking-neutral geometry
+operator such as a patch or survey shift.
+
+This representation unifies linear and circular machines immediately:
+
+1. a transfer line is an open connected path in $\mathcal G$ with two exposed
+   boundary ports,
+2. a ring is a closed cycle in $\mathcal G$,
+3. a sector machine is a subgraph together with one or more symmetry
+   transforms that replicate it.
+
+Every placed object $i$ should be representable by a tuple
+
+$$
+\mathfrak E_i=
+\bigl(
+M_i,\,
+U_i,\,
+\Omega_i,\,
+\psi_i,\,
+p_i^{\mathrm{in}},\,
+p_i^{\mathrm{out}},\,
+A_i,\,
+B_i,\,
+\Delta T_i^{\mathrm{err}},\,
+\Delta T_i^{\mathrm{dyn}}(t),\,
+\tau_i
+\bigr) .
+$$
+
+Here $M_i$ is the physics model, $U_i$ the canonical local chart,
+$\Omega_i\subset U_i$ the local support, $\psi_i$ the intrinsic geometry map,
+$p_i^{\mathrm{in}}$ and $p_i^{\mathrm{out}}$ the named ports, $A_i$ and $B_i$
+the nominal entrance and exit transforms, $\Delta T_i^{\mathrm{err}}$ the
+static alignment-error transform, $\Delta T_i^{\mathrm{dyn}}(t)$ any
+time-dependent motion, and $\tau_i$ timing metadata.
+
+If $T(p_i^{\mathrm{in}})$ denotes the laboratory-frame pose of the entrance
+port, then the runtime pose of the canonical element frame is
+
+$$
+T_i(t)=T(p_i^{\mathrm{in}})\,A_i\,\Delta T_i^{\mathrm{err}}\,\Delta T_i^{\mathrm{dyn}}(t) .
+$$
+
+The corresponding exit-port pose is
+
+$$
+T(p_i^{\mathrm{out}})=T_i(t)\,B_i .
+$$
+
+### Transition maps as first-class objects
+
+Whenever two local charts meet, OPALX should store two closely related pieces
+of information:
+
+1. the rigid port-to-port patch transform $C_{pq}$ attached to the named
+   interface;
+2. the induced chart-change map
+   $g_{ij}(t)=P_i^{-1}(\cdot,t)\circ P_j(\cdot,t)$ when an actual local chart
+   conversion is needed.
+
+If the common region is only a glued entrance or exit face, $g_{ij}$ reduces to
+the familiar rigid handoff encoded by $C_{pq}$. If there is volumetric overlap,
+$g_{ij}$ provides a precise way to translate diagnostics, apertures, or
+field-evaluation points from one local chart to the other.
+
+### Two complementary coordinate charts
+
+For OPALX it is useful to distinguish explicitly between:
+
+1. a **reference chart** $s$ for lattice description, sequence order,
+   optics-style diagnostics, and survey reports;
+2. a **world chart** $(\mathbf r,t)$ for actual field evaluation, particle
+   pushing, aperture collisions, and self-field coupling.
+
+In a purely MAD-X-like mode the two charts nearly collapse onto one another. In
+a time-based OPALX mode they do not. The code should therefore allow both to
+coexist without forcing one to masquerade as the other.
+
+### Minimal front-end semantics
+
+The front-end syntax should compile to the graph-based placement model above.
+The intent is to extend the present manual concepts rather than replace them
+with an unrelated syntax.
+
+| Input notion | Keep or extend | Proposed semantics |
+|---|---|---|
+| `LINE` | Keep | Ordered open path in the placement graph; not a separate machine type. |
+| Anchors and explicit placement data | Keep | Explicit anchor pose for a named frame or for the root of a line. |
+| `ELEMEDGE` | Keep as compatibility mode | Reference coordinate only; compile once into explicit transforms and do not use it directly for runtime ownership. |
+| Alignment errors | Keep | Populate the static error transform $\Delta T_i^{\mathrm{err}}$. |
+| Named ports and patches | Add or expose explicitly | Declare interface charts, pure geometry transforms, and closure constraints independently of the physics elements. |
+| Chart and support attributes | Add | Declare `STRAIGHT`, `ARC`, or `USER` intrinsic charts, explicit support regions, and timing metadata. |

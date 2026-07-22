@@ -1,0 +1,175 @@
+---
+title: "Spin Tracking"
+description: "Thomas-BMT spin transport and its placement in the OPALX tracker step."
+audience: physics
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+This section describes how *OPALX* evolves the per-particle spin
+polarization vector along the trajectory. The model is the Thomas-BMT
+equation [@bmt1959; @jackson1999], integrated as a closed-form Rodrigues
+rotation so that the magnitude $|\vec P|$ is preserved exactly per step.
+
+## Polarization vector {#sec-spin-pol-vector}
+
+OPALX stores, for each tracked particle, a three-component polarization
+vector
+$$
+  \vec P = \big(\langle\hat\sigma_x\rangle,\; \langle\hat\sigma_y\rangle,\;
+                \langle\hat\sigma_z\rangle\big),
+$$ {#eq-pol-def}
+where each component is the expectation value of the corresponding Pauli
+operator. The expectation is evaluated in the particle's
+**instantaneous (Lorentz) rest frame**, while the three Cartesian axes
+along which it is projected are the **lab-frame axes**. This hybrid
+convention is the one the BMT equation is naturally written in: the spin
+state lives in the rest frame, but the rotation rate $\vec\Omega$ is
+expressed using the lab-frame fields $\vec E, \vec B$ at the particle's
+position, so keeping the projection axes lab-aligned avoids a redundant
+boost rotation inside the integrator.
+
+The magnitude $|\vec P|$ is bounded by the spin-$\tfrac{1}{2}$ Bloch
+sphere,
+$$
+  0 \le |\vec P| \le 1 ,
+$$ {#eq-pol-bloch}
+with $|\vec P|=1$ corresponding to a fully polarized state and
+$|\vec P|=0$ to an unpolarized state.
+
+## The Thomas-BMT equation {#sec-spin-tbmt}
+
+In the lab frame, with $t$ the lab-frame time, $\vec P$ evolves as
+$$
+  \frac{d\vec P}{dt} = \vec\Omega \times \vec P,
+$$ {#eq-tbmt-evolution}
+where the angular velocity $\vec\Omega$ for a particle of charge $q$,
+rest mass $m$, and gyromagnetic anomaly $G = (g-2)/2$ in
+electromagnetic fields $\vec E, \vec B$ is
+$$
+  \vec\Omega = -\frac{q}{m}\Bigg[
+    \Big(G + \frac{1}{\gamma}\Big)\,\vec B
+    - \frac{G\,\gamma}{\gamma + 1}\,
+        \big(\vec\beta \cdot \vec B\big)\,\vec\beta
+    - \Big(G + \frac{1}{\gamma + 1}\Big)\,
+        \frac{\vec\beta \times \vec E}{c}
+  \Bigg].
+$$ {#eq-tbmt-omega}
+Here $\vec\beta = \vec v / c$ is the lab-frame velocity in units of $c$
+and $\gamma = (1 - \beta^2)^{-1/2}$ is the corresponding Lorentz factor.
+The derivation is given in [@jackson1999, §11.11]; we use the
+standard sign convention for $\vec\Omega$ such that
+[@eq-tbmt-evolution] describes the time evolution of $\vec P$ rather
+than that of a rotating frame.
+
+Term-by-term, [@eq-tbmt-omega] separates into three physically distinct
+contributions:
+
+- **Cyclotron-Larmor term**, $-\tfrac{q}{m}\,(G + \tfrac{1}{\gamma})\vec B$.
+  The $1/\gamma$ piece is the relativistic Larmor precession at the
+  cyclotron frequency $\omega_c = qB/(\gamma m)$, common to *any* charged
+  particle in a magnetic field. The $G$ piece is the additional
+  precession driven by the anomalous magnetic moment — it is the part
+  the BMT equation contributes beyond the Dirac result $g = 2$.
+
+- **Longitudinal-$B$ correction**,
+  $+\tfrac{q}{m}\,\tfrac{G\gamma}{\gamma+1}\,(\vec\beta\cdot\vec B)\vec\beta$.
+  This subtracts the component of $\vec B$ along the motion that is
+  ineffective at rotating $\vec P$. It vanishes when $\vec\beta \perp \vec B$
+  (the canonical storage-ring geometry).
+
+- **Motional-electric term**,
+  $+\tfrac{q}{m}\,(G + \tfrac{1}{\gamma+1})\,(\vec\beta\times\vec E)/c$.
+  This is the BMT response to electric fields. Even at $G = 0$ (Dirac)
+  it does not vanish — the residual $1/(\gamma+1)$ is the
+  Thomas-precession piece, which is a kinematic effect of the successive
+  Lorentz boosts and survives in the absence of anomalous moments.
+
+Setting $G = 0$ in [@eq-tbmt-omega] reduces the rotation to pure Larmor
+precession of a Dirac particle: $\vec\Omega = -(q/m)\,(\vec B/\gamma)$,
+i.e. at $\omega_c$ when $\vec\beta \perp \vec B$. Any deviation of $g$
+from $2$ — which is generic for composite particles and even for QED
+loop-corrected leptons — adds the $G\vec B$ contribution that physically
+defines the BMT regime.
+
+OPALX currently tabulates $G$ for the species that have a well-defined
+classical anomaly:
+
+| Species | $G = (g-2)/2$ | Source |
+|---|---|---|
+| Electron, positron | $1.15965218128 \times 10^{-3}$ | QED [@jackson1999] |
+| Muon ($\mu^\pm$) | $1.16592061 \times 10^{-3}$ | [@pdgMuon2024] |
+| Proton, antiproton | $1.792847386$ | [@jackson1999] |
+
+Species not listed default to $G = 0$. In the current OPALX release
+only the muon channel is actively spin-tracked downstream; extending
+the integrator itself to another species is just a matter of populating
+$G$ from the species table.
+
+## OPALX unit conventions {#sec-spin-units}
+
+OPALX stores rest mass as the **rest energy** in eV (numerically
+$m\,c^2$), and charge in **proton-charge units** (dimensionless,
+e.g. $-1$ for $\mu^-$, $+1$ for $\mu^+$). With these conventions, the
+SI ratio $q/m$ that appears in [@eq-tbmt-omega] becomes
+$$
+  \frac{q}{m}\bigg|_{\text{SI}}
+  \;=\; \frac{\text{charge}\,\cdot\,c^{2}}{\text{mass}_{\text{eV}}} ,
+$$ {#eq-q-over-m-units}
+because the elementary-charge factor cancels between numerator (units
+of $e$) and denominator (units of eV). This is the same idiom used by
+the Boris pusher [@langdon] in OPALX; the spin and momentum updates
+therefore consume $q, m$ in identical internal forms with no separate
+unit conversion needed.
+
+## Numerical integration: Rodrigues rotation {#sec-spin-integrator}
+
+A naive explicit ODE solver applied to [@eq-tbmt-evolution] (e.g. RK4)
+does not preserve $|\vec P|$ and accumulates a slow magnitude drift
+over time. OPALX therefore integrates [@eq-tbmt-evolution] as a closed-form rotation.
+
+For a single step of duration $\Delta t$ during which $\vec\Omega$ is
+held constant, the exact solution is a rotation of $\vec P$ about
+$\hat n \equiv \vec\Omega / |\vec\Omega|$ by angle
+$$
+  \phi = |\vec\Omega|\,\Delta t .
+$$ {#eq-rotation-angle}
+The rotation is evaluated through Rodrigues' formula,
+$$
+  \vec P' = \cos\phi\;\vec P
+          + \sin\phi\,(\hat n \times \vec P)
+          + (1 - \cos\phi)\,(\hat n \cdot \vec P)\,\hat n .
+$$ {#eq-rodrigues}
+By construction this preserves $|\vec P|$ to machine precision per step,
+independent of $\phi$, so the magnitude drift typical of explicit
+non-symplectic schemes is eliminated.
+
+The remaining accuracy concern is the **constant-$\vec\Omega$
+assumption** across the step. For small per-step rotations the error
+incurred by holding $\vec\Omega$ frozen at its value at the start of the
+step is third order in $\phi$. To bound this error robustly when the
+beamline contains strong fields or when $\Delta t$ is large compared to
+the spin-precession period, OPALX sub-steps whenever the per-step
+rotation exceeds a threshold $\phi_{\max} = 0.1$ rad: the timestep is
+split into
+$$
+  N_{\text{sub}} = \left\lceil \frac{\phi}{\phi_{\max}} \right\rceil
+$$ {#eq-substep-count}
+equal sub-rotations of angle $\phi / N_{\text{sub}}$ each, with
+$\vec\Omega$ re-evaluated identically for each (since $\vec E, \vec B,
+\gamma$ do not change inside a single tracker step). The threshold
+$\phi_{\max} = 0.1$ rad bounds the rotation-truncation error at the
+$10^{-4}$ relative level per step, which is well below the float
+storage precision of $\vec P$.
+
+## Placement in the tracker step {#sec-spin-step-order}
+
+The polarization update is applied after both external and space-charge
+contributions to $\vec E$ and $\vec B$ have been accumulated at each
+particle, but *before* the momentum kick that closes the time step.
+This ordering guarantees that the $\vec E, \vec B$ used to construct
+$\vec\Omega$ in [@eq-tbmt-omega] are precisely the fields the particle
+experiences during the step — the same fields the Boris kick uses — so
+the momentum and spin halves of the step see a consistent
+electromagnetic environment, and no extra mid-step field-interpolation
+is required.

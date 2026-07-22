@@ -1,0 +1,19 @@
+---
+title: "Legacy Documentation"
+description: "Boundary between the current OPALX manual and the separate historical OPAL manual."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+---
+
+OPAL and OPALX are documented separately.
+
+- This book covers the current OPALX executable, its physics, and its
+  development workflow.
+- The [archived OPAL manual]({{< meta legacy-opal-manual-url >}}) preserves the
+  historical OPAL documentation as it stood before the manuals were mixed.
+- OPAL-CYCL, OPAL-MAP, historical OPAL reports, and historical OPAL examples
+  remain with OPAL and are not migrated into either OPALX repository.
+
+If an OPAL concept is implemented in OPALX, it should be documented here only
+after the behavior has been verified against current source and tests.

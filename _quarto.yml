@@ -1,0 +1,95 @@
+project:
+  type: book
+  output-dir: _site
+  pre-render:
+    - ruby scripts/validate_manual.rb
+
+book:
+  title: "OPALX Documentation"
+  subtitle: "User guide, physics manual, reference, and developer handbook"
+  repo-branch: main
+  repo-actions: [edit, issue]
+  downloads: [pdf]
+  search: true
+  page-footer:
+    left: "OPALX is developed by an international accelerator-science community."
+    right: "Documentation status is shown on every page."
+  chapters:
+    - index.qmd
+    - part: "Getting Started"
+      chapters:
+        - getting-started/index.qmd
+        - getting-started/first-simulation.qmd
+    - part: "User Guide"
+      chapters:
+        - user-guide/input-language.qmd
+        - user-guide/beam-distributions.qmd
+        - user-guide/tracking.qmd
+        - user-guide/elements.qmd
+        - user-guide/field-solvers.qmd
+        - user-guide/diagnostics-output.qmd
+    - part: "Physics"
+      chapters:
+        - physics/overview/index.qmd
+        - physics/coordinate-systems/index.qmd
+        - physics/elements/index.qmd
+        - physics/collective-effects.qmd
+        - physics/beam-beam/index.qmd
+        - physics/decay-processes/index.qmd
+        - physics/spin-tracking/index.qmd
+        - physics/gamma-gamma/index.qmd
+    - part: "Reference"
+      chapters:
+        - reference/commands.qmd
+        - reference/elements.qmd
+        - reference/file-formats.qmd
+        - reference/configuration.qmd
+        - reference/api.qmd
+    - part: "Developer Guide"
+      chapters:
+        - developer-guide/architecture.qmd
+        - developer-guide/repository-layout.qmd
+        - developer-guide/build-test-ci.qmd
+        - developer-guide/adding-features.qmd
+        - developer-guide/documentation-workflow.qmd
+    - part: "Troubleshooting"
+      chapters:
+        - troubleshooting/common-problems.qmd
+        - troubleshooting/bug-reports.qmd
+        - troubleshooting/known-limitations.qmd
+    - part: "Resources"
+      chapters:
+        - resources/publications.qmd
+        - resources/presentations-reports.qmd
+        - resources/regression-tests.qmd
+        - resources/legacy-documentation.qmd
+
+number-sections: true
+number-depth: 3
+bibliography: references.bib
+csl: csl/ieee.csl
+
+format:
+  html:
+    theme:
+      - cosmo
+      - assets/styles/opalx.scss
+    toc: true
+    code-copy: true
+    code-overflow: wrap
+    html-math-method: mathjax
+    link-external-newwindow: true
+  pdf:
+    documentclass: scrreprt
+    papersize: a4
+    toc: true
+    colorlinks: true
+    include-in-header:
+      - includes/tikz-preamble.tex
+
+documents-base-url: "https://github.com/aliemen/opalx-documents/blob/main"
+manual-repository-url: "https://github.com/aliemen/opalx-manual-new"
+source-code-url: "https://github.com/OPALX-project/OPALX"
+regression-tests-url: "https://amas.pages.psi.ch/opal-live-doc/opalx-regression-test/overview/index.html"
+legacy-opal-manual-url: "https://opalx-project.github.io/Manual-old/"
+deployment-profile: "personal"

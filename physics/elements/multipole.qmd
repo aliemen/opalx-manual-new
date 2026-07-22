@@ -1,0 +1,219 @@
+## Multipole family {#sec-elements-multipoles}
+
+The OPALX `MULTIPOLE` implementation is the common straight-magnet path for
+normal and skew magnetic multipole expansions. The present `QUADRUPOLE`
+front-end is a convenience wrapper on top of that common path. A dedicated
+`SEXTUPOLE` parser-side wrapper is not present in this checkout; sextupole
+content is therefore expressed through the generic `MULTIPOLE` coefficient
+arrays.
+
+### Field expansion and conventions
+
+The underlying magnetic field class `BMultipoleField`
+(`src/Fields/BMultipoleField.h`) uses the complex transverse expansion
+$$
+B_y + i B_x = \sum_{m=0}^{N-1} (B_m + i A_m) (x + i y)^m,
+$$
+where:
+
+- $m = 0$ is the dipole term,
+- $m = 1$ is the quadrupole term,
+- $m = 2$ is the sextupole term,
+- $B_m$ are normal coefficients,
+- $A_m$ are skew coefficients.
+
+In the abstract multipole interface `Multipole`
+(`src/AbsBeamline/Multipole.h`),
+the same indexing is used explicitly: `n = 0` corresponds to dipole,
+`n = 1` to quadrupole, `n = 2` to sextupole, and so on.
+
+For the first three nontrivial components, the transverse magnetic field is:
+
+$$
+\text{normal quadrupole:}\qquad
+B_x = B_1\,y,\qquad
+B_y = B_1\,x,
+$$
+
+$$
+\text{skew quadrupole:}\qquad
+B_x = -A_1\,x,\qquad
+B_y = A_1\,y,
+$$
+
+$$
+\text{normal sextupole:}\qquad
+B_x = 2 B_2\,x y,\qquad
+B_y = B_2 (x^2 - y^2),
+$$
+
+$$
+\text{skew sextupole:}\qquad
+B_x = -A_2 (x^2 - y^2),\qquad
+B_y = 2 A_2\,x y.
+$$
+
+These formulas match the host-side field evaluation in
+`src/AbsBeamline/Multipole.cpp`.
+
+### `MULTIPOLE`
+
+The parser-side element `OpalMultipole`
+(`src/Elements/OpalMultipole.cpp`)
+accepts the coefficient arrays:
+
+- `KN`: normal normalized strengths
+- `DKN`: normal strength errors
+- `KS`: skew normalized strengths
+- `DKS`: skew strength errors
+
+The element semantics are:
+
+- if `L != 0`, the strengths are interpreted per unit length
+- if `L == 0`, they are interpreted as integrated strengths
+
+At update time, `OpalMultipole` creates or updates a
+`MultipoleRep` (`src/BeamlineCore/MultipoleRep.h`),
+copies the element length into its straight geometry, and fills a
+`BMultipoleField` plus the runtime coefficient storage in the shared
+`Multipole` (`src/AbsBeamline/Multipole.h`) base.
+
+Internally the generic mapping is:
+
+$$
+\texttt{KN}[0] \to \text{dipole},\qquad
+\texttt{KN}[1] \to \text{quadrupole},\qquad
+\texttt{KN}[2] \to \text{sextupole},
+$$
+
+and likewise for `KS`.
+
+### `QUADRUPOLE`
+
+The parser-side `OpalQuadrupole`
+(`src/Elements/OpalQuadrupole.cpp`)
+is not a separate runtime field model. It is a convenience wrapper that
+instantiates the same `MultipoleRep` (`src/BeamlineCore/MultipoleRep.h`)
+used by `MULTIPOLE`, but exposes scalar quadrupole attributes instead of full
+coefficient arrays:
+
+- `K1`, `DK1`: normal quadrupole strength and error
+- `K1S`, `DK1S`: skew quadrupole strength and error
+
+The implementation writes those values into the multipole representation as:
+
+$$
+\texttt{KN} = \{0, K_1\},\qquad
+\texttt{KS} = \{0, K_{1s}\}.
+$$
+
+So `QUADRUPOLE` is best understood as a named restricted view of the generic
+multipole interface with only the $m = 1$ term exposed.
+
+### `SEXTUPOLE`
+
+There is currently no dedicated `OpalSextupole` front-end class in this
+checkout. The sextupole physics is nevertheless available through the generic
+`MULTIPOLE` representation by populating the order-2 coefficients:
+
+$$
+\texttt{KN} = \{0, 0, K_2\},\qquad
+\texttt{KS} = \{0, 0, K_{2s}\}.
+$$
+
+That means the sextupole is currently a *configuration of `MULTIPOLE`*, not a
+distinct parser-side wrapper parallel to `QUADRUPOLE`.
+
+For a nonzero body length $L$, $K_2$ and $K_{2s}$ are interpreted as
+distributed sextupole strengths; for $L = 0$, they are integrated strengths,
+consistent with the generic `MULTIPOLE` element description.
+
+### Runtime geometry and current implementation status
+
+The runtime representation `MultipoleRep`
+(`src/BeamlineCore/MultipoleRep.h`) inherits from `Multipole`
+(`src/AbsBeamline/Multipole.h`)
+and owns:
+
+- a `StraightGeometry`
+- a `BMultipoleField`
+
+So the current multipole family described here is a straight-element model with
+field support over
+$$
+z \in [0, L].
+$$
+
+One important current detail from
+`src/AbsBeamline/Multipole.cpp`
+is that the device-side `computeField()` kernel still contains explicit special
+cases only for dipole and quadrupole, while the host-side `computeFieldHost()`
+implements sextupole and higher orders as well. For the manual this means:
+
+- the interface is generic up to higher order,
+- the host/orbit-threader path includes sextupole formulas,
+- the current device kernel is still more limited than the abstract interface.
+
+That distinction matters when documenting present implementation status versus
+intended generality.
+
+### Class structure
+
+The current parser-side and runtime-side structure is shown below.
+
+```{mermaid}
+%%| label: fig-elements-multipole-class-diagram
+%%| fig-cap: "Parser-side and runtime-side class structure for the current `MULTIPOLE` and `QUADRUPOLE` implementation. Sextupole content currently enters through the generic `MULTIPOLE` coefficient path."
+classDiagram
+  direction TB
+
+  class OpalElement
+  class OpalMultipole {
+    +clone(name)
+    +print(os)
+    +update()
+  }
+  class OpalQuadrupole {
+    +clone(name)
+    +print(os)
+    +update()
+  }
+
+  class Component
+  class Multipole {
+    +getNormalComponent(n)
+    +setNormalComponent(n, v)
+    +getSkewComponent(n)
+    +setSkewComponent(n, v)
+    +apply(...)
+    +getField()
+    +getGeometry()
+  }
+
+  class MultipoleRep {
+    +clone()
+    +getChannel(key)
+    +getField()
+    +getGeometry()
+    +setField(field)
+  }
+
+  class StraightGeometry
+  class BMultipoleField
+
+  OpalElement <|-- OpalMultipole
+  OpalElement <|-- OpalQuadrupole
+
+  Component <|-- Multipole
+  Multipole <|-- MultipoleRep
+
+  OpalMultipole ..> MultipoleRep : creates/configures
+  OpalQuadrupole ..> MultipoleRep : creates/configures
+
+  MultipoleRep *-- StraightGeometry : geometry
+  MultipoleRep *-- BMultipoleField : field
+```
+
+In other words, `QUADRUPOLE` is presently a thin parser-side specialization of
+the generic multipole path, and sextupole behavior is likewise represented
+through `MultipoleRep`, but without a dedicated `OpalSextupole` wrapper yet.

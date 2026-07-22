@@ -1,0 +1,33 @@
+---
+title: "Architecture"
+description: "How parsing, object registration, tracking, IPPL, and Kokkos fit together."
+audience: developer
+status: current
+last-reviewed: "2026-07-22"
+---
+
+OPALX keeps the statement-driven OPAL object model at its boundary while using
+IPPL and Kokkos for distributed, performance-portable particle and field work.
+
+```{mermaid}
+flowchart LR
+  Input[Input file] --> Parser[OPAL parser]
+  Parser --> Registry[OpalData registry]
+  Registry --> Track[TrackCmd and TrackRun]
+  Track --> Tracker[ParallelTracker]
+  Tracker --> Orbit[OrbitThreader and elements]
+  Tracker --> Bunch[PartBunch and particle containers]
+  Bunch --> IPPL[IPPL fields and particles]
+  IPPL --> Kokkos[Kokkos execution backend]
+  Tracker --> Output[Statistics and diagnostics]
+```
+
+The configurator creates the command and element exemplars available to the
+parser. `ParallelTracker` coordinates the time step, while local kernels such
+as the Boris pusher operate on particle state. `OrbitThreader` determines
+active elements and their local transforms. IPPL provides distributed data
+structures and solvers; Kokkos maps kernels to CPU and GPU backends.
+
+GPU-callable code must avoid host-only state. In particular, enclosing methods
+used by CUDA device lambdas need public accessibility and all data captured by
+device kernels must have a valid device representation.

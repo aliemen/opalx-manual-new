@@ -1,0 +1,118 @@
+---
+title: "OPALX Documentation"
+description: "The unified entry point for OPALX users, physics researchers, and developers."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+page-layout: full
+toc: false
+number-sections: false
+title-block-style: none
+---
+
+:::: {.hero}
+# Simulate charged-particle accelerators across CPUs and GPUs
+
+OPALX is the performance-portable accelerator simulation framework for
+high-statistics, three-dimensional beam dynamics. This manual brings the user
+guide, physics models, command reference, and developer handbook into one
+searchable source.
+
+::: {.hero-actions}
+[Install OPALX](getting-started/index.qmd)
+[Start a simulation](getting-started/first-simulation.qmd){.secondary}
+:::
+::::
+
+## Find your path
+
+:::: {.doc-grid}
+::: {.doc-card}
+<span class="eyebrow">Start here</span>
+
+### Getting Started
+
+Build OPALX, choose a platform backend, and run a first input file.
+
+[Get started](getting-started/index.qmd)
+:::
+
+::: {.doc-card}
+<span class="eyebrow">Run simulations</span>
+
+### User Guide
+
+Learn the input language, beam definitions, tracking workflow, elements, field
+solvers, and outputs.
+
+[Read the user guide](user-guide/input-language.qmd)
+:::
+
+::: {.doc-card}
+<span class="eyebrow">Understand the models</span>
+
+### Physics
+
+Follow coordinate conventions, equations of motion, element fields,
+collective effects, decay, spin, and photon physics.
+
+[Explore the physics](physics/overview/index.qmd)
+:::
+
+::: {.doc-card}
+<span class="eyebrow">Look something up</span>
+
+### Reference
+
+See the commands and elements registered by the current executable, build
+configuration, file formats, and generated API.
+
+[Open the reference](reference/commands.qmd)
+:::
+
+::: {.doc-card}
+<span class="eyebrow">Contribute</span>
+
+### Developer Guide
+
+Understand the code layout, build and test workflows, and how to add features
+without losing GPU portability.
+
+[Read the developer guide](developer-guide/architecture.qmd)
+:::
+
+::: {.doc-card}
+<span class="eyebrow">Resolve a problem</span>
+
+### Troubleshooting
+
+Diagnose build and runtime failures, prepare reproducible bug reports, and
+check known limitations.
+
+[Troubleshoot OPALX](troubleshooting/common-problems.qmd)
+:::
+::::
+
+::: {.resource-strip}
+**Live resources**
+[Generated API](reference/api.qmd)
+[Regression-test dashboard]({{< meta regression-tests-url >}})
+[OPALX source]({{< meta source-code-url >}})
+:::
+
+## Documentation status
+
+::: {.status-strip}
+This redesign is an actively curated foundation. Pages marked **current** have
+been checked against the present OPALX source. **Experimental** pages describe
+implemented work whose interface may still change. **Planned** pages make
+documentation gaps visible instead of filling them with unverified OPAL text.
+:::
+
+## Acknowledgments and citation
+
+OPALX builds on the original OPAL project and is developed across PSI and its
+international accelerator-science partners. Use the
+[publications and citation guidance](resources/publications.qmd) when citing
+the software. The original OPAL manual remains available as a
+[separate historical resource]({{< meta legacy-opal-manual-url >}}).

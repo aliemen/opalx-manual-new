@@ -1,0 +1,25 @@
+---
+title: "Collective Effects"
+description: "The physics roadmap for space charge, wake fields, and particle-matter interactions in OPALX."
+audience: physics
+status: planned
+last-reviewed: "2026-07-22"
+---
+
+Collective effects couple the tracked particles through self-consistent fields
+or material interactions. The current tracker assembles space-charge fields
+between its two half drifts, then transforms the resulting fields back into the
+reference frame before the momentum kick.
+
+This chapter is intentionally marked **planned** while each implemented model
+is checked against the source and its verification cases. It will be expanded
+into separate, source-backed sections for:
+
+- Electrostatic space charge and Green-function choices.
+- Open and periodic boundary conditions.
+- Wake fields.
+- Particle-matter interactions.
+- Mesh convergence and decomposition constraints.
+
+For a complete source-verified example today, see the
+[Beam-Beam manufactured solution](beam-beam/index.qmd).

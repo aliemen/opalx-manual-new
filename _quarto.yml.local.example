@@ -1,0 +1,2 @@
+# Copy this file to _quarto.yml.local for an uncommitted local override.
+documents-base-url: "https://github.com/example/private-documents/blob/test-branch"

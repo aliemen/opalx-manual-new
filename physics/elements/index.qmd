@@ -1,0 +1,14 @@
+---
+title: "Elements"
+description: "Detailed geometry, fields, placement, and validation for OPALX element models."
+audience: physics
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+This chapter documents element models whose geometry, field support, or
+runtime semantics require more than the generic placement conventions.
+
+{{< include bend.qmd >}}
+
+{{< include multipole.qmd >}}

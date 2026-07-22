@@ -1,0 +1,28 @@
+schema-version: 1
+sources:
+  - source: Manual
+    decision: excluded
+    rationale: The copied repository was predominantly the historical OPAL manual. OPAL-only chapters and examples remain in the separate archived OPAL manual.
+    migrated:
+      - OPALX overview PDF moved to opalx-documents presentations/2026/features.
+  - source: PhysicsManual
+    decision: curated
+    rationale: Current OPALX physics chapters are integrated into the Physics part; generated files and datasets are excluded from the text repository.
+    migrated:
+      - Overview and integration
+      - Coordinate systems
+      - Element physics
+      - Beam-beam physics
+      - Decay processes
+      - Spin tracking
+      - Gamma-gamma physics
+      - OpalElement layout proposal moved to opalx-documents reports/2026/design.
+  - source: OPALX-project.github.io
+    decision: excluded
+    rationale: Its manuals, reports, presentations, examples, and developer fragments describe historical OPAL and remain with OPAL documentation.
+  - source: OPAL-References
+    decision: excluded
+    rationale: The bibliography and reports describe historical OPAL. OPALX publications will be curated independently.
+  - source: OPALX source tree
+    decision: current-source-of-truth
+    rationale: Registered commands, elements, build options, architecture, and Doxygen are derived from the current OPALX code.

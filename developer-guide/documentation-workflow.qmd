@@ -1,0 +1,46 @@
+---
+title: "Documentation Workflow"
+description: "Maintain one text-first Quarto manual with configurable private and organization links."
+audience: developer
+status: current
+last-reviewed: "2026-07-22"
+---
+
+Every substantive page declares `title`, `description`, `audience`, `status`,
+and `last-reviewed`. Mark incomplete work visibly as `planned`; do not fill a
+gap by copying an unverified historical OPAL chapter.
+
+## Local preview
+
+```bash
+quarto preview --profile personal
+```
+
+The future organization URLs can be tested before repository transfer:
+
+```bash
+quarto render --profile opalx --to html
+```
+
+For a one-off private fork, copy `_quarto.yml.local.example` to
+`_quarto.yml.local` and set its `documents-base-url`. The local file is ignored
+by Git.
+
+## Linking binary documents
+
+Place OPALX presentations, reports, examples, and datasets in the category-first
+`opalx-documents` tree. Link them only through project metadata:
+
+```markdown
+[OPALX overview]({{< meta documents-base-url >}}/presentations/2026/features/2026-04-06-opalx-overview.pdf)
+```
+
+The personal and organization profiles override `documents-base-url`, so page
+content does not change when the repositories move.
+
+## Asset policy
+
+PDFs, Office documents, archives, and media are rejected from the manual.
+Raster figures must remain at or below 500 KiB. Source SVG, TikZ, Mermaid,
+small plots, and reproducible text scripts may remain with the page they
+support. Generated Quarto and Doxygen output is never committed.

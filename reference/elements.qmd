@@ -1,0 +1,23 @@
+---
+title: "Element Reference"
+description: "Elements and time-dependence objects registered by the current OPALX executable."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+---
+
+The following objects are registered in the current OPALX configurator.
+
+| Family | Registered objects |
+|---|---|
+| RF and electric fields | `CAVITY`, `TRAVELINGWAVE`, `CONSTANTEFIELDCAVITY`, `VARIABLERFCAVITY` |
+| Transport | `DRIFT`, `QUADRUPOLE`, `RBEND`, `SBEND`, `SOLENOID` |
+| Multipoles and specialized magnets | `MULTIPOLE`, `MULTIPOLET`, `VERTICALFFAMAGNET` |
+| Sources and interactions | `LASER` |
+| Diagnostics and structure | `MONITOR`, `MARKER`, `PROBE`, `LINE` |
+| Time dependence | Polynomial, sinusoidal, and spline time-dependence objects |
+
+Capitalization above follows the user-facing convention; exact attributes and
+defaults come from each implementation class. See the
+[Element Physics](../physics/elements/index.qmd) chapter for detailed bends and
+multipoles and the [Generated API](api.qmd) for source-level definitions.

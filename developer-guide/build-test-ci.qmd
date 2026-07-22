@@ -1,0 +1,28 @@
+---
+title: "Build, Test, and CI"
+description: "Developer builds, unit tests, regression tests, and pull-request checks."
+audience: developer
+status: current
+last-reviewed: "2026-07-22"
+---
+
+Use a debug build with unit tests for local development:
+
+```bash
+cmake -S . -B build_serial \
+  -DBUILD_TYPE=Debug \
+  -DPLATFORMS=SERIAL \
+  -DOPALX_ENABLE_UNIT_TESTS=ON
+cmake --build build_serial -j 8
+ctest --test-dir build_serial --output-on-failure
+```
+
+Repeat relevant tests with `OPENMP` and the target accelerator backend. A test
+that passes only on the serial backend is not sufficient for a
+performance-portable change.
+
+Pull-request CI includes serial, OpenMP, CUDA, and HIP compilation, with SYCL
+coverage where the runner supports it. Compile workflows run on labeled,
+non-draft pull requests to `master`; use the `compile-ci` label when the change
+is ready for those checks. Fast regression cases are executed with the serial
+artifact and compared to maintained metrics.

@@ -1,0 +1,19 @@
+---
+title: "Elements"
+description: "Assemble supported OPALX elements into a beamline."
+audience: user
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+Elements are named objects assembled into a `LINE`. The current executable
+registers drifts, bending and focusing magnets, RF structures, diagnostics,
+lasers, markers, time-dependence objects, and specialized elements.
+
+Element placement and field support are three-dimensional. Overlapping active
+elements are handled by the orbit-threading and local-frame machinery rather
+than by a single owner along the longitudinal coordinate.
+
+Use the [Element Reference](../reference/elements.qmd) for the source-derived
+inventory and the [Element Physics](../physics/elements/index.qmd) chapter for
+models that require detailed derivations and benchmarks.

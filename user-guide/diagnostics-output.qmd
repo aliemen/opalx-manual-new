@@ -1,0 +1,23 @@
+---
+title: "Diagnostics and Output"
+description: "Plan diagnostics, field dumps, statistics, and reproducible run artifacts."
+audience: user
+status: planned
+last-reviewed: "2026-07-22"
+---
+
+The current executable registers monitor and probe elements plus the
+`DUMPEMFIELDS` action. Statistics, particle dumps, loss data, and element
+diagnostics are controlled by the input model and build configuration.
+
+The output-format reference is being rebuilt directly from the OPALX writers.
+For production work, store the following together:
+
+- Input file and small supporting text files.
+- OPALX revision and build options.
+- MPI rank count and execution backend.
+- Random seeds and macro-particle counts.
+- Logs, statistics, and checksums for large external datasets.
+
+Large outputs are simulation data and do not belong in either documentation
+repository.

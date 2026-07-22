@@ -1,0 +1,414 @@
+### Scope {#sec-ics-scope}
+
+This note documents the current *OPALX* validation path for linear
+inverse Compton scattering in the weak-field regime. The immediate goal
+is not yet a full tracking implementation, but a CAIN-validated
+benchmark path for the process
+
+$$e^- + \gamma_L \rightarrow e^- + \gamma .$$
+
+The benchmark follows the same staged strategy as the Breit-Wheeler
+note:
+
+- start from a fixed-geometry, unpolarized, linear process,
+
+- validate deterministic and sampled spectra against CAIN,
+
+- then extend to broader beam models without enabling tracked
+  interaction yet.
+
+The baseline geometry used here is a $90^\circ$ crossing between a `1`
+`GeV` electron beam along $\hat z$ and a laser photon beam along
+$\hat x$ with wavelength `1030` `nm`.
+
+::: {.content-visible when-format="html"}
+![](figures/ics_90deg_figure.png){fig-alt="Inverse Compton scattering" width="85%"}
+:::
+
+```{=latex}
+\begin{figure}[htbp]
+\centering
+\input{physics/gamma-gamma/figures/tikz/ics_90deg_figure.tikz.tex}
+\caption{Inverse Compton scattering.}
+\end{figure}
+```
+
+### Physics Models {#_physics_models}
+
+#### Basic Kinematics {#_basic_kinematics}
+
+For a laser wavelength $\lambda_L$, the photon energy is
+
+$$
+\omega_L = \frac{2 \pi \hbar c}{\lambda_L} .
+$$ {#eq-ics-laser-energy}
+
+For an electron with total energy $E_e$ and momentum magnitude
+$p_e = \sqrt{E_e^2 - m_e^2}$, the exact forward-scattered photon energy
+in the `90` `degree` benchmark geometry is
+
+$$
+\omega_\gamma' =
+\frac{E_e \, \omega_L}
+     {\omega_L + \frac{m_e^2}{E_e + p_e}} .
+$$ {#eq-ics-forward-energy}
+
+The current OPALX helper uses this numerically stable form directly in
+the unit benchmark.
+
+#### Rest-Frame Model {#_rest_frame_model}
+
+The exact linear Compton kernel is evaluated in the electron rest frame.
+Let $\omega_1$ be the incoming photon energy there and let $\Theta^*$ be
+the photon scattering angle. The scattered photon energy is
+
+$$
+\omega_2(\Theta^*) =
+\frac{\omega_1}
+     {1 + (\omega_1/m_e)(1 - \cos \Theta^*)} .
+$$ {#eq-ics-erf-energy}
+
+The unpolarized Klein-Nishina differential cross section is
+
+$$
+\frac{d\sigma}{d\Omega^*}
+= \frac{r_e^2}{2}
+  \left(\frac{\omega_2}{\omega_1}\right)^2
+  \left(
+    \frac{\omega_1}{\omega_2}
+    +
+    \frac{\omega_2}{\omega_1}
+    - \sin^2 \Theta^*
+  \right) .
+$$ {#eq-ics-klein-nishina}
+
+Changing variables from $\cos\Theta^*$ to $\omega_2$ gives the
+one-dimensional energy spectrum in the rest frame,
+
+$$
+\frac{d\sigma}{d\omega_2}
+= 2\pi \frac{d\sigma}{d\Omega^*} \frac{m_e}{\omega_2^2} .
+$$ {#eq-ics-dsigma-domega}
+
+with exact support
+$\omega_2 \in [\omega_1/(1+2\omega_1/m_e),\,\omega_1]$.
+
+The exact total Klein-Nishina cross section can be written with
+$\kappa = \omega_1/m_e$ as
+
+$$
+\sigma_{\mathrm{KN}} = 2\pi r_e^2
+\left[
+  \frac{1+\kappa}{\kappa^3}
+  \left(
+    \frac{2\kappa(1+\kappa)}{1+2\kappa} - \ln(1+2\kappa)
+  \right)
+  + \frac{\ln(1+2\kappa)}{2\kappa}
+  - \frac{1+3\kappa}{(1+2\kappa)^2}
+\right] .
+$$ {#eq-ics-total-cross-section}
+
+For $\kappa \ll 1$ this approaches the Thomson limit
+
+$$
+\sigma_T = \frac{8\pi}{3} r_e^2 .
+$$ {#eq-ics-thomson}
+
+### Implemented OPALX Benchmark {#sec-ics-implemented-opalx-benchmark}
+
+The current *OPALX* implementation is the CAIN-validated benchmark path.
+The generated [API reference](../../reference/api.qmd) covers the documented
+interfaces; the implementation and tests are in these source files:
+
+- [`src/Physics/LinearCompton.h`]({{< meta source-code-url >}}/blob/master/src/Physics/LinearCompton.h)
+
+- [`src/Physics/LinearCompton.cpp`]({{< meta source-code-url >}}/blob/master/src/Physics/LinearCompton.cpp)
+
+- [`unit_tests/Physics/TestLinearCompton.cpp`]({{< meta source-code-url >}}/blob/master/unit_tests/Physics/TestLinearCompton.cpp)
+
+- [`unit_tests/Physics/TestLinearComptonSpectrum.cpp`]({{< meta source-code-url >}}/blob/master/unit_tests/Physics/TestLinearComptonSpectrum.cpp)
+
+- [`unit_tests/Physics/LinearComptonSpectrumBenchmark.cpp`]({{< meta source-code-url >}}/blob/master/unit_tests/Physics/LinearComptonSpectrumBenchmark.cpp)
+
+- [`generate-gamma-gamma-results.sh`](scripts/generate-gamma-gamma-results.sh)
+
+- `~/git/cain/generate-linear-compton-results.sh`
+
+- `~/git/cain/build-cain.sh`
+
+The benchmark remains deliberately narrow:
+
+- no tracked `LASER` interaction,
+
+- no photon bunch population,
+
+- no luminosity or overlap integration beyond the benchmark setup.
+
+The validated observables are now:
+
+- [x] photon energy spectrum,
+
+- [x] photon laboratory polar-angle spectrum,
+
+- [x] joint $E_\gamma$ vs. $\theta_{\gamma,\mathrm{lab}}$ map,
+
+- [x] finite-beam energy, angle, and joint spectra,
+
+- [x] finite-beam plus energy-spread energy, angle, and joint spectra,
+
+- [x] overlap-restricted finite-beam energy and angle spectra.
+
+### Results of Code Comparison {#sec-ics-results-of-code-comparison}
+
+The current CAIN-backed *OPALX* benchmark covers weak-field linear
+inverse Compton scattering for:
+
+- electron total energy `1` `GeV`,
+
+- laser wavelength `1030` `nm`,
+
+- crossing angle $90^\circ$,
+
+- unpolarized laser `STOKES=(0,0,0)`,
+
+- CAIN weak-field parameter $\xi = 0.2955 < 0.3$.
+
+Single-electron benchmark agreement:
+
+- [x] energy spectrum, deterministic: mean difference about `0.5%`,
+  $L_1$ about `0.0767`
+
+- [x] energy spectrum, sampled: mean difference about `0.45%`, $L_1$
+  about `0.0763`
+
+- [x] lab-angle spectrum, deterministic: mean difference about `4.0%`,
+  $L_1$ about `0.0400`
+
+- [x] lab-angle spectrum, sampled: mean difference about `1.3%`, $L_1$
+  about `0.0250`
+
+- [x] joint $E_\gamma$\--$\theta_{\gamma,\mathrm{lab}}$ map,
+  deterministic: mean-energy difference about `0.48%`, mean-angle
+  difference about `4.03%`, $L_1$ about `0.0849`
+
+- [x] joint $E_\gamma$\--$\theta_{\gamma,\mathrm{lab}}$ map, sampled:
+  mean-energy difference about `0.44%`, mean-angle difference about
+  `1.21%`, $L_1$ about `0.0709`
+
+Finite-beam benchmark agreement:
+
+- [x] baseline finite beam (`sigma_x` `=` `sigma_y` `=` `1` `mm`,
+  `sigma_{x’}` `=` `sigma_{y’}` `=` `1` `mrad`): energy mean difference
+  about `0.58%`, $L_1$ about `0.0316`
+
+- [x] baseline finite beam angle spectrum: mean difference about
+  `0.21%`, $L_1$ about `0.0142`
+
+- [x] baseline finite-beam joint
+  $E_\gamma$\--$\theta_{\gamma,\mathrm{lab}}$ map: mean-energy
+  difference about `0.58%`, mean-angle difference about `0.11%`, $L_1$
+  about `0.0741`
+
+- [x] finite beam with relative energy spread `sigma_E` `/` `E` `=`
+  `1.0e-3`: energy mean difference about `0.57%`, $L_1$ about `0.0305`
+
+- [x] finite beam with relative energy spread `sigma_E` `/` `E` `=`
+  `1.0e-3` angle spectrum: mean difference about `0.17%`, $L_1$ about
+  `0.0157`
+
+- [x] finite beam with relative energy spread `sigma_E` `/` `E` `=`
+  `1.0e-3` joint $E_\gamma$\--$\theta_{\gamma,\mathrm{lab}}$ map:
+  mean-energy difference about `0.57%`, mean-angle difference about
+  `0.14%`, $L_1$ about `0.0686`
+
+- [x] overlap-restricted finite-beam energy spectrum: mean difference
+  about `0.71%`, $L_1$ about `0.0289`
+
+- [x] overlap-restricted finite-beam angle spectrum: mean difference
+  about `0.084%`, $L_1$ about `0.0135`
+
+Single-electron overlays:
+
+::: {wrapper="1" width="82%"}
+![Weak-field 90-degree linear-Compton photon energy spectrum. The figure
+compares the CAIN reference, the OPALX deterministic benchmark, and the
+OPALX Monte Carlo benchmark for E~e~ = 1 GeV, λ~L~ = 1030 nm, and ξ =
+0.2955.](figures/reference-data/linear-compton-90deg-xi029-comparison.png){#fig-ics-weak-energy}
+:::
+
+::: {wrapper="1" width="82%"}
+![Weak-field 90-degree linear-Compton photon laboratory polar-angle
+spectrum. The figure compares the CAIN reference, the OPALX
+deterministic benchmark, and the OPALX Monte Carlo benchmark on the
+common angular histogram
+grid.](figures/reference-data/linear-compton-90deg-xi029-theta-comparison.png){#fig-ics-weak-theta}
+:::
+
+::: {wrapper="1" width="100%"}
+![Weak-field 90-degree linear-Compton joint photon spectrum. The panels
+show the CAIN reference, the OPALX deterministic benchmark, and the
+OPALX Monte Carlo E~γ~ versus θ~γ~ density on the common 2D
+grid.](figures/reference-data/linear-compton-90deg-xi029-joint-comparison.png){#fig-ics-weak-joint}
+:::
+
+Finite-beam overlays:
+
+::: {wrapper="1" width="82%"}
+![Finite-beam linear-Compton photon energy spectrum for the benchmark
+beam with σ~x~ = σ~y~ = 1 mm and σ~x\'~ = σ~y\'~ = 1 mrad. The figure
+compares CAIN and the OPALX Monte Carlo
+benchmark.](figures/reference-data/linear-compton-90deg-xi029-finite-beam-comparison.png){#fig-ics-finite-energy}
+:::
+
+::: {wrapper="1" width="82%"}
+![Finite-beam linear-Compton photon laboratory polar-angle spectrum for
+the same benchmark beam. The figure compares CAIN and the OPALX Monte
+Carlo benchmark on the common angular histogram
+grid.](figures/reference-data/linear-compton-90deg-xi029-finite-beam-theta-comparison.png){#fig-ics-finite-theta}
+:::
+
+::: {wrapper="1" width="82%"}
+![Finite-beam linear-Compton photon energy spectrum with additional
+electron-beam relative energy spread σ~E~/E = 1e-3. The figure compares
+CAIN and the OPALX Monte Carlo
+benchmark.](figures/reference-data/linear-compton-90deg-xi029-finite-beam-energy-spread-comparison.png){#fig-ics-finite-es-energy}
+:::
+
+::: {wrapper="1" width="82%"}
+![Finite-beam linear-Compton photon laboratory polar-angle spectrum with
+additional electron-beam relative energy spread σ~E~/E = 1e-3. The
+figure compares CAIN and the OPALX Monte Carlo
+benchmark.](figures/reference-data/linear-compton-90deg-xi029-finite-beam-energy-spread-theta-comparison.png){#fig-ics-finite-es-theta}
+:::
+
+::: {wrapper="1" width="100%"}
+![Finite-beam joint linear-Compton photon spectrum for the benchmark
+beam with σ~x~ = σ~y~ = 1 mm and σ~x\'~ = σ~y\'~ = 1 mrad. The panels
+compare the CAIN reference and the OPALX Monte Carlo E~γ~ versus θ~γ~
+density on the common 2D
+grid.](figures/reference-data/linear-compton-90deg-xi029-finite-beam-joint-comparison.png){#fig-ics-finite-joint}
+:::
+
+::: {wrapper="1" width="100%"}
+![Finite-beam joint linear-Compton photon spectrum with additional
+electron-beam relative energy spread σ~E~/E = 1e-3. The panels compare
+the CAIN reference and the OPALX Monte Carlo E~γ~ versus θ~γ~ density on
+the common 2D
+grid.](figures/reference-data/linear-compton-90deg-xi029-finite-beam-energy-spread-joint-comparison.png){#fig-ics-finite-es-joint}
+:::
+
+::: {wrapper="1" width="82%"}
+![Overlap-restricted finite-beam linear-Compton photon energy spectrum.
+The benchmark keeps the same finite beam and conditions the interaction
+on the beam-laser overlap through the benchmark Rayleigh and
+pulse-length scales. The figure compares CAIN and the OPALX Monte Carlo
+benchmark.](figures/reference-data/linear-compton-90deg-xi029-finite-beam-overlap-comparison.png){#fig-ics-overlap-energy}
+:::
+
+::: {wrapper="1" width="82%"}
+![Overlap-restricted finite-beam linear-Compton photon laboratory
+polar-angle spectrum for the same overlap-conditioned benchmark. The
+figure compares CAIN and the OPALX Monte Carlo benchmark on the common
+angular histogram
+grid.](figures/reference-data/linear-compton-90deg-xi029-finite-beam-overlap-theta-comparison.png){#fig-ics-overlap-theta}
+:::
+
+### Build and Run {#sec-ics-build-and-run}
+
+The CAIN build helper is now shared across the gamma-gamma notes in the
+common workspace `~/git/cain`.
+
+From `~/git/cain`:
+
+``` bash
+./build-cain.sh --download
+./build-cain.sh --compile
+```
+
+The preferred one-shot workflow is run from the docs tree:
+
+``` bash
+cd Manual-Redesign/physics/gamma-gamma/scripts
+./generate-gamma-gamma-results.sh --opalx-build /path/to/opalx-laser/build_openmp
+```
+
+This top-level driver:
+
+- builds the OPALX gamma-gamma benchmark targets,
+
+- runs the inverse-Compton and Breit-Wheeler unit/regression suites,
+
+- regenerates the CAIN and OPALX benchmark data for both notes,
+
+- republishes the comparison figures, and
+
+- renders the gamma-gamma note pages.
+
+If only the linear-Compton assets need to be refreshed, use:
+
+``` bash
+cd ~/git/cain
+./generate-linear-compton-results.sh --opalx-build /path/to/opalx-laser/build_openmp
+```
+
+This script:
+
+- runs the CAIN decks `~/git/cain/cain-linear-compton-90deg.i`,
+  `~/git/cain/cain-linear-compton-90deg-finite-beam.i`,
+  `~/git/cain/cain-linear-compton-90deg-finite-beam-energy-spread.i`,
+  and `~/git/cain/cain-linear-compton-90deg-finite-beam-overlap.i`,
+
+- regenerates the stored CAIN histogram references in `figures/reference-data/`,
+
+- runs the OPALX benchmark executable `LinearComptonSpectrumBenchmark`,
+
+- regenerates the published 1D and 2D comparison plots in
+  `figures/reference-data/`.
+
+The script expects:
+
+- a built OPALX benchmark executable in the supplied build directory,
+
+- a CAIN executable at `~/git/cain/CAIN-build/cain`, unless overridden
+  by `--cain-bin`,
+
+- the four CAIN decks in `~/git/cain`, unless overridden by
+  `--cain-deck-dir`.
+
+The relevant OPALX build target is:
+
+``` bash
+cmake --build /path/to/opalx-laser/build_openmp \
+  --target LinearComptonSpectrumBenchmark TestLinearCompton TestLinearComptonSpectrum -j4
+```
+
+### References {#sec-ics-references}
+
+- CAIN linear Compton generator:
+  [`src/lncpgn.f`](https://github.com/cfruhling2/CAIN/blob/main/src/lncpgn.f)
+
+- CAIN laser geometry helper:
+  [`src/lsrgeo.f`](https://github.com/cfruhling2/CAIN/blob/main/src/lsrgeo.f)
+
+- CAIN manual: [User's Manual of
+  CAIN](https://www-jlc.kek.jp/~tauchi/index/cain/manual-cain21e.pdf)
+
+### CAIN Mapping {#_cain_mapping}
+
+CAIN evaluates the linear Compton kinematics by boosting the laser
+photon into the electron rest frame, applying the recoil there, and
+boosting the scattered photon back to the laboratory frame. In CAIN's
+`LNCPGN`, the incoming photon energy in the electron rest frame is
+
+$$
+\omega_1 = \gamma \, \omega_L \, (1 - \beta \cos \alpha) .
+$$ {#eq-ics-cain-w1}
+
+For the present benchmark $\cos\alpha = 0$, so
+
+$$
+\omega_1 = \gamma \, \omega_L .
+$$ {#eq-ics-cain-w1-90deg}
+
+This is the CAIN mapping reproduced by the current OPALX helper and
+benchmark path.

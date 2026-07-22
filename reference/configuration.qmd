@@ -1,0 +1,33 @@
+---
+title: "Build Configuration"
+description: "Maintained CMake switches for platforms, testing, dependencies, and diagnostics."
+audience: developer
+status: current
+last-reviewed: "2026-07-22"
+---
+
+## Platform selection
+
+Set `PLATFORMS` to `SERIAL`, `OPENMP`, `CUDA`, `HIP`, or the supported SYCL
+configuration. Accelerator builds also set `ARCH` to the target architecture,
+for example `AMPERE80`.
+
+## OPALX options
+
+| Option | Default | Effect |
+|---|---:|---|
+| `OPALX_ENABLE_UNIT_TESTS` | `OFF` | Build GoogleTest unit tests. |
+| `OPALX_ENABLE_EXAMPLES` | `OFF` | Build the example module. |
+| `OPALX_ENABLE_TESTS` | `OFF` | Build integration tests. |
+| `OPALX_ENABLE_COVERAGE` | `OFF` | Enable coverage instrumentation. |
+| `OPALX_ENABLE_SANITIZER` | `OFF` | Enable configured sanitizer tooling. |
+| `OPALX_ENABLE_HIP_PROFILER` | `OFF` | Add HIP profiler support. |
+| `OPALX_ENABLE_NSYS_PROFILER` | `OFF` | Add NVIDIA Nsight Systems support. |
+| `OPALX_USE_STANDARD_FOLDERS` | `OFF` | Use build-tree `bin/` and `lib/` directories. |
+| `OPALX_FIELD_DEBUG` | `OFF` | Enable field-solver debug dumps. |
+| `OPALX_EMBED_BUILD_METADATA` | `OFF` | Embed user, machine, and build-date metadata. |
+
+Installed dependency switches exist for HDF5, H5hut, and GoogleTest. IPPL,
+Kokkos, and heFFTe versions can be selected through their documented CMake
+cache variables. Recheck defaults in the root CMake files when preparing a
+release because dependency versions evolve more quickly than prose.

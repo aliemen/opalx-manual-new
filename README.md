@@ -1,0 +1,42 @@
+# OPALX Documentation Redesign
+
+This repository is the text-first source for the redesigned OPALX manual. It
+combines user documentation, physics notes, reference material, developer
+guides, and troubleshooting information in one Quarto book.
+
+The historical OPAL manual remains a separate project. OPAL-only chapters,
+examples, reports, and presentations are deliberately not included here.
+
+## Preview
+
+Render the public personal test-repository configuration with:
+
+```sh
+quarto preview --profile personal
+```
+
+Render the future organization configuration without changing any page:
+
+```sh
+quarto render --profile opalx --to html
+```
+
+An ad hoc documents repository can be tested without editing a page:
+
+```sh
+cp _quarto.yml.local.example _quarto.yml.local
+quarto render --profile personal --to html
+```
+
+Binary documents and large datasets belong in `opalx-documents`. Pages refer
+to that repository only through the `documents-base-url` metadata value.
+
+## Validation
+
+```sh
+ruby scripts/validate_manual.rb
+OPALX_SOURCE_DIR=../opalx ./scripts/build_doxygen.sh
+```
+
+Set `DOCUMENTS_CHECKOUT=../opalx-documents` to verify configurable document
+links against a local checkout of the document repository.

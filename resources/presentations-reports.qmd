@@ -1,0 +1,19 @@
+---
+title: "Presentations and Reports"
+description: "OPALX-only presentations and design reports stored outside the text manual."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+---
+
+Binary material is stored in the separate OPALX documents repository. The
+links below are generated from `documents-base-url`, which points to the
+private personal repository during staging and to the organization repository
+after transfer.
+
+- [OPALX overview presentation]({{< meta documents-base-url >}}/presentations/2026/features/2026-04-06-opalx-overview.pdf)
+- [OpalElement layout proposal]({{< meta documents-base-url >}}/reports/2026/design/2026-04-30-opal-element-layout-proposal.pdf)
+- [Gamma-gamma benchmark reference data]({{< meta documents-base-url >}}/datasets/2026/gamma-gamma/2026-04-25-gamma-gamma-reference-data.tar.gz)
+
+Historical OPAL presentations and reports are intentionally not copied into
+the OPALX documents repository.

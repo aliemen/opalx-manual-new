@@ -1,0 +1,33 @@
+---
+title: "Common Problems"
+description: "Quick checks for configuration, compilation, launch, parser, and GPU failures."
+audience: user
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+## CMake cannot find a compiler or MPI
+
+Load a consistent compiler and MPI toolchain, remove only the affected build
+directory, and configure it again. Do not reuse a build directory created with
+a different backend.
+
+## CUDA or HIP configuration fails
+
+Check that `PLATFORMS` and `ARCH` match the installed toolkit and physical GPU.
+Confirm that the host compiler is supported by that toolkit.
+
+## The input parser rejects a statement
+
+Start from a passing OPALX regression input. Check semicolons, object names,
+attribute spelling, and referenced paths. Historical OPAL examples may use
+features that are not registered in OPALX.
+
+## Several MPI ranks select the same GPU
+
+Launch one rank per GPU and add `--kokkos-map-device-id-by=mpi_rank`.
+
+## A run completes but results change with the backend
+
+Reduce the time step, repeat with a finer mesh, record rank and device counts,
+and compare a small deterministic case across serial and accelerator builds.

@@ -1,0 +1,40 @@
+---
+title: "Input Language and Execution"
+description: "Understand the statement-oriented OPALX input language and execution model."
+audience: user
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+OPALX reads a MAD-inspired, statement-oriented language. Statements end with a
+semicolon, names bind commands or objects, and expressions may use constants
+and variables.
+
+```opal
+TITLE, STRING="Minimal beamline study";
+
+REAL cell_length = 1.0;
+D1: DRIFT, L=cell_length;
+CELL: LINE=(D1);
+
+TRACK, LINE=CELL, BEAM=BEAM1, MAXSTEPS={10}, DT={1.0e-11};
+  RUN, METHOD="PARALLEL", FIELDSOLVER=FS1;
+ENDTRACK;
+QUIT;
+```
+
+The example shows the language shape, not a complete runnable model: a beam,
+distribution, source list, and field solver must also be defined. Use a current
+regression input as the starting point for an executable case.
+
+## Statement classes
+
+- **Actions** perform work, change parser state, or end execution.
+- **Definitions** create beams, distributions, field solvers, values, and
+  related objects.
+- **Elements** describe fields, diagnostics, markers, and beamline geometry.
+- **Lines** assemble named elements into the tracked lattice.
+- **Tracking blocks** select a line and beam and execute the parallel tracker.
+
+The [Command Reference](../reference/commands.qmd) lists objects registered by
+the current executable.

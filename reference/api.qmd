@@ -1,0 +1,18 @@
+---
+title: "Generated API Reference"
+description: "Entry point for Doxygen documentation generated from the matching OPALX source revision."
+audience: developer
+status: current
+last-reviewed: "2026-07-22"
+---
+
+The documentation build generates Doxygen directly from
+`opalx/src` and publishes it inside the same build artifact as this Quarto
+manual.
+
+[Open the generated OPALX API](../api/html/index.html)
+
+The API directory is absent in a plain Quarto preview until
+`scripts/build_doxygen.sh` is run. CI checks out the current OPALX source,
+renders the manual, generates Doxygen, and uploads both together. Generated
+HTML is never committed to this repository.

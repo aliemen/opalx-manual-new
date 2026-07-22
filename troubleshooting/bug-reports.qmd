@@ -1,0 +1,23 @@
+---
+title: "Bug Reports and Investigations"
+description: "Prepare a minimal, reproducible OPALX issue with the information maintainers need."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+---
+
+A useful bug report contains:
+
+- OPALX commit or release and whether the tree has local changes.
+- Compiler, MPI, platform backend, GPU architecture, and CMake options.
+- Rank, thread, and device counts.
+- The smallest input and supporting files that reproduce the problem.
+- Exact launch command, complete error output, and expected behavior.
+- Whether serial, OpenMP, and accelerator builds behave differently.
+- A convergence comparison when the issue is numerical rather than a crash.
+
+Do not attach private production data when a reduced synthetic input can show
+the defect. Large OPALX investigation files belong in
+`opalx-documents/reports/<year>/investigations/`, not in this manual.
+
+[Open an OPALX issue]({{< meta source-code-url >}}/issues/new)

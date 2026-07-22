@@ -1,0 +1,17 @@
+---
+title: "Coordinate Systems"
+description: "Coordinate frames, element placement, local charts, ports, and geometric conventions."
+audience: physics
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+This chapter collects the current coordinate-system and placement language for
+OPALX. It has been migrated from the OPALX physics notes and is being checked
+against the orbit-threading and element-placement implementation.
+
+{{< include _quick-reader.qmd >}}
+
+{{< include _design-principles.qmd >}}
+
+{{< include _geometric-background.qmd >}}

@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1100" height="320" viewBox="0 0 1100 320">
+  <style>
+    .panel-blue { fill: #eef5ff; stroke: #78a7e3; stroke-width: 2; }
+    .panel-green { fill: #eef8ee; stroke: #76a66e; stroke-width: 2; }
+    .block { fill: #ececec; stroke: #555; stroke-width: 2; }
+    .support { fill: #f8d9a9; stroke: #cc7a00; stroke-width: 2; stroke-dasharray: 8 6; }
+    .port { stroke: #2d6cc0; stroke-width: 5; }
+    .curve { fill: none; stroke: #222; stroke-width: 3; }
+    .axis { stroke: #222; stroke-width: 3; marker-end: url(#arrow); }
+    .transform { stroke: #222; stroke-width: 4; marker-end: url(#arrow); }
+    .title { font: 700 24px sans-serif; fill: #111; }
+    .text { font: 20px sans-serif; fill: #111; }
+    .small { font: 18px sans-serif; fill: #111; }
+    .center { text-anchor: middle; dominant-baseline: middle; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#222"/>
+    </marker>
+  </defs>
+
+  <rect x="12" y="18" width="470" height="246" rx="10" ry="10" class="panel-blue"/>
+  <text x="34" y="50" class="title">(a)</text>
+  <rect x="100" y="95" width="300" height="92" class="block"/>
+  <rect x="125" y="114" width="250" height="54" class="support"/>
+  <path d="M 120 142 C 170 118, 230 166, 290 130 S 380 148, 392 140" class="curve"/>
+  <line x1="100" y1="88" x2="100" y2="194" class="port"/>
+  <line x1="400" y1="88" x2="400" y2="194" class="port"/>
+  <text x="250" y="141" class="text center">D</text>
+  <text x="250" y="110" class="small center">Ω<tspan baseline-shift="sub">i</tspan> ⊂ U<tspan baseline-shift="sub">i</tspan></text>
+  <text x="70" y="142" class="small">Z<tspan baseline-shift="sub">in</tspan></text>
+  <text x="414" y="142" class="small">Z<tspan baseline-shift="sub">out</tspan></text>
+  <text x="84" y="142" class="small" transform="rotate(-90 84 142)">p<tspan baseline-shift="sub">i,in</tspan></text>
+  <text x="424" y="142" class="small" transform="rotate(-90 424 142)">p<tspan baseline-shift="sub">i,out</tspan></text>
+  <text x="250" y="236" class="small center">U<tspan baseline-shift="sub">i</tspan> is the local block chart.</text>
+
+  <line x1="504" y1="142" x2="584" y2="142" class="transform"/>
+  <text x="544" y="126" class="text center">P<tspan baseline-shift="sub">i</tspan></text>
+
+  <rect x="606" y="18" width="482" height="246" rx="10" ry="10" class="panel-green"/>
+  <text x="628" y="50" class="title">(b)</text>
+  <line x1="650" y1="224" x2="1015" y2="224" class="axis"/>
+  <line x1="650" y1="224" x2="650" y2="70" class="axis"/>
+  <text x="1026" y="230" class="text">Z</text>
+  <text x="643" y="64" class="text">X</text>
+  <g transform="translate(836 140) rotate(17)">
+    <rect x="-148" y="-44" width="296" height="88" class="block"/>
+    <rect x="-120" y="-28" width="240" height="56" class="support"/>
+    <line x1="-148" y1="-50" x2="-148" y2="50" class="port"/>
+    <line x1="148" y1="-50" x2="148" y2="50" class="port"/>
+    <text x="0" y="0" class="text center">D</text>
+  </g>
+  <rect x="706" y="60" width="150" height="58" rx="8" ry="8" fill="#fff" stroke="#777" stroke-width="1.5"/>
+  <text x="781" y="85" class="small center">P<tspan baseline-shift="sub">i</tspan>: rigidly place</text>
+  <text x="781" y="108" class="small center">the local block</text>
+  <text x="836" y="240" class="small center">The placed support is</text>
+  <text x="836" y="262" class="small center">S<tspan baseline-shift="sub">i</tspan> = P<tspan baseline-shift="sub">i</tspan>(Ω<tspan baseline-shift="sub">i</tspan>).</text>
+</svg>

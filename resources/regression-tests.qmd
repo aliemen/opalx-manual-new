@@ -1,0 +1,16 @@
+---
+title: "Regression Tests"
+description: "Use the live OPALX regression dashboard as the compatibility and example baseline."
+audience: developer
+status: current
+last-reviewed: "2026-07-22"
+---
+
+The maintained regression suite is the best source of complete input files
+that exercise the current parser and implementation.
+
+[Open the live OPALX regression-test dashboard]({{< meta regression-tests-url >}})
+
+When documenting a feature, link its regression case and explain what metric
+the test protects. A test that only checks process completion should be
+strengthened with a physically meaningful observable where practical.

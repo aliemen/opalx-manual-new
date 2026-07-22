@@ -1,0 +1,95 @@
+## Quick Reader
+
+### Symbols and notation
+
+To keep the formulas uniform, this chapter uses the following notation.
+
+| Symbol | Meaning |
+|---|---|
+| $K$ | Laboratory or floor Cartesian frame with coordinates $\mathbf r=(X,Y,Z)$. |
+| $\mathcal B$ | Reference base of the lattice, typically an interval for a transfer line or a closed path for a ring. |
+| $s$ | Reference or reporting coordinate on $\mathcal B$; in an $s$-integrator it is also the independent variable. |
+| $t$ | Physical time and the independent variable of the current OPALX tracker. |
+| $U_i$, $u_i$ | Canonical local chart of element $i$ and the corresponding local coordinates. |
+| $\psi_i:U_i\to\mathbb{R}^3$ | Intrinsic geometry map of element $i$ in its canonical frame. |
+| $\Omega_i\subset U_i$ | Local support region on which the element field, aperture, or material model is defined. |
+| $\Sigma_{i,\alpha}\subset \partial\Omega_i$ | Marked boundary chart of element $i$; this is the geometric origin of a port. |
+| $p_{i,\alpha}=(\Sigma_{i,\alpha},F_{i,\alpha})$ | Port $\alpha$ of element $i$, consisting of a boundary chart together with an adapted frame $F_{i,\alpha}$. |
+| $P_i(u_i,t)$ | Placement map that embeds the local chart of element $i$ into the laboratory frame. |
+| $\mathcal S_i(t)=P_i(\Omega_i,t)$ | Placed support of element $i$ in laboratory space at time $t$. |
+| $T_i(t)$ | Rigid placement transform of element $i$ at time $t$; it may be written as a rotation matrix $R_i(t)$ together with a translation vector $\mathbf a_i(t)$. |
+| $\Gamma_i(\ell)$ | Optional local reference path of element $i$, parameterized by the local longitudinal coordinate $\ell\in[0,L_i]$. |
+| $C_{pq}$ | Rigid transition or patch transform from port $p$ to port $q$. |
+| $g_{ij}$ | Transition map between neighboring local charts. |
+
+### A geometric viewpoint
+
+Following Forest and Hirata [@foresthirata], one should distinguish the
+placed physical object from the coordinates used to describe it. In that
+spirit, an OPALX element is not first of all an interval in one global
+coordinate $s$. It is a local chart $U_i$, an intrinsic geometry map
+$\psi_i$, a support region $\Omega_i\subset U_i$, and a finite set of marked
+interfaces through which that local chart is connected to neighboring charts.
+
+This is the origin of the *port* notion used throughout this chapter. A port of
+element $i$ is a marked boundary chart
+
+$$
+\Sigma_{i,\alpha}\subset \partial\Omega_i .
+$$
+
+together with an adapted frame $F_{i,\alpha}$. In ordinary beamline language
+these are simply the entrance face, exit face, branch face, fiducial
+interface, or closure interface of the object in case of a circular machine.
+The advantage of introducing the word "port" is that the same notion works for
+a straight drift, a curved bend, a patch, a branch, or a ring-closing
+connection.
+
+When two ports are connected, OPALX stores a transition datum between them. In
+differential-geometric language this is the chart-to-chart handoff across an
+interface. In fibre-bundle language it is the transition function relating two
+local trivializations [@foresthirata]. The port notion therefore does not
+introduce new physics. It is the implementation-level representative of how
+local charts are glued together.
+
+A transfer line is then an open chain of ports, while a ring is a closed
+chain, possibly only up to a prescribed symmetry transform. That is the
+geometric reason the same placement model can cover both linear and circular
+machines.
+
+### Why the independent variable matters
+
+Comparisons with established accelerator codes provide a useful baseline:
+MAD-X describes the machine primarily as an ordered sequence of elements
+along a reference orbit, and survey or optics calculations are performed
+relative to that backbone [@madxprimer; @madxptc]. The later code survey then
+showed four distinct placement philosophies relative to that baseline:
+Elegant remains strongly sequence-centric, MARYLIE is more map-first, IMPACT-T
+uses ordered field regions with local frame changes, and Bmad exposes geometry
+operators such as patches and fiducials
+[@elegantmanual; @marylie; @impactt; @bmad].
+
+In an **$s$-based code**, placement is fundamentally one-dimensional. An
+element is placed by specifying where it begins and ends on the design curve.
+Once that curve is known, global survey coordinates are derived by transporting
+a local frame along it. The tracker can usually decide which element is active
+by asking where the particle is in $s$.
+
+In a **$t$-based code**, placement is fundamentally spatial. A particle is
+advanced in laboratory time, self-fields are evaluated on a common time slice,
+and different particles in the bunch may simultaneously occupy different parts
+of the machine. Therefore the code cannot rely on a single global "current
+element" inferred from one common $s$. Each element must instead have a placed
+spatial support, a local coordinate frame, ports that describe how it connects
+to neighbours, and usually timing metadata such as RF phase origin or trigger
+offset.
+
+This leads to the main OPALX conclusion:
+
+1. topology,
+2. survey or reference-curve metadata,
+3. rigid placement in laboratory space, and
+4. physics field evaluation
+
+should be treated as separate concepts, even if they are often conflated in
+traditional $s$-based lattice descriptions.

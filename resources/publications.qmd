@@ -1,0 +1,21 @@
+---
+title: "Publications and Citation"
+description: "Physics references used by the OPALX manual and initial citation guidance."
+audience: physics
+status: experimental
+last-reviewed: "2026-07-22"
+nocite: '@*'
+---
+
+The bibliography below is curated from the integrated OPALX physics chapters.
+A release-specific software citation and DOI will be added when the redesigned
+documentation is published as the canonical manual.
+
+When reporting results today, record the exact OPALX revision and cite both the
+software repository and the publications associated with the physical model
+being used.
+
+## References {.unnumbered}
+
+::: {#refs}
+:::

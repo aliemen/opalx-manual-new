@@ -1,0 +1,66 @@
+---
+title: "Install and Build OPALX"
+description: "Clone OPALX and build a serial, OpenMP, CUDA, or HIP executable."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+---
+
+OPALX uses CMake and Kokkos to select the execution backend. A recent CMake,
+C++ compiler, MPI installation, and Git are required. Accelerator builds also
+need the matching CUDA or HIP toolchain. Other core dependencies are obtained
+by the build unless installed-dependency options are selected.
+
+## Clone the source
+
+```bash
+git clone https://github.com/OPALX-project/OPALX.git
+cd OPALX
+```
+
+## Configure a CPU build
+
+For a portable single-threaded backend:
+
+```bash
+cmake -S . -B build_serial \
+  -DBUILD_TYPE=Release \
+  -DPLATFORMS=SERIAL
+cmake --build build_serial -j 8
+```
+
+For OpenMP, use a separate build directory:
+
+```bash
+cmake -S . -B build_openmp \
+  -DBUILD_TYPE=Release \
+  -DPLATFORMS=OPENMP
+cmake --build build_openmp -j 8
+```
+
+## Configure a GPU build
+
+An NVIDIA A100 build uses the CUDA backend and Ampere architecture:
+
+```bash
+cmake -S . -B build_cuda \
+  -DBUILD_TYPE=Release \
+  -DPLATFORMS=CUDA \
+  -DARCH=AMPERE80
+cmake --build build_cuda -j 8
+```
+
+Select the architecture that matches the target GPU. HIP builds use
+`-DPLATFORMS=HIP` and the corresponding AMD architecture.
+
+## Enable tests
+
+Add `-DOPALX_ENABLE_UNIT_TESTS=ON` when configuring, then run:
+
+```bash
+ctest --test-dir build_serial --output-on-failure
+```
+
+See [Build, Test, and CI](../developer-guide/build-test-ci.qmd) for the full
+developer workflow and [Configuration Reference](../reference/configuration.qmd)
+for the maintained build options.

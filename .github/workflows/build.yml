@@ -1,0 +1,78 @@
+name: Build documentation preview
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  QUARTO_PROFILE: ${{ vars.QUARTO_PROFILE || 'personal' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out manual
+        uses: actions/checkout@v4
+
+      - name: Set up Quarto
+        uses: quarto-dev/quarto-actions/setup@v2
+        with:
+          version: 1.9.38
+
+      - name: Validate manual source
+        run: ruby scripts/validate_manual.rb
+
+      - name: Check out documents
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.DOCUMENTS_REPOSITORY || 'aliemen/opalx-documents' }}
+          lfs: true
+          path: _external/opalx-documents
+
+      - name: Validate document links
+        env:
+          DOCUMENTS_CHECKOUT: _external/opalx-documents
+        run: ruby scripts/validate_manual.rb
+
+      - name: Render HTML
+        run: quarto render --profile "${QUARTO_PROFILE}" --to html
+
+      - name: Install TinyTeX
+        uses: r-lib/actions/setup-tinytex@v2
+
+      - name: Install headless Chrome for PDF diagrams
+        run: quarto install chrome-headless-shell --no-prompt
+
+      - name: Render A4 PDF
+        run: quarto render --profile "${QUARTO_PROFILE}" --to pdf --no-clean
+
+      - name: Check out OPALX source
+        uses: actions/checkout@v4
+        with:
+          repository: OPALX-project/OPALX
+          path: _external/OPALX
+
+      - name: Install Doxygen
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y doxygen
+
+      - name: Build API reference
+        env:
+          OPALX_SOURCE_DIR: _external/OPALX
+        run: ./scripts/build_doxygen.sh
+
+      - name: Validate rendered links and profile URLs
+        run: ruby scripts/validate_rendered_html.rb
+
+      - name: Upload HTML, PDF, and API artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: opalx-documentation-${{ env.QUARTO_PROFILE }}
+          path: _site
+          if-no-files-found: error

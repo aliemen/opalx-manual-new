@@ -1,0 +1,42 @@
+---
+title: "γ-γ Physics"
+description: "Linear Compton and Breit-Wheeler models, validation workflows, and benchmark results."
+audience: physics
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+This note collects the physics model and benchmarks of the laser and
+photon functionality in *OPALX*.
+
+## Full Workflow {#_full_workflow}
+
+The migrated top-level driver
+[`generate-gamma-gamma-results.sh`](scripts/generate-gamma-gamma-results.sh)
+regenerates the full published gamma-gamma benchmark state. It builds the
+required OPALX benchmark targets, runs the inverse-Compton and Breit-Wheeler
+physics tests, calls the shared CAIN helper scripts in `~/git/cain`, and
+rerenders the physics notes.
+
+Use it when you want to refresh all benchmark figures and note pages in
+one pass:
+
+``` bash
+cd Manual-Redesign/physics/gamma-gamma/scripts
+./generate-gamma-gamma-results.sh --opalx-build /path/to/OPALX/build_openmp
+```
+
+The narrower CAIN-side helpers remain useful when only one of the two
+physics notes needs to be regenerated.
+
+The corresponding histogram inputs are stored as the
+[gamma-gamma reference dataset]({{< meta documents-base-url >}}/datasets/2026/gamma-gamma/2026-04-25-gamma-gamma-reference-data.tar.gz),
+outside the text manual.
+
+## Linear Compton Benchmark {#sec-gamma-gamma-linear-compton}
+
+{{< include _linear-compton-benchmark.qmd >}}
+
+## Breit-Wheeler Theory {#sec-gamma-gamma-breit-wheeler}
+
+{{< include _BreitWheeler.qmd >}}

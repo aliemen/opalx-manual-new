@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1180" height="320" viewBox="0 0 1180 320">
+  <style>
+    .panel-blue { fill: #eef5ff; stroke: #78a7e3; stroke-width: 2; }
+    .panel-orange { fill: #fff4e9; stroke: #d08a34; stroke-width: 2; }
+    .block { fill: #ececec; stroke: #555; stroke-width: 2; }
+    .port { stroke: #2d6cc0; stroke-width: 5; }
+    .curve { fill: none; stroke: #222; stroke-width: 3; }
+    .arrow { stroke: #222; stroke-width: 3; marker-end: url(#arrow); fill: none; }
+    .patch { stroke: #222; stroke-width: 4; marker-end: url(#arrow); fill: none; }
+    .closure { stroke: #222; stroke-width: 4; stroke-dasharray: 10 7; marker-end: url(#arrow); fill: none; }
+    .title { font: 700 24px sans-serif; fill: #111; }
+    .text { font: 20px sans-serif; fill: #111; }
+    .small { font: 18px sans-serif; fill: #111; }
+    .center { text-anchor: middle; dominant-baseline: middle; }
+  </style>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#222"/>
+    </marker>
+  </defs>
+
+  <rect x="12" y="18" width="540" height="246" rx="10" ry="10" class="panel-blue"/>
+  <text x="34" y="50" class="title">(a)</text>
+  <rect x="64" y="102" width="150" height="72" class="block"/>
+  <text x="139" y="138" class="text center">D</text>
+  <line x1="214" y1="95" x2="214" y2="181" class="port"/>
+  <text x="242" y="124" class="small">p</text>
+  <line x1="214" y1="138" x2="266" y2="124" class="arrow"/>
+  <line x1="214" y1="138" x2="214" y2="92" class="arrow"/>
+  <text x="272" y="128" class="small">z</text>
+  <text x="222" y="86" class="small">x</text>
+
+  <g transform="translate(420 138) rotate(18)">
+    <rect x="-72" y="-36" width="144" height="72" class="block"/>
+    <line x1="-72" y1="-42" x2="-72" y2="42" class="port"/>
+    <text x="0" y="0" class="text center">B</text>
+  </g>
+  <text x="364" y="104" class="small">q</text>
+  <line x1="354" y1="160" x2="404" y2="178" class="arrow"/>
+  <line x1="354" y1="160" x2="338" y2="112" class="arrow"/>
+  <text x="412" y="183" class="small">z′</text>
+  <text x="330" y="106" class="small">x′</text>
+  <line x1="260" y1="138" x2="356" y2="138" class="patch"/>
+  <text x="308" y="122" class="text center">C<tspan baseline-shift="sub">pq</tspan></text>
+
+  <rect x="606" y="18" width="560" height="246" rx="10" ry="10" class="panel-orange"/>
+  <text x="628" y="50" class="title">(b)</text>
+  <path d="M 700 140 C 760 66, 924 66, 984 140 C 924 214, 760 214, 700 140" class="curve"/>
+  <rect x="760" y="80" width="38" height="24" class="block"/>
+  <rect x="912" y="80" width="38" height="24" class="block"/>
+  <rect x="760" y="178" width="38" height="24" class="block"/>
+  <rect x="912" y="178" width="38" height="24" class="block"/>
+  <text x="779" y="92" class="small center">D</text>
+  <text x="931" y="92" class="small center">B</text>
+  <text x="779" y="190" class="small center">B</text>
+  <text x="931" y="190" class="small center">D</text>
+  <text x="650" y="140" class="small">p<tspan baseline-shift="sub">start</tspan></text>
+  <text x="992" y="140" class="small">p<tspan baseline-shift="sub">end</tspan></text>
+  <path d="M 1004 140 C 1058 44, 640 44, 690 140" class="closure"/>
+  <text x="848" y="52" class="text center">C<tspan baseline-shift="sub">close</tspan></text>
+</svg>
