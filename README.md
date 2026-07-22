@@ -42,3 +42,7 @@ links against a local checkout of the document repository.
 
 The generated C++ API documentation is published separately at the PSI Doxygen
 site and is linked through the `doxygen-url` metadata value.
+
+On the rendered website, Quarto persists the selected color scheme and the
+manual's small sidebar-state script persists expanded and collapsed sections
+between page navigations.

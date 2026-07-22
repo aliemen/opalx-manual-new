@@ -23,6 +23,8 @@ combined_html = html_files.map { |path| File.read(path) }.join("\n")
 errors = []
 errors << "render does not contain the profile's document base URL" unless combined_html.include?(expected_documents)
 errors << "render does not contain the profile's manual repository URL" unless combined_html.include?(expected_repository)
+errors << "render does not contain Quarto's color-scheme persistence" unless combined_html.include?("quarto-color-scheme")
+errors << "render does not contain OPALX sidebar-state persistence" unless combined_html.include?("opalx-sidebar-state-v1")
 
 html_cache = {}
 
