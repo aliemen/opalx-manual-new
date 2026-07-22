@@ -1,28 +1,339 @@
 ---
 title: "Beam and Distributions"
-description: "Define a beam, particle distribution, emission sources, and source lists."
+description: "Define OPALX particle distributions, emission sources, and source lists."
 audience: user
-status: experimental
+status: current
 last-reviewed: "2026-07-22"
+body-classes: "opalx-sidebar-page-toc"
 ---
 
-An OPALX run separates the physical beam from the rule used to generate
-particles:
+OPALX separates the sampled phase space from its placement in the simulation:
 
-1. `DISTRIBUTION` defines the phase-space sample.
-2. `EMISSIONSOURCE` associates emission behavior with a distribution.
-3. `EMISSIONSOURCELIST` groups one or more sources.
-4. `BEAM` specifies the species, reference momentum, charge, allocation, and
-   source list.
+```text
+Dist: DISTRIBUTION, TYPE=GAUSS, NPARTDIST=10000,
+      SIGMAX=1e-3, SIGMAY=1e-3, SIGMAZ=2e-3,
+      SIGMAPX=1e-4, SIGMAPY=1e-4, SIGMAPZ=1e-4;
+Source: EMISSIONSOURCE, DISTRIBUTION=Dist;
+Sources: EMISSIONSOURCELIST=(Source);
+Beam: BEAM, PARTICLE=ELECTRON, PC=0.1, NALLOC=10000,
+      BCHARGE=-1e-9, SOURCES=Sources;
+```
 
-This separation permits several source definitions to feed the same tracked
-beam. Distribution attributes and accepted species are undergoing a
-source-level audit; until that table is complete, use current regression inputs
-and confirm the selected attributes in the generated API reference.
+The `DISTRIBUTION` defines the particle sample, `EMISSIONSOURCE` adds source
+offsets and timing, `EMISSIONSOURCELIST` groups sources, and `BEAM.SOURCES`
+selects the group.
 
-## Reproducibility
+## `EMISSIONSOURCE` {#emissionsource}
 
-Record the OPALX revision, distribution seed, macro-particle count, bunch
-charge, and all referenced external files with each production result. Large
-reference distributions and datasets belong in the separate OPALX documents
-repository rather than this text manual.
+```text
+name: EMISSIONSOURCE, DISTRIBUTION=distribution_name, ...;
+```
+
+Offsets are applied after sampling. Position uses metres, momentum uses
+dimensionless normalized momentum $\boldsymbol{p}/mc=\boldsymbol{\beta}\gamma$,
+and time uses seconds.
+
+| Parameter | Default | Meaning and constraints |
+|---|---:|---|
+| `DISTRIBUTION` | required | Previously defined `DISTRIBUTION` name. |
+| `R0X`, `R0Y`, `R0Z` | `0 m` | Position offset added to every sampled particle. |
+| `P0X`, `P0Y`, `P0Z` | `0` | Normalized-momentum offset added after sampling. |
+| `T0` | `0 s` | Source start time. For one-shot types, `T0 > 0` delays injection. |
+| `EMISSIONMODEL` | `NONE` | `NONE` or `ASTRA`; availability depends on distribution type. |
+| `EKIN` | `0 eV` | Thermal kinetic energy for generated emitted particles; OPALX uses its absolute value. |
+| `ZEROFACE_R0Z` | `FALSE` | Apply explicit image-charge Dirichlet correction at $z=\mathrm{R0Z}$. |
+| `SHIFTED_GREENS_FUNCTION` | `FALSE` | Alternative shifted-Green correction; requires an `OPEN` field solver. |
+| `ZEROFACEPLANEDUMP` | `0` | Non-negative integer dump frequency; requires `ZEROFACE_R0Z=TRUE`. |
+| `ZEROFACE_MAXSTEPS` | `0` | Non-negative correction-step limit; `0` means unlimited. |
+
+: {tbl-colwidths="[30, 15, 55]"}
+
+`ZEROFACE_R0Z` and `SHIFTED_GREENS_FUNCTION` are mutually exclusive. A run can
+activate at most one source plane by either method.
+
+For generated emission, `NONE` adds the momentum corresponding to `EKIN` in
+$+z$. `ASTRA` samples the forward half-sphere with magnitude
+
+$$
+p_{\mathrm{th}}=\sqrt{\left(1+\frac{E_{\mathrm{kin}}}{mc^2}\right)^2-1},
+\qquad p_z\geq 0,
+$$
+
+before adding `P0X`, `P0Y`, and `P0Z`.
+
+## `EMISSIONSOURCELIST` {#emissionsourcelist}
+
+```text
+Sources: EMISSIONSOURCELIST=(Source1, Source2);
+```
+
+The list is ordered and must contain at least one previously defined
+`EMISSIONSOURCE`. Attach it with `SOURCES=Sources` on `BEAM`. Several sources
+may use the same distribution, each with independent offsets and start time.
+
+## `DISTRIBUTION` {#distribution}
+
+```text
+name: DISTRIBUTION, TYPE=distribution_type, ...;
+```
+
+OPALX accepts exactly `GAUSS`, `MULTIVARIATEGAUSS`, `FLATTOP`,
+`OPALFLATTOP`, `FROMFILE`, and `EMITTEDFROMFILE`.
+
+### Available input parameters {.unnumbered}
+
+| Parameter | Default / unit | Used by | Runtime effect |
+|---|---|---|---|
+| `TYPE` | required | all | Selects one of the six types above. |
+| `NPARTDIST` | `0`, particles | all | Requested macroparticle count. Use a positive integer except where `EMITTEDFROMFILE` explicitly selects all file records. |
+| `FNAME` | empty, path | file types | Input particle file. Relative paths are resolved from the OPALX input file. |
+| `SIGMAX`, `SIGMAY`, `SIGMAZ` | `0 m` | Gaussian types; transverse flat-top types | Spatial widths; flat-top `SIGMAX` and `SIGMAY` are ellipse semi-axes. |
+| `SIGMAPX`, `SIGMAPY`, `SIGMAPZ` | `0`, $\beta\gamma$ | Gaussian types | RMS normalized-momentum widths. |
+| `CORR` | empty array | `MULTIVARIATEGAUSS` | Fifteen off-diagonal correlation coefficients. |
+| `SIGMAT` | `0 s` | flat-top types; optional emitted-file window | Default RMS width for both pulse edges. |
+| `TPULSEFWHM` | `0 s` | flat-top types; optional emitted-file window | Full pulse width at half maximum. |
+| `TRISE`, `TFALL` | `0 s` | flat-top types; optional emitted-file window | Edge times; a positive value overrides the corresponding `SIGMAT`. |
+| `CUTOFFLONG` | `3`, $\sigma$ | flat-top types; optional emitted-file window | Truncates both Gaussian pulse edges. |
+| `FTOSCAMPLITUDE` | `0 %` | `OPALFLATTOP` | Sinusoidal modulation amplitude, clamped to 100%. |
+| `FTOSCPERIODS` | `0` | `OPALFLATTOP` | Number of modulation periods across the flat interval. |
+| `EMITTED` | `FALSE` | flat-top types; optional emitted-file window | Enables generated time-dependent emission. |
+| `EMISSIONSTEPS` | `100` | `OPALFLATTOP`, `EMITTEDFROMFILE` | Preferred emission resolution; positive values are rounded up. |
+| `CUTOFFX`, `CUTOFFY` | `3`, $\sigma$ | none currently | **Accepted but currently ignored by active samplers.** |
+| `CUTOFFPX`, `CUTOFFPY`, `CUTOFFPZ` | `3`, $\sigma$ | none currently | **Accepted but currently ignored; Gaussian bounds are fixed internally.** |
+| `CORRX`, `CORRY`, `CORRZ`, `CORRT` | `0` | none currently | **Accepted but currently ignored; use `CORR` with `MULTIVARIATEGAUSS`.** |
+
+Non-file distributions require `PC`, `ENERGY`, or `GAMMA` on `BEAM`.
+`FROMFILE` and `EMITTEDFROMFILE` contain absolute normalized momenta and reject
+those three beam-energy attributes.
+
+### `GAUSS` {#gauss}
+
+`GAUSS` samples independent coordinates. Positions are truncated at the
+internally fixed $\pm3\sigma$ bounds and translated so their sampled mean is
+zero; momenta are unbounded normals around the beam reference momentum.
+
+$$
+R_i\sim\mathcal{N}(0,\sigma_{R_i}^2),\qquad
+P_i\sim\mathcal{N}(\bar P_i,\sigma_{P_i}^2).
+$$
+
+| Use | Parameters |
+|---|---|
+| Count | `NPARTDIST` (positive integer) |
+| Position | `SIGMAX`, `SIGMAY`, `SIGMAZ` |
+| Momentum | `SIGMAPX`, `SIGMAPY`, `SIGMAPZ` |
+| Source | `R0*`, `P0*`, `T0`; `EMISSIONMODEL=NONE` only |
+
+```text
+G: DISTRIBUTION, TYPE=GAUSS, NPARTDIST=10000,
+   SIGMAX=1e-3, SIGMAY=1e-3, SIGMAZ=2e-3,
+   SIGMAPX=1e-4, SIGMAPY=1e-4, SIGMAPZ=2e-4;
+```
+
+With `T0 > 0`, the complete sample is injected once when a tracker step crosses
+`T0`. Named correlations and user-supplied cutoffs do not affect this sampler.
+
+### `MULTIVARIATEGAUSS` {#multivariategauss}
+
+Let
+
+$$
+q=(x,p_x,y,p_y,z,p_z)^T,\qquad
+D=\operatorname{diag}(\sigma_x,\sigma_{p_x},\sigma_y,\sigma_{p_y},
+                      \sigma_z,\sigma_{p_z}).
+$$
+
+`CORR` defines a correlation matrix $C$ and the sampler forms
+$\Sigma=DCD=LL^T$, then applies the Cholesky factor $L$ to independent normal
+samples. $C$ must be symmetric positive definite.
+
+| Use | Parameters |
+|---|---|
+| Count and widths | `NPARTDIST`, all six `SIGMA*` values |
+| Coupling | `CORR` with exactly 15 values |
+| Source | `R0*`, `P0*`, `T0`; `EMISSIONMODEL=NONE` only |
+
+The array is the upper triangle in this order:
+
+```text
+(x,px), (x,y), (x,py), (x,z), (x,pz),
+(px,y), (px,py), (px,z), (px,pz),
+(y,py), (y,z), (y,pz), (py,z), (py,pz), (z,pz)
+```
+
+```text
+MG: DISTRIBUTION, TYPE=MULTIVARIATEGAUSS, NPARTDIST=10000,
+    SIGMAX=1e-3, SIGMAPX=1e-4,
+    SIGMAY=1e-3, SIGMAPY=1e-4,
+    SIGMAZ=2e-3, SIGMAPZ=2e-4,
+    CORR={0.2,0,0,0,0, 0,0,0,0, 0,0,0, 0,0,0};
+```
+
+Sampling uses internally fixed three-sigma bounds. `T0 > 0` produces one
+delayed injection, as for `GAUSS`.
+
+### `FLATTOP` {#flattop}
+
+`FLATTOP` is a time-dependent emitter. Transverse positions are uniform on an
+ellipse with semi-axes $a=\mathrm{SIGMAX}$ and $b=\mathrm{SIGMAY}$:
+
+$$
+x=a\sqrt{u}\cos(2\pi v),\qquad
+y=b\sqrt{u}\sin(2\pi v),\qquad u,v\sim U(0,1).
+$$
+
+| Use | Parameters |
+|---|---|
+| Required | `NPARTDIST>0`, `EMITTED=TRUE`, `SIGMAX`, `SIGMAY` |
+| Pulse | `SIGMAT` or `TRISE`/`TFALL`, `TPULSEFWHM`, `CUTOFFLONG` |
+| Source | `T0`, `R0*`, `P0*`, `EKIN`; `EMISSIONMODEL=NONE` or `ASTRA` |
+
+For a positive `TRISE` or `TFALL`, OPALX converts the corresponding input edge
+time to an RMS width using
+
+$$
+\sigma=\frac{T_{\mathrm{edge}}}
+{\sqrt{2\ln 10}-\sqrt{2\ln(10/9)}}.
+$$
+
+With edge widths $\sigma_r$, $\sigma_f$ and cutoff $C$, the flat interval and
+total emission duration are
+
+$$
+T_{\mathrm{flat}}=\max\!\left(0,T_{\mathrm{FWHM}}
+-\sqrt{2\ln2}(\sigma_r+\sigma_f)\right),\qquad
+T_{\mathrm{emit}}=C(\sigma_r+\sigma_f)+T_{\mathrm{flat}}.
+$$
+
+The rate consists of truncated Gaussian rise and fall edges around a constant
+flat interval. Each tracker step integrates that profile and gives newborn
+particles a random fractional timestep.
+
+```text
+FT: DISTRIBUTION, TYPE=FLATTOP, NPARTDIST=10000, EMITTED=TRUE,
+    SIGMAX=1e-3, SIGMAY=1e-3,
+    TRISE=0.5e-12, TFALL=0.5e-12,
+    TPULSEFWHM=10e-12, CUTOFFLONG=3;
+```
+
+{{< pagebreak >}}
+
+### `OPALFLATTOP` {#opalflattop}
+
+`OPALFLATTOP` uses the same transverse and pulse mathematics as `FLATTOP`, but
+precomputes a globally sorted inventory of particle birth times. This gives an
+exact requested inventory and OPAL-compatible pulse centering.
+
+| Use | Parameters |
+|---|---|
+| Required | All `FLATTOP` parameters; `NPARTDIST>0` and `EMITTED=TRUE` are enforced |
+| Resolution | `EMISSIONSTEPS` |
+| Modulation | `FTOSCAMPLITUDE`, `FTOSCPERIODS` |
+| Source | `T0`, `R0*`, `P0*`, `EKIN`; `EMISSIONMODEL=NONE` or `ASTRA` |
+
+On the flat interval, birth-time density is proportional to
+
+$$
+1+a\sin\!\left(2\pi n\frac{t}{T_{\mathrm{flat}}}\right),\qquad
+a=\min\!\left(1,\frac{|\mathrm{FTOSCAMPLITUDE}|}{100}\right),
+$$
+
+where $n=|\mathrm{FTOSCPERIODS}|$.
+
+```text
+OFT: DISTRIBUTION, TYPE=OPALFLATTOP, NPARTDIST=10000, EMITTED=TRUE,
+     SIGMAX=1e-3, SIGMAY=1e-3,
+     TRISE=0.5e-12, TFALL=0.5e-12,
+     TPULSEFWHM=10e-12, CUTOFFLONG=3,
+     EMISSIONSTEPS=100, FTOSCAMPLITUDE=5, FTOSCPERIODS=3;
+```
+
+### `FROMFILE` {#fromfile}
+
+`FROMFILE` reads an injected 6D sample. Set a positive `NPARTDIST`; OPALX uses
+at most that many records from the beginning of the file.
+
+| Use | Parameters |
+|---|---|
+| Required | `FNAME`, positive `NPARTDIST` |
+| Source | `R0*`, `P0*`, `T0`; `EMISSIONMODEL=NONE` only |
+| Beam | Omit `PC`, `ENERGY`, and `GAMMA` |
+
+The first non-comment line is the declared count, the second is a header, and
+exactly that many data rows must follow. Header order is arbitrary but must
+contain `x`, `y`, `z`, `px`, `py`, and `pz` (case-insensitive). Blank lines and
+lines beginning with `#` are ignored.
+
+```text
+3
+x px y py z pz
+0.0 0.001 0.0 0.000 0.0 1.2
+0.1 0.002 0.0 0.001 0.0 1.2
+-0.1 0.000 0.0 -0.001 0.0 1.2
+```
+
+```text
+FF: DISTRIBUTION, TYPE=FROMFILE, FNAME="particles.txt", NPARTDIST=3;
+```
+
+Positions are metres and file momenta are absolute $\beta\gamma$ values.
+Source offsets are added after reading. `T0 > 0` delays the complete file sample
+to one tracker step.
+
+{{< pagebreak >}}
+
+### `EMITTEDFROMFILE` {#emittedfromfile}
+
+`EMITTEDFROMFILE` reads old-OPAL emitted records and releases them according to
+their file times.
+
+| Use | Parameters |
+|---|---|
+| Required | `FNAME`; `NPARTDIST=0` selects all records, otherwise it selects a prefix |
+| Resolution | `EMISSIONSTEPS` |
+| Optional window | `EMITTED=TRUE` plus flat-top pulse parameters |
+| Source | `R0*`, `P0*`, `T0`; `EMISSIONMODEL=NONE` only |
+| Beam | Omit `PC`, `ENERGY`, and `GAMMA` |
+
+Rows are positional: `x px y py t pz [bin]`. The positive-integer `bin` column
+is optional. A file may use a leading count and header, or a comment header.
+
+```text
+3
+x px y py t pz bin
+0.0 0.001 0.0 0.000 -2e-12 1.2 1
+0.1 0.002 0.0 0.001 -1e-12 1.2 2
+-0.1 0.000 0.0 -0.001 0.0 1.2 3
+```
+
+```text
+EFF: DISTRIBUTION, TYPE=EMITTEDFROMFILE,
+     FNAME="emitted.txt", NPARTDIST=0, EMISSIONSTEPS=100;
+```
+
+Without bins or a configured window, OPALX negates the old-OPAL file times,
+centres their span, and uses
+
+$$
+t_{\mathrm{birth}}=\mathrm{T0}-t_{\mathrm{file}}-t_{\mathrm{centre}}.
+$$
+
+An enabled flat-top window may replace the inferred span, but it must cover the
+latest selected file time. Positions and momenta receive the source offsets;
+the file momenta remain absolute.
+
+{{< pagebreak >}}
+
+## Reproducibility and current limitations {#reproducibility-limitations}
+
+Record the OPALX revision, random seed, `NPARTDIST`, `BEAM.NALLOC`, bunch
+charge, source list, and every referenced file. Keep `NALLOC` at least as large
+as the sum of the source distributions' particle counts.
+
+Current source limitations are deliberate documentation constraints:
+
+- only `MULTIVARIATEGAUSS.CORR` affects correlations;
+- Gaussian cutoff attributes are parsed but sampling uses internal bounds;
+- `FTOSCAMPLITUDE` and `FTOSCPERIODS` affect only `OPALFLATTOP`;
+- `ASTRA` is supported only by the generated flat-top emitters; and
+- file distributions take momentum from their files, not from `BEAM` energy.

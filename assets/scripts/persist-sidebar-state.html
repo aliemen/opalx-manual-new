@@ -19,6 +19,7 @@
   };
 
   const sectionKey = (section) => {
+    if (section.dataset.opalxStateKey) return section.dataset.opalxStateKey;
     const heading = section.previousElementSibling?.querySelector(".menu-text");
     return heading?.textContent.trim() || section.id;
   };

@@ -1,0 +1,156 @@
+<script>
+(() => {
+  const chapter = {
+    path: "/user-guide/beam-distributions.html",
+    stateKey: "page-toc:beam-distributions",
+    items: [
+      { id: "emissionsource", text: "EMISSIONSOURCE", suffix: "1" },
+      { id: "emissionsourcelist", text: "EMISSIONSOURCELIST", suffix: "2" },
+      {
+        id: "distribution",
+        text: "DISTRIBUTION",
+        suffix: "3",
+        stateKey: "page-toc:beam-distributions:distribution",
+        children: [
+          { id: "gauss", text: "GAUSS", suffix: "3.1" },
+          { id: "multivariategauss", text: "MULTIVARIATEGAUSS", suffix: "3.2" },
+          { id: "flattop", text: "FLATTOP", suffix: "3.3" },
+          { id: "opalflattop", text: "OPALFLATTOP", suffix: "3.4" },
+          { id: "fromfile", text: "FROMFILE", suffix: "3.5" },
+          { id: "emittedfromfile", text: "EMITTEDFROMFILE", suffix: "3.6" }
+        ]
+      },
+      {
+        id: "reproducibility-limitations",
+        text: "Reproducibility and current limitations",
+        suffix: "4"
+      }
+    ]
+  };
+
+  const linkPath = (link) => {
+    try {
+      return new URL(link.href, window.location.href).pathname;
+    } catch (_) {
+      return "";
+    }
+  };
+
+  const chapterLink = () => Array.from(
+    document.querySelectorAll("#quarto-sidebar a.sidebar-link[href]")
+  ).find((link) => linkPath(link).endsWith(chapter.path));
+
+  const numberedText = (chapterNumber, suffix, text) => {
+    const fragment = document.createDocumentFragment();
+    if (chapterNumber) {
+      const number = document.createElement("span");
+      number.className = "chapter-number";
+      number.textContent = `${chapterNumber}.${suffix}`;
+      fragment.append(number, document.createTextNode("\u00a0 "));
+    }
+    const title = document.createElement("span");
+    title.className = "chapter-title";
+    title.textContent = text;
+    fragment.append(title);
+    return fragment;
+  };
+
+  const sectionLink = (baseHref, chapterNumber, item, depth) => {
+    const li = document.createElement("li");
+    li.className = "sidebar-item opalx-page-toc-item";
+    li.dataset.opalxTocAnchor = item.id;
+
+    const container = document.createElement("div");
+    container.className = "sidebar-item-container";
+
+    const link = document.createElement("a");
+    link.className = "sidebar-item-text sidebar-link";
+    link.href = `${baseHref}#${item.id}`;
+    link.dataset.opalxTocDepth = String(depth);
+    const menuText = document.createElement("span");
+    menuText.className = "menu-text";
+    menuText.append(numberedText(chapterNumber, item.suffix, item.text));
+    link.append(menuText);
+    container.append(link);
+    li.append(container);
+
+    if (item.children) {
+      li.classList.add("sidebar-item-section");
+      const targetId = `opalx-sidebar-${item.id}`;
+      const toggle = document.createElement("button");
+      toggle.type = "button";
+      toggle.className = "sidebar-item-toggle text-start collapsed opalx-page-toc-toggle";
+      toggle.dataset.bsToggle = "collapse";
+      toggle.dataset.bsTarget = `#${targetId}`;
+      toggle.setAttribute("aria-controls", targetId);
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", `Toggle ${item.text} types`);
+      const icon = document.createElement("i");
+      icon.className = "bi bi-chevron-right ms-2";
+      toggle.append(icon);
+      container.append(toggle);
+
+      const children = document.createElement("ul");
+      children.id = targetId;
+      children.className = "collapse list-unstyled sidebar-section depth3 opalx-page-toc-children";
+      children.dataset.opalxStateKey = item.stateKey;
+      item.children.forEach((child) => {
+        children.append(sectionLink(baseHref, chapterNumber, child, depth + 1));
+      });
+      li.append(children);
+    }
+
+    return li;
+  };
+
+  const markActiveAnchor = (toc) => {
+    toc.querySelectorAll("a.sidebar-link.active").forEach((link) => link.classList.remove("active"));
+    if (!window.location.pathname.endsWith(chapter.path) || !window.location.hash) return;
+    const id = window.location.hash.slice(1);
+    toc.querySelector(`[data-opalx-toc-anchor="${CSS.escape(id)}"] > div a`)?.classList.add("active");
+  };
+
+  const initialize = () => {
+    const link = chapterLink();
+    if (!link || document.getElementById("opalx-sidebar-beam-distributions")) return;
+
+    const host = link.closest("li.sidebar-item");
+    const container = link.closest(".sidebar-item-container");
+    if (!host || !container) return;
+
+    host.classList.add("sidebar-item-section", "opalx-page-toc-host");
+    const targetId = "opalx-sidebar-beam-distributions";
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "sidebar-item-toggle text-start collapsed opalx-page-toc-toggle";
+    toggle.dataset.bsToggle = "collapse";
+    toggle.dataset.bsTarget = `#${targetId}`;
+    toggle.setAttribute("aria-controls", targetId);
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Toggle Beam and Distributions sections");
+    const icon = document.createElement("i");
+    icon.className = "bi bi-chevron-right ms-2";
+    toggle.append(icon);
+    container.append(toggle);
+
+    const toc = document.createElement("ul");
+    toc.id = targetId;
+    toc.className = "collapse list-unstyled sidebar-section depth2 opalx-page-toc";
+    toc.dataset.opalxStateKey = chapter.stateKey;
+    const baseHref = link.getAttribute("href").split("#", 1)[0];
+    const chapterNumber = link.querySelector(".chapter-number")?.textContent.trim() || "";
+    chapter.items.forEach((item) => {
+      toc.append(sectionLink(baseHref, chapterNumber, item, 2));
+    });
+    host.append(toc);
+    markActiveAnchor(toc);
+    window.addEventListener("hashchange", () => markActiveAnchor(toc));
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initialize, { once: true });
+  } else {
+    initialize();
+  }
+})();
+</script>

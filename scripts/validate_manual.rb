@@ -83,6 +83,59 @@ ROOT.glob("**/*", File::FNM_DOTMATCH).select(&:file?).each do |path|
   end
 end
 
+distribution_page = ROOT / "user-guide/beam-distributions.qmd"
+distribution_toc = ROOT / "assets/scripts/sidebar-page-toc.html"
+distribution_sections = [
+  ["## `EMISSIONSOURCE` {#emissionsource}", "emissionsource"],
+  ["## `EMISSIONSOURCELIST` {#emissionsourcelist}", "emissionsourcelist"],
+  ["## `DISTRIBUTION` {#distribution}", "distribution"],
+  ["### `GAUSS` {#gauss}", "gauss"],
+  ["### `MULTIVARIATEGAUSS` {#multivariategauss}", "multivariategauss"],
+  ["### `FLATTOP` {#flattop}", "flattop"],
+  ["### `OPALFLATTOP` {#opalflattop}", "opalflattop"],
+  ["### `FROMFILE` {#fromfile}", "fromfile"],
+  ["### `EMITTEDFROMFILE` {#emittedfromfile}", "emittedfromfile"],
+  ["## Reproducibility and current limitations {#reproducibility-limitations}",
+   "reproducibility-limitations"]
+]
+
+if distribution_page.file?
+  distribution_text = distribution_page.read
+  previous_position = -1
+  distribution_sections.each do |heading, _anchor|
+    position = distribution_text.index(heading)
+    if position.nil?
+      errors += error("beam-distributions is missing required heading: #{heading}")
+    elsif position <= previous_position
+      errors += error("beam-distributions headings are out of order at: #{heading}")
+    else
+      previous_position = position
+    end
+  end
+  unless distribution_text.include?("Accepted but currently ignored")
+    errors += error("beam-distributions must flag parser-accepted parameters that are ignored")
+  end
+  %w[BINOMIAL GAUSSMATCHED MULTIGAUSS].each do |legacy_type|
+    if distribution_text.match?(/`#{legacy_type}`/)
+      errors += error("beam-distributions contains legacy-only type: #{legacy_type}")
+    end
+  end
+end
+
+if distribution_toc.file?
+  toc_text = distribution_toc.read
+  distribution_sections.each do |_heading, anchor|
+    unless toc_text.match?(/\bid:\s*["']#{Regexp.escape(anchor)}["']/)
+      errors += error("distribution sidebar manifest is missing anchor: #{anchor}")
+    end
+  end
+  %w[page-toc:beam-distributions page-toc:beam-distributions:distribution].each do |state_key|
+    errors += error("distribution sidebar manifest is missing stable key: #{state_key}") unless toc_text.include?(state_key)
+  end
+else
+  errors += error("missing distribution sidebar manifest: #{distribution_toc.relative_path_from(ROOT)}")
+end
+
 if ENV["DOCUMENTS_CHECKOUT"] && !ENV["DOCUMENTS_CHECKOUT"].empty?
   checkout = Pathname.new(ENV["DOCUMENTS_CHECKOUT"]).expand_path
   abort "error: DOCUMENTS_CHECKOUT is not a directory: #{checkout}" unless checkout.directory?

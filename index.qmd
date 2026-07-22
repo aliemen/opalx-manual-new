@@ -6,12 +6,14 @@ status: current
 last-reviewed: "2026-07-22"
 page-layout: full
 toc: false
-number-sections: false
+format:
+  html:
+    number-sections: false
 title-block-style: none
 ---
 
 :::: {.hero}
-# Simulate charged-particle accelerators across CPUs and GPUs
+# Simulate charged-particle accelerators across CPUs and GPUs {.unnumbered}
 
 OPALX is the performance-portable accelerator simulation framework for
 high-statistics, three-dimensional beam dynamics. This manual brings the user

@@ -25,6 +25,35 @@ errors << "render does not contain the profile's document base URL" unless combi
 errors << "render does not contain the profile's manual repository URL" unless combined_html.include?(expected_repository)
 errors << "render does not contain Quarto's color-scheme persistence" unless combined_html.include?("quarto-color-scheme")
 errors << "render does not contain OPALX sidebar-state persistence" unless combined_html.include?("opalx-sidebar-state-v1")
+errors << "render does not contain the distribution sidebar manifest" unless combined_html.include?("page-toc:beam-distributions")
+
+distribution_html_path = SITE / "user-guide/beam-distributions.html"
+if distribution_html_path.file?
+  distribution_html = File.read(distribution_html_path)
+  distribution_anchors = %w[
+    emissionsource emissionsourcelist distribution gauss multivariategauss flattop opalflattop
+    fromfile emittedfromfile reproducibility-limitations
+  ]
+  distribution_anchors.each do |anchor|
+    errors << "beam-distributions render is missing ##{anchor}" unless distribution_html.match?(/\bid=["']#{Regexp.escape(anchor)}["']/)
+  end
+  {
+    "emissionsource" => /data-number=["']\d+\.1["']/,
+    "emissionsourcelist" => /data-number=["']\d+\.2["']/,
+    "distribution" => /data-number=["']\d+\.3["']/,
+    "gauss" => /data-number=["']\d+\.3\.1["']/,
+    "emittedfromfile" => /data-number=["']\d+\.3\.6["']/
+  }.each do |anchor, numbering|
+    section = distribution_html[/<section\s+id=["']#{Regexp.escape(anchor)}["'][\s\S]*?<\/section>/]
+    errors << "beam-distributions ##{anchor} has incorrect automatic numbering" unless section&.match?(numbering)
+  end
+  errors << "beam-distributions does not suppress its duplicate margin TOC" unless distribution_html.include?("opalx-sidebar-page-toc")
+  errors << "distribution sidebar lacks an accessible chapter toggle" unless distribution_html.include?("Toggle Beam and Distributions sections")
+  errors << "distribution sidebar lacks an accessible type toggle" unless distribution_html.include?("Toggle ${item.text} types")
+  errors << "distribution sidebar state keys are not rendered" unless distribution_html.include?("dataset.opalxStateKey")
+else
+  errors << "render is missing user-guide/beam-distributions.html"
+end
 
 html_cache = {}
 

@@ -146,6 +146,26 @@ body.quarto-dark .doc-card:hover {
   max-width: 920px;
 }
 
+.opalx-page-toc-toggle {
+  flex: 0 0 auto;
+  padding: 0.25rem 0.35rem;
+  color: inherit;
+  border: 0;
+  background: transparent;
+}
+
+.opalx-page-toc .sidebar-link {
+  font-size: 0.91rem;
+}
+
+.opalx-page-toc-children .sidebar-link {
+  font-size: 0.86rem;
+}
+
+body.opalx-sidebar-page-toc #quarto-margin-sidebar {
+  display: none;
+}
+
 @media (max-width: 900px) {
   .doc-grid {
     grid-template-columns: 1fr 1fr;
