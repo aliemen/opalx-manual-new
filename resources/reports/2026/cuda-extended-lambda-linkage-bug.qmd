@@ -1,0 +1,58 @@
+---
+title: "CUDA Extended-Lambda Linkage Bug"
+description: "Investigation of a host-side null call caused by NVCC linkage of Kokkos extended lambdas across CUDA translation units."
+audience: developer
+status: current
+last-reviewed: "2026-07-22"
+---
+
+**Report date:** 2026-07-14  
+**Author:** Alexander Liemen  
+**Outcome:** NVCC compiler bug confirmed; OPALX/IPPL workaround implemented
+
+[Download the original bug-report presentation]({{< meta documents-base-url >}}/reports/2026/bugs/2026-07-14-cuda-extended-lambda-linkage-bug.pdf)
+
+## Summary
+
+A Kokkos halo-packing path could segfault on a CUDA build before the affected
+kernel launched. The immediate failure was a host-side indirect call through a
+null function pointer in `HaloCells::pack()`. CUDA memory access, device
+execution, and MPI transport were therefore not the source of the crash.
+
+The investigation reduced the failure to NVCC handling of Kokkos extended
+lambdas instantiated from a header in multiple CUDA translation units. The
+generated launch wrapper could be coalesced by the final linker while related
+helper state remained local to a translation unit. A wrapper selected from one
+translation unit could consequently refer to uninitialized helper state from
+another.
+
+## Why OPALX exposed it
+
+OPALX instantiated the affected halo path from multiple CUDA translation units,
+including `BinnedFieldSolver.cpp`, `FieldSolver.cpp`, and `PartBunch.cpp`. A
+smaller IPPL-only target instantiated it once and did not reproduce the same
+linkage pattern. Adding a fence or an empty kernel changed binary layout and
+could make the symptom disappear, which initially made the failure appear
+nondeterministic.
+
+## Resolution
+
+The production workaround replaces the extended lambdas in halo packing,
+unpacking, and periodic halo application with named functors using ordinary
+copy semantics. This avoids the problematic generated wrapper and helper-state
+relationship while preserving the intended Kokkos execution model.
+
+The report also records a
+[standalone CUDA reproducer](https://github.com/aliemen/reproduce-nvcc-multiple-transl-unit-bug)
+and NVIDIA's confirmation that this is an NVCC bug. It notes that the
+reproducer is no longer observed with CUDA 13.2 and later; the named-functor
+workaround remains appropriate for the CUDA 12.9 toolchain recommended for
+current OPALX builds.
+
+## Diagnostic lesson
+
+When a GPU code path fails before kernel launch, first determine whether the
+fault is in host-side launch preparation. Binary-layout sensitivity, weak
+generated symbols, and several CUDA translation units are strong reasons to
+inspect compiler-generated linkage before changing synchronization or device
+memory logic.

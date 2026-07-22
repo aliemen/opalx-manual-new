@@ -1,0 +1,22 @@
+---
+title: "OpalElement Layout Proposal"
+description: "Design report comparing historical OPAL element-placement schemes and proposing a unified OPALX layout model."
+audience: developer
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+**Report date:** 2026-04-30  
+**Kind:** Design proposal
+
+[Download the original design report]({{< meta documents-base-url >}}/reports/2026/design/2026-04-30-opal-element-layout-proposal.pdf)
+
+This report examines the distinct element-layout schemes inherited from
+OPAL-T and OPAL-CYCL before proposing how OPALX could make the relevant layout
+capabilities available consistently. It covers relative and global placement,
+coordinate transforms, beamline containers, and the roles of `OpalElement`,
+`Element`, and `ElementBase`.
+
+The document is retained as an experimental design record, not as a description
+of a finalized user interface. Verify implementation details against the
+current source before relying on the proposed class or attribute changes.

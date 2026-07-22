@@ -25,4 +25,4 @@ sources:
     rationale: The bibliography and reports describe historical OPAL. OPALX publications will be curated independently.
   - source: OPALX source tree
     decision: current-source-of-truth
-    rationale: Registered commands, elements, build options, architecture, and Doxygen are derived from the current OPALX code.
+    rationale: Registered commands, elements, build options, and architecture are derived from the current OPALX code; Doxygen is published separately by PSI.

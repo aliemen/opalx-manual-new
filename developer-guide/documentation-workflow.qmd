@@ -43,4 +43,6 @@ content does not change when the repositories move.
 PDFs, Office documents, archives, and media are rejected from the manual.
 Raster figures must remain at or below 500 KiB. Source SVG, TikZ, Mermaid,
 small plots, and reproducible text scripts may remain with the page they
-support. Generated Quarto and Doxygen output is never committed.
+support. Generated Quarto output is never committed. The separately hosted
+[Doxygen API reference]({{< meta doxygen-url >}}) is linked rather than copied
+into this manual.

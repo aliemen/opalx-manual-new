@@ -18,7 +18,10 @@ def chapter_paths(items)
     if item.is_a?(String)
       [item]
     elsif item.is_a?(Hash)
-      chapter_paths(item["chapters"] || [])
+      parent = item["part"] || item["section"] || item["href"]
+      parent_path = parent.is_a?(String) && parent.match?(/\.qmd?\z/) ? [parent] : []
+      children = item["chapters"] || item["contents"] || []
+      parent_path + chapter_paths(children)
     else
       []
     end

@@ -35,8 +35,10 @@ to that repository only through the `documents-base-url` metadata value.
 
 ```sh
 ruby scripts/validate_manual.rb
-OPALX_SOURCE_DIR=../opalx ./scripts/build_doxygen.sh
 ```
 
 Set `DOCUMENTS_CHECKOUT=../opalx-documents` to verify configurable document
 links against a local checkout of the document repository.
+
+The generated C++ API documentation is published separately at the PSI Doxygen
+site and is linked through the `doxygen-url` metadata value.

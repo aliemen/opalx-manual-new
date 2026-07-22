@@ -1,0 +1,23 @@
+---
+title: "OPALX Overview"
+description: "Architecture presentation tracing OPALX input parsing, element registration, particle creation, and tracking."
+audience: developer
+status: current
+last-reviewed: "2026-07-22"
+---
+
+**Presentation date:** 2026-04-06  
+**Kind:** Architecture overview
+
+[Download the original overview presentation]({{< meta documents-base-url >}}/presentations/2026/features/2026-04-06-opalx-overview.pdf)
+
+This one-page overview follows an OPALX simulation from parser-visible
+prototype registration through input parsing, beamline assembly, sampler
+setup, `PartBunch` construction, field-solver selection, and the
+`ParallelTracker` loop. It also gives a recommended source-reading order for
+developers approaching the codebase.
+
+Use this presentation as an orientation map. The maintained
+[Architecture](../../../developer-guide/architecture.qmd) page provides the
+curated description, while the current source remains authoritative for class
+and function details.

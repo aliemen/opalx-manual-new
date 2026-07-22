@@ -65,7 +65,7 @@ collective effects, decay, spin, and photon physics.
 ### Reference
 
 See the commands and elements registered by the current executable, build
-configuration, file formats, and generated API.
+configuration, file formats, and external API documentation.
 
 [Open the reference](reference/commands.qmd)
 :::
@@ -75,7 +75,7 @@ configuration, file formats, and generated API.
 
 ### Developer Guide
 
-Understand the code layout, build and test workflows, and how to add features
+Understand the architecture, build and test workflows, and how to add features
 without losing GPU portability.
 
 [Read the developer guide](developer-guide/architecture.qmd)
@@ -95,7 +95,7 @@ check known limitations.
 
 ::: {.resource-strip}
 **Live resources**
-[Generated API](reference/api.qmd)
+[OPALX API documentation]({{< meta doxygen-url >}})
 [Regression-test dashboard]({{< meta regression-tests-url >}})
 [OPALX source]({{< meta source-code-url >}})
 :::

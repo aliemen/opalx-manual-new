@@ -6,10 +6,33 @@ status: current
 last-reviewed: "2026-07-22"
 ---
 
-OPALX uses CMake and Kokkos to select the execution backend. A recent CMake,
-C++ compiler, MPI installation, and Git are required. Accelerator builds also
-need the matching CUDA or HIP toolchain. Other core dependencies are obtained
-by the build unless installed-dependency options are selected.
+OPALX uses CMake and Kokkos to select the execution backend. The following
+toolchain is recommended for current development and production builds:
+
+| Dependency | Recommended version | Notes |
+|---|---:|---|
+| GCC | 13 | Use the same host compiler throughout the dependency stack. |
+| OpenMPI | 4 or 5 | Either major version is suitable; use the MPI wrappers from the selected installation. |
+| CUDA | 12.9 | Required only for NVIDIA GPU builds. Match the architecture setting to the target GPU. |
+| CMake | 3.24 or newer | OPALX currently declares CMake 3.24 as its minimum version. |
+| Git | Recent release | Used to clone OPALX and fetched dependencies. |
+
+These are recommended versions, not a promise that every other combination is
+unsupported. Accelerator builds need the matching CUDA or HIP toolchain. Other
+core dependencies are obtained by the build unless installed-dependency
+options are selected.
+
+On a module-based system, a typical environment is:
+
+```bash
+module load gcc/13
+module load openmpi/5  # openmpi/4 is also supported
+module load cuda/12.9  # CUDA builds only
+```
+
+Module names vary between clusters. After loading them, check that `gcc`,
+`mpicxx`, and `nvcc` resolve to the intended installations before configuring
+the build.
 
 ## Clone the source
 

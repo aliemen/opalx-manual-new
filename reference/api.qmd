@@ -1,18 +1,17 @@
 ---
-title: "Generated API Reference"
-description: "Entry point for Doxygen documentation generated from the matching OPALX source revision."
+title: "API Reference"
+description: "Entry point for the separately published OPALX Doxygen documentation."
 audience: developer
 status: current
 last-reviewed: "2026-07-22"
 ---
 
-The documentation build generates Doxygen directly from
-`opalx/src` and publishes it inside the same build artifact as this Quarto
-manual.
+The source-level OPALX API reference is generated and published separately
+from this manual. This keeps the curated documentation small while allowing
+the API site to follow the source code closely.
 
-[Open the generated OPALX API](../api/html/index.html)
+[Open the OPALX Doxygen documentation]({{< meta doxygen-url >}})
 
-The API directory is absent in a plain Quarto preview until
-`scripts/build_doxygen.sh` is run. CI checks out the current OPALX source,
-renders the manual, generates Doxygen, and uploads both together. Generated
-HTML is never committed to this repository.
+The API site lives at PSI and is not copied into this Quarto build. Use the
+command and element reference in this manual for user-facing input syntax, and
+the Doxygen site for C++ classes, functions, and source-level relationships.

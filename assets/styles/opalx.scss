@@ -1,12 +1,3 @@
-/*-- scss:defaults --*/
-$primary: #155e75;
-$secondary: #475569;
-$link-color: #0e7490;
-$body-color: #172033;
-$body-bg: #fbfdff;
-$font-family-sans-serif: "Inter", "Avenir Next", "Segoe UI", sans-serif;
-$headings-font-family: "Avenir Next", "Segoe UI", sans-serif;
-
 /*-- scss:rules --*/
 :root {
   --opalx-ink: #10233d;
@@ -14,6 +5,18 @@ $headings-font-family: "Avenir Next", "Segoe UI", sans-serif;
   --opalx-blue: #2456a6;
   --opalx-mist: #eaf5f7;
   --opalx-line: #d8e4ea;
+  --opalx-surface: #ffffff;
+  --opalx-resource: #edf3ff;
+}
+
+body.quarto-dark {
+  --opalx-ink: #e8f3f7;
+  --opalx-teal: #72d3e0;
+  --opalx-blue: #9dbfff;
+  --opalx-mist: #18323d;
+  --opalx-line: #35515e;
+  --opalx-surface: #18242b;
+  --opalx-resource: #1b2d48;
 }
 
 .navbar {
@@ -82,7 +85,7 @@ $headings-font-family: "Avenir Next", "Segoe UI", sans-serif;
   padding: 1.35rem;
   border: 1px solid var(--opalx-line);
   border-radius: 0.9rem;
-  background: white;
+  background: var(--opalx-surface);
   box-shadow: 0 10px 30px rgb(29 78 102 / 7%);
   transition: transform 140ms ease, box-shadow 140ms ease;
 }
@@ -124,7 +127,19 @@ $headings-font-family: "Avenir Next", "Segoe UI", sans-serif;
   gap: 0.75rem 1.5rem;
   align-items: center;
   border-left-color: var(--opalx-blue);
-  background: #edf3ff;
+  background: var(--opalx-resource);
+}
+
+body.quarto-dark .navbar {
+  box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
+}
+
+body.quarto-dark .doc-card {
+  box-shadow: 0 10px 30px rgb(0 0 0 / 18%);
+}
+
+body.quarto-dark .doc-card:hover {
+  box-shadow: 0 16px 38px rgb(0 0 0 / 28%);
 }
 
 .page-columns .content {

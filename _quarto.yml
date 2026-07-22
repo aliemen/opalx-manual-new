@@ -7,6 +7,8 @@ project:
 book:
   title: "OPALX Documentation"
   subtitle: "User guide, physics manual, reference, and developer handbook"
+  sidebar:
+    collapse-level: 1
   repo-branch: main
   repo-actions: [edit, issue]
   downloads: [pdf]
@@ -48,7 +50,6 @@ book:
     - part: "Developer Guide"
       chapters:
         - developer-guide/architecture.qmd
-        - developer-guide/repository-layout.qmd
         - developer-guide/build-test-ci.qmd
         - developer-guide/adding-features.qmd
         - developer-guide/documentation-workflow.qmd
@@ -60,9 +61,12 @@ book:
     - part: "Resources"
       chapters:
         - resources/publications.qmd
-        - resources/presentations-reports.qmd
         - resources/regression-tests.qmd
-        - resources/legacy-documentation.qmd
+    - part: resources/reports/index.qmd
+      chapters:
+        - resources/reports/2026/cuda-extended-lambda-linkage-bug.qmd
+        - resources/reports/2026/opal-element-layout-proposal.qmd
+        - resources/reports/2026/opalx-overview.qmd
 
 number-sections: true
 number-depth: 3
@@ -72,8 +76,14 @@ csl: csl/ieee.csl
 format:
   html:
     theme:
-      - cosmo
-      - assets/styles/opalx.scss
+      light:
+        - cosmo
+        - assets/styles/opalx-light.scss
+        - assets/styles/opalx.scss
+      dark:
+        - darkly
+        - assets/styles/opalx-dark.scss
+        - assets/styles/opalx.scss
     toc: true
     code-copy: true
     code-overflow: wrap
@@ -91,5 +101,6 @@ documents-base-url: "https://github.com/aliemen/opalx-documents/blob/main"
 manual-repository-url: "https://github.com/aliemen/opalx-manual-new"
 source-code-url: "https://github.com/OPALX-project/OPALX"
 regression-tests-url: "https://amas.pages.psi.ch/opal-live-doc/opalx-regression-test/overview/index.html"
+doxygen-url: "https://amas.pages.psi.ch/opal-live-doc/opalx-doxygen/index.html"
 legacy-opal-manual-url: "https://opalx-project.github.io/Manual-old/"
 deployment-profile: "personal"
