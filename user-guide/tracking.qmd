@@ -1,26 +1,85 @@
 ---
 title: "Tracking"
-description: "Configure and run the time-based parallel tracking path."
+description: "Select beams and a lattice, schedule time steps, and run the current OPALX parallel tracker."
 audience: user
 status: current
 last-reviewed: "2026-07-22"
 ---
 
-The current OPALX executable uses the time-based `ParallelTracker` path. A
-tracking block selects the line, beam, time-step schedule, maximum-step
-schedule, and field solver before `RUN` starts the simulation.
+An OPALX tracking block has three statements:
 
-At each step the tracker performs a half position push, assembles space-charge
-and external fields, emits particles, applies the Boris momentum update and
-second half push, advances time, and updates the reference state. The
-[Physics Overview](../physics/overview/index.qmd) describes the split in detail.
+```opal
+TRACK, LINE=Line1, BEAM=Beam1,
+       DT={5e-11}, MAXSTEPS={100}, ZSTOP={1.0};
+  RUN, METHOD=PARALLEL, FIELDSOLVER=FS1;
+ENDTRACK;
+```
 
-## Choosing a time step
+`TRACK` selects the lattice, beam containers, and stopping schedule. `RUN`
+selects the executable tracking method and field solver.
+
+## `TRACK`
+
+| Parameter | Default | Current behavior |
+|---|---:|---|
+| `LINE` | required | Name of the `LINE` to track. |
+| `BEAM` | `UNNAMED_BEAM` | Single beam name. Set it explicitly for normal runs. |
+| `BEAMS` | empty | Ordered beam-name array. A non-empty array takes precedence over `BEAM`. |
+| `SOURCES` | empty | Accepted for compatibility but ignored; sources come from each selected `BEAM`. |
+| `DT` | `{1e-12}` s | Time-step schedule. Use positive values. |
+| `MAXSTEPS` | `{10}` | Maximum-step schedule. Negative values are rejected; values are converted to integers. |
+| `ZSTART` | `0` m | Starting reference position. |
+| `ZSTOP` | `{1e6}` m | Stop-position schedule. |
+| `T0` | `0` s | Accepted and stored, but not currently forwarded to `ParallelTracker`; source timing uses `EMISSIONSOURCE.T0`. |
+| `DTSCINIT` | `1e-12` s | Accepted adaptive-integrator setting; not used by the current parallel path. |
+| `DTAU` | `-1` | Accepted adaptive-integrator accuracy setting; not used by the current parallel path. |
+| `TIMEINTEGRATOR` | `RK4` | Accepts `RK-4`, `RK4`, `LF-2`, `LF2`, or `MTS`, but does not currently select the `ParallelTracker` integration kernel. |
+| `STEPSPERTURN` | `720` | OPAL-CYCL compatibility attribute; inactive in OPALX tracking. |
+| `MAP_ORDER` | `1` | Stored compatibility value for map tracking; inactive in the current parallel path. |
+
+`DT`, `MAXSTEPS`, and `ZSTOP` may contain different numbers of entries. OPALX
+extends each shorter array by repeating its final value until all three have
+the same length. This defines consecutive tracking segments.
+
+## Beam selection
+
+```opal
+TRACK, LINE=Line1, BEAMS={ElectronBeam, PositronBeam},
+       DT=1e-10, MAXSTEPS=2000, ZSTOP=60.0;
+```
+
+`BEAMS` takes precedence whenever it is non-empty. Each entry must resolve to a
+`BEAM`, and OPALX creates one particle container per entry. The order is
+significant: the first beam supplies the reference state used to construct the
+tracking block. Photon beams are rejected when `RUN` starts.
+
+See [Beam Definitions](beam.qmd) for per-container properties and source
+selection.
+
+## `RUN`
+
+| Parameter | Default | Current behavior |
+|---|---:|---|
+| `METHOD` | required | Only `PARALLEL` is accepted. |
+| `FIELDSOLVER` | required | Name of the `FIELDSOLVER` used for the run. |
+| `BOUNDARYGEOMETRY` | `NONE` | Optional named boundary geometry. |
+| `TURNS` | `1` | Accepted compatibility value; inactive in the current parallel path. |
+| `TRACKBACK` | `FALSE` | Accepted compatibility value; reverse tracking is not currently applied. |
+
+`RUN` does not register `BEAM`, `BEAMS`, `SOURCES`, or `DISTRIBUTION`.
+Selection belongs on `TRACK` and each `BEAM`; distribution objects are reached
+through the beam's emission-source list.
+
+## Current step sequence
+
+At each step `ParallelTracker` performs a half position push, assembles
+space-charge and external fields, emits particles, applies the Boris momentum
+update and second half push, advances time, and updates the reference state.
+The [Physics Overview](../physics/overview/index.qmd) describes this split.
 
 The time step must resolve the shortest relevant field, geometry, emission,
 and collective-effect scale. Establish convergence by repeating a calculation
-with smaller steps and comparing physical observables, not only successful
-completion.
+with smaller steps and comparing physical observables.
 
 ## Parallel execution
 

@@ -20,4 +20,6 @@ Until it is published here:
 - Confirm GPU support for any newly selected algorithm.
 
 The [Beam-Beam](../physics/beam-beam/index.qmd) chapter contains a documented
-open-boundary manufactured solution.
+open-boundary manufactured solution. For beams with a large longitudinal
+energy or velocity spread, see [Structures / Binning](structures/index.qmd#binning)
+for the source-audited `BINNING` command and `FIELDSOLVER.BINS` connection.

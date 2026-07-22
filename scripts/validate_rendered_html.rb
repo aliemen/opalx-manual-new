@@ -26,6 +26,7 @@ errors << "render does not contain the profile's manual repository URL" unless c
 errors << "render does not contain Quarto's color-scheme persistence" unless combined_html.include?("quarto-color-scheme")
 errors << "render does not contain OPALX sidebar-state persistence" unless combined_html.include?("opalx-sidebar-state-v1")
 errors << "render does not contain the distribution sidebar manifest" unless combined_html.include?("page-toc:beam-distributions")
+errors << "render does not contain the structures sidebar manifest" unless combined_html.include?("page-toc:structures")
 
 distribution_html_path = SITE / "user-guide/beam-distributions.html"
 if distribution_html_path.file?
@@ -53,6 +54,19 @@ if distribution_html_path.file?
   errors << "distribution sidebar state keys are not rendered" unless distribution_html.include?("dataset.opalxStateKey")
 else
   errors << "render is missing user-guide/beam-distributions.html"
+end
+
+structures_html_path = SITE / "user-guide/structures/index.html"
+if structures_html_path.file?
+  structures_html = File.read(structures_html_path)
+  binning_section = structures_html[/<section\s+id=["']binning["'][\s\S]*?<\/section>/]
+  errors << "structures render is missing #binning" unless binning_section
+  errors << "BINNING has incorrect automatic numbering" unless binning_section&.match?(/data-number=["']\d+\.1["']/)
+  errors << "structures does not suppress its duplicate margin TOC" unless structures_html.include?("opalx-sidebar-page-toc")
+  errors << "structures sidebar lacks an accessible chapter toggle" unless structures_html.include?("Toggle Structures sections")
+  errors << "structures sidebar state key is not rendered" unless structures_html.include?("page-toc:structures")
+else
+  errors << "render is missing user-guide/structures/index.html"
 end
 
 html_cache = {}

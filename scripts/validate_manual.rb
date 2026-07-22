@@ -132,8 +132,66 @@ if distribution_toc.file?
   %w[page-toc:beam-distributions page-toc:beam-distributions:distribution].each do |state_key|
     errors += error("distribution sidebar manifest is missing stable key: #{state_key}") unless toc_text.include?(state_key)
   end
+  unless toc_text.match?(/path:\s*["']\/user-guide\/structures\/index\.html["'][\s\S]*?id:\s*["']binning["']/)
+    errors += error("structures sidebar manifest is missing the BINNING anchor")
+  end
+  unless toc_text.include?("page-toc:structures")
+    errors += error("structures sidebar manifest is missing its stable key")
+  end
 else
   errors += error("missing distribution sidebar manifest: #{distribution_toc.relative_path_from(ROOT)}")
+end
+
+source_audited_inputs = {
+  "user-guide/beam.qmd" => %w[
+    PARTICLE MASS CHARGE ENERGY PC GAMMA BCURRENT BFREQ BCHARGE NALLOC SOURCES
+    GLOBALPROCESSES DAUGHTERBEAM POLARIZATION
+  ],
+  "user-guide/tracking.qmd" => %w[
+    LINE SOURCES BEAM BEAMS DT DTSCINIT DTAU T0 MAXSTEPS ZSTART ZSTOP STEPSPERTURN
+    TIMEINTEGRATOR MAP_ORDER METHOD TURNS FIELDSOLVER BOUNDARYGEOMETRY TRACKBACK
+  ],
+  "user-guide/options.qmd" => %w[
+    ECHO INFO TRACE WARN SEED TELL PSDUMPFREQ STATDUMPFREQ STEPINFOFQ PRINTRANKDISTRFQ
+    PSDUMPEACHTURN PSDUMPFRAME SPTDUMPFREQ REPARTFREQ REBINFREQ SCSOLVEFREQ MTSSUBSTEPS
+    REMOTEPARTDEL RHODUMP EBDUMP RANKDUMP CSRDUMP AUTOPHASE NUMBLOCKS RECYCLEBLOCKS NLHS
+    CZERO RNGTYPE ENABLEHDF5 ENABLEVTK ASCIIDUMP BOUNDPDESTROY BEAMHALOBOUNDARY CLOTUNEONLY
+    IDEALIZED LOGBENDTRAJECTORY VERSION MEMORYDUMP HALOSHIFT DELPARTFREQ MINBINEMITTED
+    MINSTEPFORREBIN COMPUTEPERCENTILES QM_MODE AGGRESSIVE_STATE_SYNC LOADBALANCINGTHRESHOLD
+  ],
+  "user-guide/structures/index.qmd" => %w[
+    MAXBINS DESIREDWIDTH BINNINGALPHA BINNINGBETA PARAMETER ADAPTIVEBINNING DUMPBINSFILE
+    DUMPBINSFREQ TABLEPRINTFREQ
+  ]
+}
+
+source_audited_inputs.each do |relative, attributes|
+  path = ROOT / relative
+  unless path.file?
+    errors += error("missing source-audited input page: #{relative}")
+    next
+  end
+
+  text = path.read
+  attributes.each do |attribute|
+    errors += error("#{relative} is missing input attribute: #{attribute}") unless text.include?("`#{attribute}`")
+  end
+end
+
+tracking_text = (ROOT / "user-guide/tracking.qmd").read
+unless tracking_text.include?("`BEAMS` takes precedence")
+  errors += error("tracking page must document BEAMS precedence")
+end
+unless tracking_text.include?("`RUN` does not register `BEAM`, `BEAMS`, `SOURCES`, or `DISTRIBUTION`")
+  errors += error("tracking page must document current RUN ownership")
+end
+
+binning_text = (ROOT / "user-guide/structures/index.qmd").read
+%w[VELOCITYZ POSITIONZ PZ GAMMAZ].each do |parameter|
+  errors += error("binning page is missing parser value: #{parameter}") unless binning_text.include?("`#{parameter}`")
+end
+unless binning_text.include?("implements only `VELOCITYZ` and `GAMMAZ`")
+  errors += error("binning page must distinguish parser values from runtime support")
 end
 
 if ENV["DOCUMENTS_CHECKOUT"] && !ENV["DOCUMENTS_CHECKOUT"].empty?

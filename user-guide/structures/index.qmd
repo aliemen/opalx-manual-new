@@ -1,0 +1,88 @@
+---
+title: "Structures"
+description: "Named OPALX definitions that configure reusable runtime structures."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+body-classes: "opalx-sidebar-page-toc"
+---
+
+Structures are named definitions that configure reusable runtime machinery and
+are attached to another input object by name. They are declared once, validated
+by their implementation, and resolved when a run constructs the corresponding
+runtime component.
+
+## `BINNING` {#binning}
+
+`BINNING` defines a longitudinal histogram used by the binned space-charge
+solver. Define it separately and attach it to a `FIELDSOLVER` with `BINS`:
+
+```opal
+Bins1: BINNING,
+    MAXBINS=120,
+    DESIREDWIDTH=0.2,
+    BINNINGALPHA=1.1,
+    BINNINGBETA=1.6,
+    PARAMETER=VELOCITYZ,
+    ADAPTIVEBINNING=TRUE,
+    TABLEPRINTFREQ=10;
+
+FS1: FIELDSOLVER, TYPE=OPEN, BINS=Bins1,
+    NX=32, NY=32, NZ=32,
+    PARFFTX=TRUE, PARFFTY=TRUE, PARFFTZ=TRUE,
+    BCFFTX=OPEN, BCFFTY=OPEN, BCFFTZ=OPEN;
+```
+
+Use `BINS=NONE`, the field-solver default, to disable binning.
+
+### Parameters {.unnumbered}
+
+| Parameter | Default | Current behavior |
+|---|---:|---|
+| `MAXBINS` | `128` | Number of bins in the initial uniform histogram and upper bound after merging. The real input is converted to an integer; use a positive value. |
+| `DESIREDWIDTH` | `0.1` | Target-width bias used by the adaptive merge cost function. |
+| `BINNINGALPHA` | `1.0` | Weight penalizing wide merged bins. |
+| `BINNINGBETA` | `1.5` | Weight biasing the cost toward `DESIREDWIDTH`. |
+| `PARAMETER` | `VELOCITYZ` | Bunch quantity used to assign particles to bins. |
+| `ADAPTIVEBINNING` | `TRUE` | Merge the initial uniform histogram adaptively. `FALSE` retains the uniform `MAXBINS` histogram. |
+| `DUMPBINSFILE` | `NONE` | JSON output name. Empty or `NONE` disables output; `.json` is appended when missing. |
+| `DUMPBINSFREQ` | `1` | JSON dump frequency in global steps. Must be at least one when file output is enabled. |
+| `TABLEPRINTFREQ` | `10` | Console bin-statistics frequency in global steps. `0` disables it; negative values are rejected. |
+
+The parser accepts `VELOCITYZ`, `POSITIONZ`, `PZ`, and `GAMMAZ`, but the
+current runtime implements only `VELOCITYZ` and `GAMMAZ`. Selecting either of
+the other two values fails when the bunch creates its bins.
+
+With normalized momentum $P_z=p_z/(mc)$, the implemented selectors are
+
+$$
+\mathrm{VELOCITYZ}=\frac{|P_z|}{\sqrt{1+P_z^2}},
+\qquad
+\mathrm{GAMMAZ}=\sqrt{1+P_z^2}.
+$$
+
+`GAMMAZ` is therefore a longitudinal proxy based only on $P_z$, not the full
+Lorentz factor when transverse momentum is nonzero.
+
+### Adaptive merging {.unnumbered}
+
+OPALX first creates a uniform histogram over the selected quantity. With
+`ADAPTIVEBINNING=TRUE`, adjacent bins are merged using a cost function based on
+particle fraction, combined width, `DESIREDWIDTH`, `BINNINGALPHA`, and
+`BINNINGBETA`. With `FALSE`, the uniform histogram remains unchanged.
+
+The current parser does not enforce numeric ranges for `DESIREDWIDTH`,
+`BINNINGALPHA`, or `BINNINGBETA`. In particular, the source descriptions of the
+weights mention `[0,1]`, while the compiled default of `BINNINGBETA` is `1.5`
+and maintained regression inputs use values above one. The manual therefore
+does not claim a range that the implementation contradicts.
+
+### Runtime notes {.unnumbered}
+
+- Binning is enabled only when a field solver resolves a named `BINNING`
+  definition through `BINS`.
+- The current bin object is constructed from the primary particle container.
+- `OPTION.MINBINEMITTED` controls when space charge begins during emission;
+  `OPTION.MINSTEPFORREBIN` controls the earliest bin-collapse step.
+- `DUMPBINSFILE` records counts and widths for reproducibility; generated JSON
+  is simulation output and does not belong in the manual repository.

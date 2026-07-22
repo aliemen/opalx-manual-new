@@ -26,9 +26,12 @@ book:
     - part: "User Guide"
       chapters:
         - user-guide/input-language.qmd
+        - user-guide/beam.qmd
         - user-guide/beam-distributions.qmd
         - user-guide/tracking.qmd
+        - user-guide/options.qmd
         - user-guide/elements.qmd
+        - user-guide/structures/index.qmd
         - user-guide/field-solvers.qmd
         - user-guide/diagnostics-output.qmd
     - part: "Physics"

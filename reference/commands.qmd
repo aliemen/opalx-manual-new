@@ -35,3 +35,10 @@ The current registry provides value constants and variables, macros, `BEAM`,
 Attribute-level tables will be generated from the corresponding class
 definitions and Doxygen comments. Until then, treat historical OPAL attribute
 lists as unverified rather than assuming one-to-one compatibility.
+
+The following high-use interfaces already have source-audited tables:
+
+- [Beam Definitions](../user-guide/beam.qmd)
+- [Tracking](../user-guide/tracking.qmd)
+- [Runtime Options](../user-guide/options.qmd)
+- [Structures / Binning](../user-guide/structures/index.qmd#binning)

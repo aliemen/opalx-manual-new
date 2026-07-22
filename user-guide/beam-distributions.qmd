@@ -21,7 +21,8 @@ Beam: BEAM, PARTICLE=ELECTRON, PC=0.1, NALLOC=10000,
 
 The `DISTRIBUTION` defines the particle sample, `EMISSIONSOURCE` adds source
 offsets and timing, `EMISSIONSOURCELIST` groups sources, and `BEAM.SOURCES`
-selects the group.
+selects the group. See [Beam Definitions](beam.qmd) for the complete `BEAM`
+attribute table and its reference-energy rules.
 
 ## `EMISSIONSOURCE` {#emissionsource}
 

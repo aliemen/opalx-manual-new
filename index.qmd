@@ -44,8 +44,8 @@ Build OPALX, choose a platform backend, and run a first input file.
 
 ### User Guide
 
-Learn the input language, beam definitions, tracking workflow, elements, field
-solvers, and outputs.
+Learn the input language, beam definitions, runtime options, tracking workflow,
+elements, reusable structures, field solvers, and outputs.
 
 [Read the user guide](user-guide/input-language.qmd)
 :::

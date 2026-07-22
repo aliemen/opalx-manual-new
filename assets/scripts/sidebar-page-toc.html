@@ -1,32 +1,45 @@
 <script>
 (() => {
-  const chapter = {
-    path: "/user-guide/beam-distributions.html",
-    stateKey: "page-toc:beam-distributions",
-    items: [
-      { id: "emissionsource", text: "EMISSIONSOURCE", suffix: "1" },
-      { id: "emissionsourcelist", text: "EMISSIONSOURCELIST", suffix: "2" },
-      {
-        id: "distribution",
-        text: "DISTRIBUTION",
-        suffix: "3",
-        stateKey: "page-toc:beam-distributions:distribution",
-        children: [
-          { id: "gauss", text: "GAUSS", suffix: "3.1" },
-          { id: "multivariategauss", text: "MULTIVARIATEGAUSS", suffix: "3.2" },
-          { id: "flattop", text: "FLATTOP", suffix: "3.3" },
-          { id: "opalflattop", text: "OPALFLATTOP", suffix: "3.4" },
-          { id: "fromfile", text: "FROMFILE", suffix: "3.5" },
-          { id: "emittedfromfile", text: "EMITTEDFROMFILE", suffix: "3.6" }
-        ]
-      },
-      {
-        id: "reproducibility-limitations",
-        text: "Reproducibility and current limitations",
-        suffix: "4"
-      }
-    ]
-  };
+  const chapters = [
+    {
+      path: "/user-guide/beam-distributions.html",
+      stateKey: "page-toc:beam-distributions",
+      targetId: "opalx-sidebar-beam-distributions",
+      toggleLabel: "Toggle Beam and Distributions sections",
+      items: [
+        { id: "emissionsource", text: "EMISSIONSOURCE", suffix: "1" },
+        { id: "emissionsourcelist", text: "EMISSIONSOURCELIST", suffix: "2" },
+        {
+          id: "distribution",
+          text: "DISTRIBUTION",
+          suffix: "3",
+          stateKey: "page-toc:beam-distributions:distribution",
+          children: [
+            { id: "gauss", text: "GAUSS", suffix: "3.1" },
+            { id: "multivariategauss", text: "MULTIVARIATEGAUSS", suffix: "3.2" },
+            { id: "flattop", text: "FLATTOP", suffix: "3.3" },
+            { id: "opalflattop", text: "OPALFLATTOP", suffix: "3.4" },
+            { id: "fromfile", text: "FROMFILE", suffix: "3.5" },
+            { id: "emittedfromfile", text: "EMITTEDFROMFILE", suffix: "3.6" }
+          ]
+        },
+        {
+          id: "reproducibility-limitations",
+          text: "Reproducibility and current limitations",
+          suffix: "4"
+        }
+      ]
+    },
+    {
+      path: "/user-guide/structures/index.html",
+      stateKey: "page-toc:structures",
+      targetId: "opalx-sidebar-structures",
+      toggleLabel: "Toggle Structures sections",
+      items: [
+        { id: "binning", text: "BINNING", suffix: "1" }
+      ]
+    }
+  ];
 
   const linkPath = (link) => {
     try {
@@ -36,7 +49,7 @@
     }
   };
 
-  const chapterLink = () => Array.from(
+  const chapterLink = (chapter) => Array.from(
     document.querySelectorAll("#quarto-sidebar a.sidebar-link[href]")
   ).find((link) => linkPath(link).endsWith(chapter.path));
 
@@ -103,38 +116,37 @@
     return li;
   };
 
-  const markActiveAnchor = (toc) => {
+  const markActiveAnchor = (chapter, toc) => {
     toc.querySelectorAll("a.sidebar-link.active").forEach((link) => link.classList.remove("active"));
     if (!window.location.pathname.endsWith(chapter.path) || !window.location.hash) return;
     const id = window.location.hash.slice(1);
     toc.querySelector(`[data-opalx-toc-anchor="${CSS.escape(id)}"] > div a`)?.classList.add("active");
   };
 
-  const initialize = () => {
-    const link = chapterLink();
-    if (!link || document.getElementById("opalx-sidebar-beam-distributions")) return;
+  const initializeChapter = (chapter) => {
+    const link = chapterLink(chapter);
+    if (!link || document.getElementById(chapter.targetId)) return;
 
     const host = link.closest("li.sidebar-item");
     const container = link.closest(".sidebar-item-container");
     if (!host || !container) return;
 
     host.classList.add("sidebar-item-section", "opalx-page-toc-host");
-    const targetId = "opalx-sidebar-beam-distributions";
     const toggle = document.createElement("button");
     toggle.type = "button";
     toggle.className = "sidebar-item-toggle text-start collapsed opalx-page-toc-toggle";
     toggle.dataset.bsToggle = "collapse";
-    toggle.dataset.bsTarget = `#${targetId}`;
-    toggle.setAttribute("aria-controls", targetId);
+    toggle.dataset.bsTarget = `#${chapter.targetId}`;
+    toggle.setAttribute("aria-controls", chapter.targetId);
     toggle.setAttribute("aria-expanded", "false");
-    toggle.setAttribute("aria-label", "Toggle Beam and Distributions sections");
+    toggle.setAttribute("aria-label", chapter.toggleLabel);
     const icon = document.createElement("i");
     icon.className = "bi bi-chevron-right ms-2";
     toggle.append(icon);
     container.append(toggle);
 
     const toc = document.createElement("ul");
-    toc.id = targetId;
+    toc.id = chapter.targetId;
     toc.className = "collapse list-unstyled sidebar-section depth2 opalx-page-toc";
     toc.dataset.opalxStateKey = chapter.stateKey;
     const baseHref = link.getAttribute("href").split("#", 1)[0];
@@ -143,8 +155,12 @@
       toc.append(sectionLink(baseHref, chapterNumber, item, 2));
     });
     host.append(toc);
-    markActiveAnchor(toc);
-    window.addEventListener("hashchange", () => markActiveAnchor(toc));
+    markActiveAnchor(chapter, toc);
+    window.addEventListener("hashchange", () => markActiveAnchor(chapter, toc));
+  };
+
+  const initialize = () => {
+    chapters.forEach(initializeChapter);
   };
 
   if (document.readyState === "loading") {

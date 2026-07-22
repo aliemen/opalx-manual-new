@@ -1,0 +1,112 @@
+---
+title: "Runtime Options"
+description: "Complete source-audited reference for values accepted by the OPALX OPTION statement."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+---
+
+`OPTION` changes process-wide parser, tracking, output, and diagnostic settings:
+
+```opal
+OPTION, VERSION=10900, PSDUMPFREQ=10, STATDUMPFREQ=1,
+        BOUNDPDESTROY=10, QM_MODE=SINGLE;
+```
+
+Several attributes remain registered for input compatibility even though the
+current `ParallelTracker` does not consume them. Those attributes are listed
+separately so parser acceptance is not confused with runtime support.
+
+The Boolean `INFO` option is distinct from the executable's `--info <level>`
+argument. `INFO` gates a small set of parser messages; the command-line level
+controls the `level1`, `level2`, and more detailed runtime streams.
+
+## Command-line logging
+
+Pass `--info N` after the input file to show messages through level `N`:
+
+| Level | Intended content |
+|---:|---|
+| `1` | Essential run status and rare or critical events. |
+| `2` | Normal progress and run summaries suitable for production. |
+| `3` | Algorithm progress, including time-step, repartitioning, and binning setup. |
+| `4` | Fine-grained implementation details for debugging. |
+| `5` | Full trace-style output, including frequent step and solver details. |
+
+Use level `1` or `2` for production runs. Higher integer values are accepted,
+but OPALX currently defines no additional message categories above level `5`.
+
+## Parser and messages
+
+| Option | Default | Effect |
+|---|---:|---|
+| `ECHO` | `FALSE` | Echo input while parsing. |
+| `INFO` | `TRUE` | Enable informational parser messages. |
+| `TRACE` | `FALSE` | Print timing before and after traceable commands. Put this in the first `OPTION` statement. |
+| `WARN` | `TRUE` | Enable warnings from expressions and selectors. |
+| `SEED` | `123456789` | Random seed used by current samplers and stochastic physics. `-1` requests time-based seeding where supported. |
+| `TELL` | `FALSE` | Print all effective option values immediately. Put this in the last `OPTION` statement whose settings should be shown. |
+
+## Output and diagnostics
+
+Frequencies are measured in global tracking steps unless stated otherwise.
+
+| Option | Default | Effect |
+|---|---:|---|
+| `PSDUMPFREQ` | `10` | Phase-space dump frequency. `0` is converted internally to an effectively disabled frequency. |
+| `STATDUMPFREQ` | `10` | Statistics dump frequency. `0` is converted internally to an effectively disabled frequency. |
+| `STEPINFOFQ` | `1` | Per-step status frequency; values below zero become `0`, which disables the lines. |
+| `PRINTRANKDISTRFQ` | `0` | Per-rank particle-count table frequency; `0` disables it and negative values become `0`. |
+| `RHODUMP` | `FALSE` | Add the scalar charge-density field to supported HDF5 output. |
+| `EBDUMP` | `FALSE` | Add the electric and magnetic field at each particle to phase-space HDF5 output. |
+| `RANKDUMP` | `FALSE` | Add each particle's current MPI rank to phase-space HDF5 output. |
+| `ENABLEHDF5` | `TRUE` | Enable HDF5 phase-space and loss output. |
+| `ENABLEVTK` | `TRUE` | Enable supported VTK geometry output. |
+| `ASCIIDUMP` | `FALSE` | Make supported monitor and plug-in loss sinks write ASCII instead of HDF5. |
+| `BEAMHALOBOUNDARY` | `0` | Halo boundary in rms beam sizes for statistics; values at or below zero disable this count. |
+| `HALOSHIFT` | `0` | Constant subtracted from the reported halo parameter. |
+| `COMPUTEPERCENTILES` | `FALSE` | Compute the configured beam-size and normalized-emittance percentiles; samples below 100 particles are skipped. |
+
+## Tracking, particles, and solvers
+
+| Option | Default | Effect and constraints |
+|---|---:|---|
+| `REPARTFREQ` | `10` | Check particle repartitioning at this frequency. Values at or below zero disable periodic repartitioning. |
+| `LOADBALANCINGTHRESHOLD` | `0.05` | Imbalance threshold for load balancing; must lie in `[0,1]`. |
+| `BOUNDPDESTROY` | `10` | Delete particles outside this many rms beam sizes. Values at or below zero disable the cut. |
+| `MINBINEMITTED` | `10` | Delay space-charge calculation until the primary container has more particles than this threshold. |
+| `MINSTEPFORREBIN` | `200` | Earliest step at which the current tracker may collapse emission bins. |
+| `AUTOPHASE` | `6` | Number of RF phase-search refinements; `0` disables autophasing. |
+| `QM_MODE` | `SINGLE` | `SINGLE` stores one charge and mass per container; `ATTRIBUTES` allocates per-particle `Q` and `M` views. |
+| `AGGRESSIVE_STATE_SYNC` | `FALSE` | MPI-allreduce every shared bunch-state mutation. Intended for diagnosing rank-local state divergence; adds collective overhead. |
+| `VERSION` | `10000` | OPAL input-version code. `RUN` reports incompatible changes when the value predates registered input changes. |
+
+`MINBINEMITTED` and `MINSTEPFORREBIN` affect runtime bin handling. The
+definition of the adaptive histogram itself is documented under
+[Structures / Binning](structures/index.qmd#binning).
+
+## Accepted compatibility options
+
+The following names are accepted and stored, but have no current consumer in
+the OPALX `ParallelTracker` source. Do not rely on them to change a simulation.
+
+| Option | Default | Historical or intended role |
+|---|---:|---|
+| `PSDUMPEACHTURN` | `FALSE` | OPAL-CYCL phase-space dump after each turn. |
+| `PSDUMPFRAME` | `GLOBAL` | OPAL-CYCL dump frame: `GLOBAL`, `BUNCH_MEAN`, or `REFERENCE`. |
+| `SPTDUMPFREQ` | `1` | Single-particle trajectory dump frequency. `0` is converted to an effectively disabled frequency. |
+| `SCSOLVEFREQ` | `1` | Requested space-charge solve frequency; parsed values below one become one. |
+| `MTSSUBSTEPS` | `1` | Small-step count intended for multiple-time-stepping integration. |
+| `REMOTEPARTDEL` | `0` | Historical remote-particle rms deletion threshold. |
+| `REBINFREQ` | `100` | Historical frequency for resetting energy-bin identifiers. |
+| `CSRDUMP` | `FALSE` | Historical CSR field and line-density output. |
+| `NUMBLOCKS` | `0` | Recycled-CG Krylov-space vector limit. |
+| `RECYCLEBLOCKS` | `0` | Recycled-CG recycle-space vector count. |
+| `NLHS` | `1` | Old solutions retained for a solver starting-vector extrapolation. |
+| `CZERO` | `FALSE` | Historical request for a distribution with zero centroid. |
+| `RNGTYPE` | `RANDOM` | Accepts `RANDOM`, `HALTON`, `SOBOL`, or `NIEDERREITER`; current distribution samplers do not select their engine through it. |
+| `CLOTUNEONLY` | `FALSE` | OPAL-CYCL closed-orbit and tune-only mode. |
+| `IDEALIZED` | `FALSE` | Historical hard-edge path-length compatibility mode. |
+| `LOGBENDTRAJECTORY` | `FALSE` | Historical request to write each bend trajectory. |
+| `MEMORYDUMP` | `FALSE` | Historical SDDS memory output request; the current `OPTION` execution path does not apply it. |
+| `DELPARTFREQ` | `1` | Historical particle-deletion frequency. |

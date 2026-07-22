@@ -1,0 +1,83 @@
+---
+title: "Beam Definitions"
+description: "Define particle species, reference energy, charge, allocation, sources, spin, and decay processes for OPALX tracking."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+---
+
+`BEAM` defines the physical species and reference state for one particle
+container. A typical generated distribution uses:
+
+```opal
+Beam1: BEAM, PARTICLE=ELECTRON, PC=0.1,
+       NALLOC=100000, BCHARGE=1e-9, SOURCES=Sources1;
+```
+
+`BCHARGE` is normally given as a positive charge magnitude. OPALX obtains the
+macroparticle sign from `CHARGE`, which defaults to the selected particle's
+charge. The named emission-source list must exist when `RUN` resolves the beam.
+
+## Parameters
+
+| Parameter | Default | Unit | Current behavior |
+|---|---:|---|---|
+| `PARTICLE` | none | - | Selects a predefined species. If omitted, both `MASS` and `CHARGE` are required. |
+| `MASS` | species value | GeV/$c^2$ | Overrides the predefined rest mass, or defines a custom species with `CHARGE`. |
+| `CHARGE` | species value | $e$ | Charge in proton-charge units. It also determines the macroparticle charge sign. |
+| `ENERGY` | unset | GeV | Total charged-particle energy; must exceed `MASS`. |
+| `PC` | unset | GeV/$c$ | Reference momentum; must be positive. |
+| `GAMMA` | unset | - | Reference Lorentz factor; must be greater than one. |
+| `BCHARGE` | `0` | C | Bunch-charge magnitude used with `NALLOC` to calculate macroparticle charge. |
+| `NALLOC` | required | particles | Positive allocation and macroparticle-weight baseline. Real input is converted to an integer size. |
+| `SOURCES` | required | name | `EMISSIONSOURCELIST` used by this non-photon beam. |
+| `GLOBALPROCESSES` | empty | names | Uppercase array of global processes. Only `DECAY` is currently accepted. |
+| `DAUGHTERBEAM` | empty | name | Beam/container that receives daughter particles from a configured decay. |
+| `POLARIZATION` | unset | - | Muon-only vector `{Px, Py, Pz}` with $|\mathbf P|\leq1$. Setting it, including to zero, enables spin storage. |
+| `BCURRENT`, `BFREQ` | unset | - | Legacy attributes explicitly rejected by OPALX; use `BCHARGE`. |
+
+The predefined `PARTICLE` values are `PHOTON`, `ELECTRON`, `POSITRON`, `MUON`,
+`PION`, `PROTON`, `ANTIPROTON`, `DEUTERON`, `HMINUS`, `H2P`, `ALPHA`,
+`CARBON`, `XENON`, and `URANIUM`.
+
+## Reference energy
+
+For generated distributions, set one of `GAMMA`, `ENERGY`, or `PC`. If more
+than one is supplied, the implementation currently uses `GAMMA` before
+`ENERGY`, and `ENERGY` before `PC`; relying on that precedence is discouraged.
+
+`FROMFILE` and `EMITTEDFROMFILE` carry absolute particle momenta. A beam using
+either type must omit all three reference-energy attributes. See
+[Beam and Distributions](beam-distributions.qmd) for their file conventions.
+
+## Allocation and sources
+
+`NALLOC` is required and must be positive. It remains the denominator used to
+derive macroparticle charge even when the sum of `NPARTDIST` over all sources
+sets a different runtime allocation. Keep `NALLOC` at least as large as that
+sum unless the weighting is intentional.
+
+Every tracked non-photon beam requires a non-empty `SOURCES` name. The target
+list must contain at least one `EMISSIONSOURCE`; it is resolved during `RUN`.
+
+## Multiple species, decay, and spin
+
+Use `TRACK.BEAMS` to select several beam definitions in a fixed order. OPALX
+creates one particle container per entry. For decay calculations:
+
+- `GLOBALPROCESSES={DECAY}` is implemented for muons and pions.
+- `DAUGHTERBEAM` must name another beam selected by the same `TRACK` command.
+- Parent and daughter beams must represent one physical particle per
+  macroparticle: `BCHARGE = NALLOC * |CHARGE| * q_e`.
+- Muon decay requires `POLARIZATION`; a daughter-muon beam also needs it so the
+  destination container allocates spin storage.
+
+The [Decay Processes](../physics/decay-processes/index.qmd) chapter gives the
+physics model and validation.
+
+## Photon definitions
+
+`PARTICLE=PHOTON` is accepted as a definition but is rejected by `TRACK`.
+Photon beams require positive `ENERGY` and `NALLOC`, and reject `MASS`,
+`CHARGE`, `PC`, `GAMMA`, and `SOURCES`. The current source declares the shared
+`BEAM.ENERGY` input unit as GeV; no photon transport path consumes the value yet.
