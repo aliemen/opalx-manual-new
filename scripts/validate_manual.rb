@@ -122,6 +122,60 @@ if distribution_page.file?
   end
 end
 
+field_solver_page = ROOT / "user-guide/field-solver/index.qmd"
+field_solver_sections = [
+  ["## Solver backends {#solver-backends}", "solver-backends"],
+  ["### `NONE` {#solver-none}", "solver-none"],
+  ["### `FFT` {#solver-fft}", "solver-fft"],
+  ["### `OPEN` {#solver-open}", "solver-open"],
+  ["### `CG` {#solver-cg}", "solver-cg"],
+  ["## `FIELDSOLVER` parameters {#fieldsolver-parameters}", "fieldsolver-parameters"],
+  ["## Mesh and particle-in-cell cycle {#mesh-pic-cycle}", "mesh-pic-cycle"],
+  ["## Boundary conditions {#boundary-conditions}", "boundary-conditions"],
+  ["### Open and periodic boundaries {#open-periodic-boundaries}", "open-periodic-boundaries"],
+  ["### Generic all-face Dirichlet boundaries {#generic-dirichlet-boundaries}",
+   "generic-dirichlet-boundaries"],
+  ["## Space-charge modes {#space-charge-modes}", "space-charge-modes"],
+  ["### Monolithic electrostatic mode {#monolithic-mode}", "monolithic-mode"],
+  ["### Binned rest-frame mode {#binned-mode}", "binned-mode"],
+  ["### Explicit image-charge Dirichlet correction {#explicit-image-charges}",
+   "explicit-image-charges"],
+  ["### Shifted-Green Dirichlet correction {#shifted-greens-correction}",
+   "shifted-greens-correction"],
+  ["## Compatibility and selection {#compatibility-selection}", "compatibility-selection"],
+  ["## Accuracy, cost, and reproducibility {#accuracy-cost}", "accuracy-cost"]
+]
+
+if field_solver_page.file?
+  field_solver_text = field_solver_page.read
+  previous_position = -1
+  field_solver_sections.each do |heading, _anchor|
+    position = field_solver_text.index(heading)
+    if position.nil?
+      errors += error("field-solver is missing required heading: #{heading}")
+    elsif position <= previous_position
+      errors += error("field-solver headings are out of order at: #{heading}")
+    else
+      previous_position = position
+    end
+  end
+
+  {
+    "disabled CG backend" => "Cannot use CGSolver yet, not fully implemented.",
+    "unavailable P3M backend" => "`P3M` is not an accepted `FIELDSOLVER.TYPE`",
+    "mandatory 3D decomposition" => "`PARFFTX`, `PARFFTY`, and `PARFFTZ` are all",
+    "uniform boundary restriction" => "Mixed boundary conditions",
+    "generic Dirichlet limitation" => "this is **not a usable mode**",
+    "shifted-Green backend and binning requirements" =>
+      "**requires both `TYPE=OPEN` and a named `BINS` definition**",
+    "explicit-image backend caveat" => "current input checks do not reject other backends"
+  }.each do |description, required_text|
+    unless field_solver_text.include?(required_text)
+      errors += error("field-solver is missing #{description}")
+    end
+  end
+end
+
 if distribution_toc.file?
   toc_text = distribution_toc.read
   distribution_sections.each do |_heading, anchor|
@@ -137,6 +191,20 @@ if distribution_toc.file?
   end
   unless toc_text.include?("page-toc:structures")
     errors += error("structures sidebar manifest is missing its stable key")
+  end
+  field_solver_sections.each do |_heading, anchor|
+    unless toc_text.match?(/\bid:\s*["']#{Regexp.escape(anchor)}["']/)
+      errors += error("field-solver sidebar manifest is missing anchor: #{anchor}")
+    end
+  end
+  %w[
+    page-toc:field-solver page-toc:field-solver:backends
+    page-toc:field-solver:boundaries page-toc:field-solver:modes
+  ].each do |state_key|
+    errors += error("field-solver sidebar manifest is missing stable key: #{state_key}") unless toc_text.include?(state_key)
+  end
+  unless toc_text.match?(/path:\s*["']\/user-guide\/field-solver\/index\.html["']/)
+    errors += error("field-solver sidebar manifest has an incorrect rendered path")
   end
 else
   errors += error("missing distribution sidebar manifest: #{distribution_toc.relative_path_from(ROOT)}")
@@ -162,6 +230,10 @@ source_audited_inputs = {
   "user-guide/structures/index.qmd" => %w[
     MAXBINS DESIREDWIDTH BINNINGALPHA BINNINGBETA PARAMETER ADAPTIVEBINNING DUMPBINSFILE
     DUMPBINSFREQ TABLEPRINTFREQ
+  ],
+  "user-guide/field-solver/index.qmd" => %w[
+    TYPE BINS NX NY NZ PARFFTX PARFFTY PARFFTZ BCFFTX BCFFTY BCFFTZ GREENSF BBOXINCR
+    BCHARGE ZEROFACE_R0Z SHIFTED_GREENS_FUNCTION ZEROFACEPLANEDUMP ZEROFACE_MAXSTEPS
   ]
 }
 

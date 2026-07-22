@@ -1,0 +1,310 @@
+---
+title: "Field Solvers"
+description: "Configure OPALX particle-in-cell space charge, boundary conditions, binning, and cathode-plane corrections."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+body-classes: "opalx-sidebar-page-toc"
+---
+
+`FIELDSOLVER` selects the mesh Poisson backend and the space-charge mode used
+by a tracking run. Define the object before `TRACK`, then attach it by name on
+`RUN`:
+
+```opal
+FS1: FIELDSOLVER, TYPE=OPEN,
+    NX=64, NY=64, NZ=128,
+    PARFFTX=TRUE, PARFFTY=TRUE, PARFFTZ=TRUE,
+    BCFFTX=OPEN, BCFFTY=OPEN, BCFFTZ=OPEN,
+    GREENSF=INTEGRATED, BBOXINCR=2.0;
+
+TRACK, LINE=Line1, BEAM=Beam1,
+       DT={1e-11}, MAXSTEPS={1000}, ZSTOP={2.0};
+  RUN, METHOD=PARALLEL, FIELDSOLVER=FS1;
+ENDTRACK;
+```
+
+For an active solver, `BEAM.BCHARGE` must be nonzero once more than one
+macroparticle is present. Use `TYPE=NONE` when self-fields should be disabled.
+
+## Solver backends {#solver-backends}
+
+OPALX deposits particle charge on one distributed mesh, solves Poisson's
+equation, and interpolates the resulting field back to the particles:
+
+$$
+\nabla^2\phi=-\frac{\rho}{\epsilon_0},
+\qquad \mathbf E=-\nabla\phi.
+$$
+
+The configured backend controls how the mesh boundary is interpreted. Binning
+and cathode-plane corrections are additional modes described below.
+
+| `TYPE` | Boundary model | Current status | Typical use |
+|---|---|---|---|
+| `NONE` | No solve | Available no-op | External fields only |
+| `FFT` | Periodic in all three axes | Available | A periodically repeated charge distribution |
+| `OPEN` | Isolated free space | Available | Finite bunches; recommended default |
+| `CG` | Intended potential solve with field boundary conditions | **Unavailable** | Parser-visible, but construction deliberately fails |
+
+: {tbl-colwidths="[12, 24, 22, 42]"}
+
+### `NONE` {#solver-none}
+
+`NONE` skips binning, charge deposition, the field solve, and field gathering.
+Particle self-fields remain zero. A syntactically complete `FIELDSOLVER`
+definition is still required by the current construction path, including
+positive mesh sizes and all three `PARFFT*` flags set to `TRUE`.
+
+### `FFT` {#solver-fft}
+
+`FFT` uses IPPL's periodic FFT Poisson solver and returns the electric-field
+gradient directly. Set all three `BCFFT*` values to `PERIODIC`. Before the
+solve, OPALX subtracts the mean charge density so the periodic domain has zero
+net charge.
+
+```opal
+FSPeriodic: FIELDSOLVER, TYPE=FFT,
+    NX=64, NY=64, NZ=64,
+    PARFFTX=TRUE, PARFFTY=TRUE, PARFFTZ=TRUE,
+    BCFFTX=PERIODIC, BCFFTY=PERIODIC, BCFFTZ=PERIODIC;
+```
+
+This solver represents an infinite periodic repetition of the simulation box;
+it is not an approximation to an isolated bunch.
+
+### `OPEN` {#solver-open}
+
+`OPEN` uses IPPL's Hockney free-space FFT solver. The doubled-grid convolution
+removes the periodic wraparound of an ordinary FFT solve. Set all three
+`BCFFT*` values to `OPEN`.
+
+`GREENSF` selects the free-space kernel:
+
+- `INTEGRATED` is the default integrated-cell Green function.
+- `STANDARD` uses the point-sampled Green function.
+
+Both choices are forwarded only to the `OPEN` backend. Establish mesh
+convergence for the selected kernel rather than assuming identical finite-grid
+results.
+
+### `CG` {#solver-cg}
+
+::: {.callout-warning title="Not usable on current master"}
+`TYPE=CG` is accepted by the input parser, but solver construction throws
+`Cannot use CGSolver yet, not fully implemented.` The generic all-face
+Dirichlet boundary setting therefore has no runnable backend at present.
+:::
+
+`P3M` is not an accepted `FIELDSOLVER.TYPE` on current master. Historical or
+development-branch references to it do not describe a released OPALX input.
+
+## `FIELDSOLVER` parameters {#fieldsolver-parameters}
+
+| Parameter | Default | Accepted values / unit | Current effect |
+|---|---:|---|---|
+| `TYPE` | required | `NONE`, `FFT`, `OPEN`, `CG` | Selects the backend described above. |
+| `BINS` | `NONE` | `NONE` or a `BINNING` name | Selects monolithic or per-bin rest-frame space charge. |
+| `NX`, `NY`, `NZ` | none | positive integer cell counts | Number of mesh points in $x$, $y$, and $z$. The parser stores real values; use integers. |
+| `PARFFTX` | `FALSE` | Boolean | Domain decomposition in $x$. Must currently be `TRUE`. |
+| `PARFFTY` | `FALSE` | Boolean | Domain decomposition in $y$. Must currently be `TRUE`. |
+| `PARFFTZ` | `TRUE` | Boolean | Domain decomposition in $z$. Must currently be `TRUE`. |
+| `BCFFTX`, `BCFFTY`, `BCFFTZ` | `OPEN` | `OPEN`, `PERIODIC`, `DIRICHLET` | Mesh boundary selection. All three values must match. See [Boundary conditions](#boundary-conditions). |
+| `GREENSF` | `INTEGRATED` | `INTEGRATED`, `STANDARD` | Green-function discretization for `TYPE=OPEN`; otherwise ineffective. |
+| `BBOXINCR` | `2.0` | percent | Adds this fraction of the particle span to each side of the moving mesh. |
+
+: {tbl-colwidths="[16, 15, 24, 45]"}
+
+The compiled `PARFFTX` and `PARFFTY` defaults are not usable defaults: current
+OPALX rejects any definition unless `PARFFTX`, `PARFFTY`, and `PARFFTZ` are all
+`TRUE`. Mixed boundary conditions, such as periodic $x,y$ with open $z$, are
+also rejected.
+
+## Mesh and particle-in-cell cycle {#mesh-pic-cycle}
+
+The runtime objects share one distributed field layout containing charge
+density, electric field, potential, and scratch fields. Each active
+space-charge evaluation performs the following cycle:
+
+```{mermaid}
+flowchart LR
+    RUN[RUN.FIELDSOLVER] --> PB[Particle bunch]
+    PB --> FC[One moving field layout]
+    PB --> BFS[Self-field controller]
+    TYPE[FIELDSOLVER.TYPE] --> BACKEND[NONE / FFT / OPEN / CG]
+    BINS[FIELDSOLVER.BINS] --> PATH[Monolithic / binned]
+    SOURCE[EMISSIONSOURCE] --> CORR[No correction / image / shifted Green]
+    BFS --> BACKEND
+    BFS --> PATH
+    BFS --> CORR
+    FC --> PIC[Scatter - solve - transform - gather]
+    BACKEND --> PIC
+    PATH --> PIC
+    CORR --> PIC
+```
+
+The mesh follows the particle bounds. `BBOXINCR=p` expands both the lower and
+upper bound by $p$ percent of the unpadded span, so the total width grows by
+$2p$ percent. A degenerate span is clamped to $1\,\mu\mathrm m$. If load
+balancing repartitions the field layout, OPALX updates fields and particles
+before refreshing backend-owned FFT state.
+
+Zero or one global particle produces zero self-field without a solve. For two
+or more particles, an active backend rejects zero per-particle charge; this
+usually means `BCHARGE` is missing from `BEAM`.
+
+## Boundary conditions {#boundary-conditions}
+
+### Open and periodic boundaries {#open-periodic-boundaries}
+
+Use matching solver and boundary settings:
+
+| Physical model | Configuration |
+|---|---|
+| Isolated finite bunch | `TYPE=OPEN`; all `BCFFT*=OPEN` |
+| Periodically repeated box | `TYPE=FFT`; all `BCFFT*=PERIODIC` |
+| No self-field | `TYPE=NONE`; all `BCFFT*=OPEN` is conventional |
+
+The three axes must use the same boundary value. The boundary attributes set
+mesh periodicity, but they do not change `FFT` into an open solver or `OPEN`
+into a periodic solver; select the matching `TYPE` explicitly.
+
+### Generic all-face Dirichlet boundaries {#generic-dirichlet-boundaries}
+
+The parser accepts `BCFFTX=DIRICHLET`, `BCFFTY=DIRICHLET`, and
+`BCFFTZ=DIRICHLET` together. These values would impose zero potential on all
+six mesh faces for the `CG` potential solver. Since `CG` is currently disabled,
+this is **not a usable mode** on current master.
+
+Cathode-plane Dirichlet corrections are different: keep `TYPE=OPEN` and all
+three `BCFFT*` values `OPEN`, then select one correction on
+[`EMISSIONSOURCE`](../beam-distributions.qmd#emissionsource).
+
+## Space-charge modes {#space-charge-modes}
+
+`TYPE` chooses a backend. `BINS` independently chooses whether OPALX performs
+one lab-frame electrostatic solve or several rest-frame solves. An emission
+source can additionally request one cathode-plane correction.
+
+### Monolithic electrostatic mode {#monolithic-mode}
+
+`BINS=NONE` performs one scatter, one solve, and one electric-field gather for
+the entire bunch. It applies no rest-frame transformation and does not create a
+self-magnetic field. This is the least expensive mode and is appropriate only
+when that electrostatic approximation is adequate.
+
+Explicit image charges can be included in this path. A requested shifted-Green
+correction is not applied without binning; OPALX emits a warning and proceeds
+with the uncorrected monolithic solve.
+
+### Binned rest-frame mode {#binned-mode}
+
+Set `BINS` to a named [`BINNING`](../structures/index.qmd#binning) definition.
+At every field evaluation OPALX rebins particles, then for each populated bin:
+
+1. computes its mean normalized momentum $\mathbf p_b$ and mean $\gamma_b$;
+2. stretches the longitudinal mesh spacing by $\gamma_b$;
+3. deposits that bin's charge and solves in its approximate rest frame;
+4. transforms the result to the laboratory frame; and
+5. accumulates electric and magnetic contributions from all bins.
+
+For $\mathbf v_b=c\mathbf p_b/\gamma_b$ and
+$\hat{\mathbf w}_b=\mathbf v_b/|\mathbf v_b|$, the transformation is
+
+$$
+\mathbf E_b=\gamma_b\mathbf E'_b
+ -(\gamma_b-1)(\mathbf E'_b\cdot\hat{\mathbf w}_b)\hat{\mathbf w}_b,
+\qquad
+\mathbf B_b=\frac{\gamma_b}{c^2}\mathbf v_b\times\mathbf E'_b.
+$$
+
+Use binning when velocity varies substantially through the bunch, especially
+during emission or in a chirped beam. Check convergence with respect to both
+mesh resolution and binning parameters.
+
+### Explicit image-charge Dirichlet correction {#explicit-image-charges}
+
+Set `ZEROFACE_R0Z` to `TRUE` on one emission source to model a grounded plane
+at that source's `R0Z`. For each real charge $q$ at $z$, OPALX deposits a mirror charge
+$-q$ at $2R0Z-z$. Their superposed potential is zero on the plane.
+
+```opal
+Source: EMISSIONSOURCE, DISTRIBUTION=Dist,
+    R0Z=0.0,
+    ZEROFACE_R0Z=TRUE,
+    ZEROFACE_MAXSTEPS=500,
+    ZEROFACEPLANEDUMP=0;
+```
+
+The mode is implemented for monolithic and binned execution. Use it with the
+`OPEN` backend; this is the physically consistent and maintained setup, though
+the current input checks do not reject other backends. In binned mode the real
+and mirror charges require separate solves per bin.
+
+The moving mesh must span both the bunch and its mirror. Once the bunch is far
+from the cathode, this can make the mesh unnecessarily large or lose the
+required resolution. Set `ZEROFACE_MAXSTEPS` to a positive cutoff when the
+correction becomes negligible; `0` means unlimited. `ZEROFACEPLANEDUMP` is a
+non-negative diagnostic frequency, is available only for this explicit-image
+mode, and currently writes only in single-rank runs.
+
+### Shifted-Green Dirichlet correction {#shifted-greens-correction}
+
+Set `SHIFTED_GREENS_FUNCTION` to `TRUE` to impose the same grounded plane
+without placing mirror particles on the mesh. It repeats each binned primary deposition using
+a shifted free-space Green function, reflects the resulting field in $z$, and
+adds the image contribution with the required component signs.
+
+```opal
+Source: EMISSIONSOURCE, DISTRIBUTION=Dist,
+    R0Z=0.0,
+    SHIFTED_GREENS_FUNCTION=TRUE,
+    ZEROFACE_MAXSTEPS=500;
+```
+
+This mode **requires both `TYPE=OPEN` and a named `BINS` definition**. Without
+binning the correction is skipped. Its kernel shift is computed from the
+rest-frame mesh centre $z_c'$ and plane $z_p$ as
+
+$$
+\mathbf s=(0,0,2(z_c'-z_p)).
+$$
+
+Unlike explicit images, the mesh need not extend from the bunch to the mirror
+distribution, so the method remains usable at larger bunch-plane separation.
+It does not support `ZEROFACEPLANEDUMP`.
+
+The explicit-image and shifted-Green modes are mutually exclusive across the
+entire run. Only one emission source may select either method, and both use the
+same `ZEROFACE_MAXSTEPS` convention.
+
+## Compatibility and selection {#compatibility-selection}
+
+| Goal | Backend and boundaries | Space-charge mode | Cathode correction |
+|---|---|---|---|
+| Disable self-fields | `NONE`; conventionally `OPEN` boundaries | `BINS=NONE` | none |
+| Periodic electrostatics | `FFT`; all `PERIODIC` | monolithic or binned | none |
+| Isolated, nearly mono-velocity bunch | `OPEN`; all `OPEN` | monolithic | optional explicit images |
+| Isolated bunch with velocity spread | `OPEN`; all `OPEN` | named `BINS` | none or explicit images |
+| Emission near a grounded plane | `OPEN`; all `OPEN` | named `BINS` | shifted Green recommended for separation from the plane |
+
+: {tbl-colwidths="[25, 24, 20, 31]"}
+
+Do not select `CG`, generic `DIRICHLET`, or `P3M` for a current production
+input. Do not combine cathode corrections with `FFT` periodic physics.
+
+## Accuracy, cost, and reproducibility {#accuracy-cost}
+
+- A monolithic step performs one Poisson solve. A binned step performs one per
+  populated bin; either cathode correction doubles that count.
+- Increase `NX`, `NY`, and `NZ` independently and compare physical observables.
+  A visually smooth field is not a convergence test.
+- Vary `BBOXINCR`: too little padding places particles close to the mesh edge;
+  too much padding lowers resolution for fixed mesh dimensions.
+- For binned runs, vary the `BINNING` controls and check that observables do not
+  depend materially on the chosen partition.
+- Compare correction cutoffs and confirm that fields are negligible before
+  `ZEROFACE_MAXSTEPS` disables the cathode model.
+- Start from a maintained regression input with the intended backend. Record
+  all mesh, boundary, Green-function, binning, and correction settings with the
+  result.

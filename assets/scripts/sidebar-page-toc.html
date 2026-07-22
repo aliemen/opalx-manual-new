@@ -14,6 +14,7 @@
           text: "DISTRIBUTION",
           suffix: "3",
           stateKey: "page-toc:beam-distributions:distribution",
+          toggleLabel: "Toggle DISTRIBUTION types",
           children: [
             { id: "gauss", text: "GAUSS", suffix: "3.1" },
             { id: "multivariategauss", text: "MULTIVARIATEGAUSS", suffix: "3.2" },
@@ -37,6 +38,84 @@
       toggleLabel: "Toggle Structures sections",
       items: [
         { id: "binning", text: "BINNING", suffix: "1" }
+      ]
+    },
+    {
+      path: "/user-guide/field-solver/index.html",
+      stateKey: "page-toc:field-solver",
+      targetId: "opalx-sidebar-field-solver",
+      toggleLabel: "Toggle Field Solver sections",
+      items: [
+        {
+          id: "solver-backends",
+          text: "Solver backends",
+          suffix: "1",
+          stateKey: "page-toc:field-solver:backends",
+          children: [
+            { id: "solver-none", text: "NONE", suffix: "1.1" },
+            { id: "solver-fft", text: "FFT", suffix: "1.2" },
+            { id: "solver-open", text: "OPEN", suffix: "1.3" },
+            { id: "solver-cg", text: "CG", suffix: "1.4" }
+          ]
+        },
+        {
+          id: "fieldsolver-parameters",
+          text: "FIELDSOLVER parameters",
+          suffix: "2"
+        },
+        {
+          id: "mesh-pic-cycle",
+          text: "Mesh and particle-in-cell cycle",
+          suffix: "3"
+        },
+        {
+          id: "boundary-conditions",
+          text: "Boundary conditions",
+          suffix: "4",
+          stateKey: "page-toc:field-solver:boundaries",
+          children: [
+            {
+              id: "open-periodic-boundaries",
+              text: "Open and periodic boundaries",
+              suffix: "4.1"
+            },
+            {
+              id: "generic-dirichlet-boundaries",
+              text: "Generic all-face Dirichlet boundaries",
+              suffix: "4.2"
+            }
+          ]
+        },
+        {
+          id: "space-charge-modes",
+          text: "Space-charge modes",
+          suffix: "5",
+          stateKey: "page-toc:field-solver:modes",
+          children: [
+            { id: "monolithic-mode", text: "Monolithic electrostatic mode", suffix: "5.1" },
+            { id: "binned-mode", text: "Binned rest-frame mode", suffix: "5.2" },
+            {
+              id: "explicit-image-charges",
+              text: "Explicit image-charge Dirichlet correction",
+              suffix: "5.3"
+            },
+            {
+              id: "shifted-greens-correction",
+              text: "Shifted-Green Dirichlet correction",
+              suffix: "5.4"
+            }
+          ]
+        },
+        {
+          id: "compatibility-selection",
+          text: "Compatibility and selection",
+          suffix: "6"
+        },
+        {
+          id: "accuracy-cost",
+          text: "Accuracy, cost, and reproducibility",
+          suffix: "7"
+        }
       ]
     }
   ];
@@ -97,7 +176,7 @@
       toggle.dataset.bsTarget = `#${targetId}`;
       toggle.setAttribute("aria-controls", targetId);
       toggle.setAttribute("aria-expanded", "false");
-      toggle.setAttribute("aria-label", `Toggle ${item.text} types`);
+      toggle.setAttribute("aria-label", item.toggleLabel || `Toggle ${item.text} subsections`);
       const icon = document.createElement("i");
       icon.className = "bi bi-chevron-right ms-2";
       toggle.append(icon);

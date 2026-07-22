@@ -27,6 +27,7 @@ errors << "render does not contain Quarto's color-scheme persistence" unless com
 errors << "render does not contain OPALX sidebar-state persistence" unless combined_html.include?("opalx-sidebar-state-v1")
 errors << "render does not contain the distribution sidebar manifest" unless combined_html.include?("page-toc:beam-distributions")
 errors << "render does not contain the structures sidebar manifest" unless combined_html.include?("page-toc:structures")
+errors << "render does not contain the field-solver sidebar manifest" unless combined_html.include?("page-toc:field-solver")
 
 distribution_html_path = SITE / "user-guide/beam-distributions.html"
 if distribution_html_path.file?
@@ -50,10 +51,47 @@ if distribution_html_path.file?
   end
   errors << "beam-distributions does not suppress its duplicate margin TOC" unless distribution_html.include?("opalx-sidebar-page-toc")
   errors << "distribution sidebar lacks an accessible chapter toggle" unless distribution_html.include?("Toggle Beam and Distributions sections")
-  errors << "distribution sidebar lacks an accessible type toggle" unless distribution_html.include?("Toggle ${item.text} types")
+  errors << "distribution sidebar lacks an accessible type toggle" unless distribution_html.include?("Toggle DISTRIBUTION types")
   errors << "distribution sidebar state keys are not rendered" unless distribution_html.include?("dataset.opalxStateKey")
 else
   errors << "render is missing user-guide/beam-distributions.html"
+end
+
+field_solver_html_path = SITE / "user-guide/field-solver/index.html"
+if field_solver_html_path.file?
+  field_solver_html = File.read(field_solver_html_path)
+  field_solver_anchors = %w[
+    solver-backends solver-none solver-fft solver-open solver-cg fieldsolver-parameters
+    mesh-pic-cycle boundary-conditions open-periodic-boundaries generic-dirichlet-boundaries
+    space-charge-modes monolithic-mode binned-mode explicit-image-charges
+    shifted-greens-correction compatibility-selection accuracy-cost
+  ]
+  field_solver_anchors.each do |anchor|
+    errors << "field-solver render is missing ##{anchor}" unless field_solver_html.match?(/\bid=["']#{Regexp.escape(anchor)}["']/)
+  end
+  {
+    "solver-backends" => /data-number=["']\d+\.1["']/,
+    "solver-none" => /data-number=["']\d+\.1\.1["']/,
+    "solver-cg" => /data-number=["']\d+\.1\.4["']/,
+    "fieldsolver-parameters" => /data-number=["']\d+\.2["']/,
+    "generic-dirichlet-boundaries" => /data-number=["']\d+\.4\.2["']/,
+    "shifted-greens-correction" => /data-number=["']\d+\.5\.4["']/,
+    "accuracy-cost" => /data-number=["']\d+\.7["']/
+  }.each do |anchor, numbering|
+    section = field_solver_html[/<section\s+id=["']#{Regexp.escape(anchor)}["'][\s\S]*?<\/section>/]
+    errors << "field-solver ##{anchor} has incorrect automatic numbering" unless section&.match?(numbering)
+  end
+  errors << "field-solver does not suppress its duplicate margin TOC" unless field_solver_html.include?("opalx-sidebar-page-toc")
+  errors << "field-solver sidebar lacks an accessible chapter toggle" unless field_solver_html.include?("Toggle Field Solver sections")
+  errors << "field-solver sidebar lacks accessible subsection toggles" unless field_solver_html.include?("Toggle ${item.text} subsections")
+  %w[
+    page-toc:field-solver page-toc:field-solver:backends
+    page-toc:field-solver:boundaries page-toc:field-solver:modes
+  ].each do |state_key|
+    errors << "field-solver sidebar is missing state key #{state_key}" unless field_solver_html.include?(state_key)
+  end
+else
+  errors << "render is missing user-guide/field-solver/index.html"
 end
 
 structures_html_path = SITE / "user-guide/structures/index.html"
