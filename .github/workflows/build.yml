@@ -8,6 +8,12 @@ on:
 
 permissions:
   contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
 
 env:
   QUARTO_PROFILE: ${{ vars.QUARTO_PROFILE || 'personal' }}
@@ -23,6 +29,9 @@ jobs:
         uses: quarto-dev/quarto-actions/setup@v2
         with:
           version: 1.9.38
+
+      - name: Configure GitHub Pages
+        uses: actions/configure-pages@v6
 
       - name: Validate manual source
         run: ruby scripts/validate_manual.rb
@@ -76,3 +85,21 @@ jobs:
           name: opalx-documentation-${{ env.QUARTO_PROFILE }}
           path: _site
           if-no-files-found: error
+
+      - name: Upload GitHub Pages artifact
+        if: github.event_name != 'pull_request'
+        uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    if: github.event_name != 'pull_request'
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5
