@@ -1,0 +1,106 @@
+---
+title: "Cluster-Specific Setup"
+description: "Initial OPALX build and Slurm launch guidance for supported computing clusters."
+audience: user
+status: experimental
+last-reviewed: "2026-07-22"
+---
+
+Cluster modules, queues, accounts, and scheduler policies change independently
+of OPALX. Treat the examples here as starting points: confirm the current site
+documentation and replace paths, input files, time limits, and resource counts
+before submitting a job.
+
+## Common Slurm workflow
+
+1. Load one consistent compiler, MPI, and accelerator-toolkit stack.
+2. Configure a new build directory for that stack and target architecture.
+3. Build on a login or build node according to local policy.
+4. Submit simulations through Slurm rather than running them on a login node.
+5. For GPU jobs, normally allocate one MPI rank per GPU and pass
+   `--kokkos-map-device-id-by=mpi_rank` to OPALX.
+
+The recommended baseline is GCC 13, OpenMPI 4 or 5, and CUDA 12.9. Module names
+are site-specific; see [Install and Build OPALX](../index.qmd) for the general
+toolchain requirements.
+
+{{< pagebreak >}}
+
+## PSI Merlin GPU
+
+The Merlin GPU example targets Pascal hardware:
+
+```bash
+cmake -S . -B build_merlin_cuda \
+  -DBUILD_TYPE=Release \
+  -DPLATFORMS=CUDA \
+  -DARCH=PASCAL61
+cmake --build build_merlin_cuda -j 8
+```
+
+A minimal two-GPU Slurm script is:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=opalx-merlin
+#SBATCH --output=opalx-merlin-%j.out
+#SBATCH --error=opalx-merlin-%j.err
+#SBATCH --time=00:10:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=2
+#SBATCH --clusters=gmerlin6
+#SBATCH --partition=gpu-short
+#SBATCH --account=merlin
+#SBATCH --gpus=2
+
+ulimit -c unlimited
+
+srun /path/to/build_merlin_cuda/src/opalx /path/to/example.in \
+  --info 10 --kokkos-map-device-id-by=mpi_rank
+```
+
+{{< pagebreak >}}
+
+## PSI Gwendolen GPU
+
+Gwendolen uses the CUDA backend with the Ampere A100 target:
+
+```bash
+cmake -S . -B build_gwendolen_cuda \
+  -DBUILD_TYPE=Release \
+  -DPLATFORMS=CUDA \
+  -DARCH=AMPERE80
+cmake --build build_gwendolen_cuda -j 8
+```
+
+The corresponding two-GPU Slurm starting point is:
+
+```bash
+#!/bin/bash
+#SBATCH --job-name=opalx-gwendolen
+#SBATCH --output=opalx-gwendolen-%j.out
+#SBATCH --error=opalx-gwendolen-%j.err
+#SBATCH --time=00:10:00
+#SBATCH --nodes=1
+#SBATCH --ntasks=2
+#SBATCH --clusters=gmerlin6
+#SBATCH --partition=gwendolen
+#SBATCH --account=gwendolen
+#SBATCH --gpus=2
+
+ulimit -c unlimited
+
+srun /path/to/build_gwendolen_cuda/src/opalx /path/to/example.in \
+  --info 10 --kokkos-map-device-id-by=mpi_rank
+```
+
+## Add another cluster
+
+New entries should record the toolchain modules, OPALX backend and architecture,
+configure command, scheduler resource model, MPI-to-device mapping, and a small
+verified launch script. As this section grows, each cluster can move to its own
+page under `getting-started/clusters/` without mixing site-specific commands
+into the general installation instructions.
+
+The [IPPL Slurm guide](https://ippl-framework.github.io/Manual/sections/getting-started/slurm/)
+contains additional PSI and LUMI examples that can inform future entries.

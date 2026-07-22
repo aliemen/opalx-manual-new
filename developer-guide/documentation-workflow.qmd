@@ -38,6 +38,12 @@ Place OPALX presentations, reports, examples, and datasets in the category-first
 The personal and organization profiles override `documents-base-url`, so page
 content does not change when the repositories move.
 
+Report summaries live in the nested `resources/reports/` Quarto project. Add a
+detail page beneath its year directory and link it from
+`resources/presentations-reports.qmd`; do not add individual reports to the
+numbered book chapters. The nested archive is rendered after the main HTML site
+and shares the selected deployment profile.
+
 ## Asset policy
 
 PDFs, Office documents, archives, and media are rejected from the manual.

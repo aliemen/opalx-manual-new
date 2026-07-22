@@ -4,7 +4,10 @@ description: "Design report comparing historical OPAL element-placement schemes 
 audience: developer
 status: experimental
 last-reviewed: "2026-07-22"
+number-sections: false
 ---
+
+[Return to the Presentations and Reports catalog](../../presentations-reports.html)
 
 **Report date:** 2026-04-30  
 **Kind:** Design proposal

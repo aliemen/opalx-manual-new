@@ -4,7 +4,10 @@ description: "Investigation of a host-side null call caused by NVCC linkage of K
 audience: developer
 status: current
 last-reviewed: "2026-07-22"
+number-sections: false
 ---
+
+[Return to the Presentations and Reports catalog](../../presentations-reports.html)
 
 **Report date:** 2026-07-14  
 **Author:** Alexander Liemen  

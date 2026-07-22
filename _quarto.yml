@@ -21,6 +21,7 @@ book:
     - part: "Getting Started"
       chapters:
         - getting-started/index.qmd
+        - getting-started/clusters/index.qmd
         - getting-started/first-simulation.qmd
     - part: "User Guide"
       chapters:
@@ -61,12 +62,8 @@ book:
     - part: "Resources"
       chapters:
         - resources/publications.qmd
+        - resources/presentations-reports.qmd
         - resources/regression-tests.qmd
-    - part: resources/reports/index.qmd
-      chapters:
-        - resources/reports/2026/cuda-extended-lambda-linkage-bug.qmd
-        - resources/reports/2026/opal-element-layout-proposal.qmd
-        - resources/reports/2026/opalx-overview.qmd
 
 number-sections: true
 number-depth: 3

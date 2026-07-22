@@ -1,0 +1,34 @@
+project:
+  type: website
+  output-dir: ../../_site/resources/reports
+  render:
+    - index.qmd
+    - "[0-9][0-9][0-9][0-9]/*.qmd"
+
+website:
+  title: "OPALX Report Archive"
+  search: true
+  page-navigation: false
+  page-footer:
+    center: "Report files are stored separately from the text-first manual."
+
+format:
+  html:
+    theme:
+      light:
+        - cosmo
+        - ../../assets/styles/opalx-light.scss
+        - ../../assets/styles/opalx.scss
+      dark:
+        - darkly
+        - ../../assets/styles/opalx-dark.scss
+        - ../../assets/styles/opalx.scss
+    toc: true
+    code-copy: true
+    code-overflow: wrap
+    html-math-method: mathjax
+    link-external-newwindow: true
+
+documents-base-url: "https://github.com/aliemen/opalx-documents/blob/main"
+manual-repository-url: "https://github.com/aliemen/opalx-manual-new"
+deployment-profile: "personal"

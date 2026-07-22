@@ -1,0 +1,6 @@
+website:
+  site-url: "https://aliemen.github.io/opalx-manual-new/resources/reports/"
+
+documents-base-url: "https://github.com/aliemen/opalx-documents/blob/main"
+manual-repository-url: "https://github.com/aliemen/opalx-manual-new"
+deployment-profile: "personal"

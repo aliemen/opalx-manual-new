@@ -1,0 +1,6 @@
+website:
+  site-url: "https://opalx-project.github.io/Manual-Redesign/resources/reports/"
+
+documents-base-url: "https://github.com/OPALX-project/opalx-documents/blob/main"
+manual-repository-url: "https://github.com/OPALX-project/Manual-Redesign"
+deployment-profile: "opalx"

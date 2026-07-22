@@ -51,6 +51,9 @@ jobs:
       - name: Render HTML
         run: quarto render --profile "${QUARTO_PROFILE}" --to html
 
+      - name: Render unnumbered report archive
+        run: quarto render resources/reports --profile "${QUARTO_PROFILE}" --to html
+
       - name: Install TinyTeX
         uses: r-lib/actions/setup-tinytex@v2
 

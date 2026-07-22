@@ -1,5 +1,7 @@
 # OPALX Documentation Redesign
 
+[![Build documentation preview](https://github.com/aliemen/opalx-manual-new/actions/workflows/build.yml/badge.svg)](https://github.com/aliemen/opalx-manual-new/actions/workflows/build.yml)
+
 This repository is the text-first source for the redesigned OPALX manual. It
 combines user documentation, physics notes, reference material, developer
 guides, and troubleshooting information in one Quarto book.
@@ -12,6 +14,8 @@ examples, reports, and presentations are deliberately not included here.
 Render the public personal test-repository configuration with:
 
 ```sh
+quarto render --profile personal --to html
+quarto render resources/reports --profile personal --to html
 quarto preview --profile personal
 ```
 
@@ -19,6 +23,7 @@ Render the future organization configuration without changing any page:
 
 ```sh
 quarto render --profile opalx --to html
+quarto render resources/reports --profile opalx --to html
 ```
 
 An ad hoc documents repository can be tested without editing a page:

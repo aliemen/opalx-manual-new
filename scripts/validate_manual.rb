@@ -45,14 +45,19 @@ end
 
 errors = 0
 chapters = chapter_paths(CONFIG.dig("book", "chapters"))
+report_pages = [ROOT / "resources/reports/index.qmd"] +
+               ROOT.glob("resources/reports/[0-9][0-9][0-9][0-9]/*.qmd")
+substantive_pages = (chapters.map { |relative| ROOT / relative } + report_pages).uniq
 
 chapters.each do |relative|
   path = ROOT / relative
   unless path.file?
     errors += error("missing chapter: #{relative}")
-    next
   end
+end
 
+substantive_pages.select(&:file?).each do |path|
+  relative = path.relative_path_from(ROOT)
   metadata = front_matter(path)
   missing = REQUIRED_METADATA - metadata.keys.to_set
   errors += error("#{relative} is missing metadata: #{missing.to_a.sort.join(', ')}") unless missing.empty?

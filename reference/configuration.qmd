@@ -1,33 +1,125 @@
 ---
 title: "Build Configuration"
-description: "Maintained CMake switches for platforms, testing, dependencies, and diagnostics."
+description: "Complete reference for the user-facing OPALX CMake selectors, feature toggles, and dependency controls."
 audience: developer
 status: current
 last-reviewed: "2026-07-22"
 ---
 
-## Platform selection
+Pass configuration values to CMake with `-D<NAME>=<VALUE>`. For example:
 
-Set `PLATFORMS` to `SERIAL`, `OPENMP`, `CUDA`, `HIP`, or the supported SYCL
-configuration. Accelerator builds also set `ARCH` to the target architecture,
-for example `AMPERE80`.
+```bash
+cmake -S . -B build_cuda \
+  -DBUILD_TYPE=Release \
+  -DPLATFORMS=CUDA \
+  -DARCH=AMPERE80 \
+  -DOPALX_ENABLE_UNIT_TESTS=ON
+```
 
-## OPALX options
+Reconfigure from a clean build directory when changing compilers, MPI
+implementations, execution backends, or GPU architectures. CMake cache values
+from one toolchain should not be reused with another.
 
-| Option | Default | Effect |
+## Build and platform selectors
+
+| Flag | Default | Accepted values and effect |
 |---|---:|---|
-| `OPALX_ENABLE_UNIT_TESTS` | `OFF` | Build GoogleTest unit tests. |
-| `OPALX_ENABLE_EXAMPLES` | `OFF` | Build the example module. |
-| `OPALX_ENABLE_TESTS` | `OFF` | Build integration tests. |
-| `OPALX_ENABLE_COVERAGE` | `OFF` | Enable coverage instrumentation. |
-| `OPALX_ENABLE_SANITIZER` | `OFF` | Enable configured sanitizer tooling. |
-| `OPALX_ENABLE_HIP_PROFILER` | `OFF` | Add HIP profiler support. |
-| `OPALX_ENABLE_NSYS_PROFILER` | `OFF` | Add NVIDIA Nsight Systems support. |
-| `OPALX_USE_STANDARD_FOLDERS` | `OFF` | Use build-tree `bin/` and `lib/` directories. |
-| `OPALX_FIELD_DEBUG` | `OFF` | Enable field-solver debug dumps. |
-| `OPALX_EMBED_BUILD_METADATA` | `OFF` | Embed user, machine, and build-date metadata. |
+| `BUILD_TYPE` | `Release` | `Debug`, `Release`, `RelWithDebInfo`, or `MinSizeRel`. This value sets `CMAKE_BUILD_TYPE`. |
+| `PLATFORMS` | `SERIAL` | Semicolon-separated selection from `SERIAL`, `OPENMP`, `CUDA`, `HIP`, and `SYCL`. CUDA and HIP cannot be enabled together. |
+| `ARCH` | empty | Enables the matching `Kokkos_ARCH_*` setting. CUDA builds require an architecture such as `AMPERE80`; SYCL uses an appropriate `INTEL_*` value. |
+| `BUILD_SHARED_LIBS` | `OFF` | Build the OPALX library as shared rather than static. |
 
-Installed dependency switches exist for HDF5, H5hut, and GoogleTest. IPPL,
-Kokkos, and heFFTe versions can be selected through their documented CMake
-cache variables. Recheck defaults in the root CMake files when preparing a
-release because dependency versions evolve more quickly than prose.
+Supported `ARCH` values are grouped by target family:
+
+- NVIDIA GPU: `HOPPER90`, `AMPERE80`, `AMPERE86`, `AMPERE87`, `VOLTA70`,
+  `VOLTA72`, `PASCAL61`, `PASCAL60`, and `ADA102`.
+- CPU: `BDW`, `SKX`, `CNL`, `ZEN`, `ZEN2`, `ZEN3`, `ARM80`, and `ARM81`.
+- Intel accelerator: `INTEL_GEN9`, `INTEL_GEN11`, `INTEL_GEN12LP`,
+  `INTEL_DG1`, `INTEL_XEHP`, and `INTEL_PVC`.
+
+For CUDA, OPALX derives `CMAKE_CUDA_ARCHITECTURES` from the numeric suffix of
+`ARCH`. HIP builds instead require an explicit
+`-DCMAKE_HIP_ARCHITECTURES=<arch>`. SYCL architecture configuration also
+depends on the selected compiler and environment.
+
+## OPALX feature flags
+
+| Flag | Default | Effect when enabled |
+|---|---:|---|
+| `OPALX_EMBED_BUILD_METADATA` | `OFF` | Embed the build user, machine, and date in `BuildInfo.h`. Leave off to avoid rebuilds caused only by changing metadata. |
+| `OPALX_ENABLE_UNIT_TESTS` | `OFF` | Build the GoogleTest unit-test targets. |
+| `OPALX_ENABLE_EXAMPLES` | `OFF` | Build the example module. |
+| `OPALX_ENABLE_TESTS` | `OFF` | Build integration tests from the test directory. |
+| `OPALX_ENABLE_COVERAGE` | `OFF` | Add coverage instrumentation with a supported GNU or Clang compiler. |
+| `OPALX_ENABLE_SANITIZER` | `OFF` | Enable sanitizer instrumentation for supported debug builds. |
+| `OPALX_ENABLE_NSYS_PROFILER` | `OFF` | Enable NVIDIA Nsight Systems integration. This is valid only with `PLATFORMS=CUDA`. |
+| `OPALX_ENABLE_HIP_PROFILER` | `OFF` | Reserved for HIP profiler integration. The current configuration rejects `ON` because support is not implemented yet. |
+| `OPALX_USE_ALTERNATIVE_VARIANT` | `OFF` | Use the modified variant implementation retained for CUDA 12.2 and GCC 12.3 compatibility. |
+| `OPALX_USE_STANDARD_FOLDERS` | `OFF` | Place generated executables and libraries under build-tree `bin/` and `lib/` directories. |
+| `OPALX_SKIP_FAILING_TESTS` | `OFF` | Exclude tests currently marked as failing from the build and test run. |
+| `OPALX_ENABLE_SCRIPTS` | `OFF` | Generate supported benchmark and test job-script templates. |
+| `OPALX_FIELD_DEBUG` | `OFF` | Compile field-solver field-dump diagnostics. This can create additional output during a simulation. |
+| `OPALX_USE_KOKKOS_MATH_CONSTANTS` | `ON` | Source constants such as `pi`, `e`, and `log10e` from `Kokkos::numbers`; set `OFF` for literal fallback values. |
+
+Enable a Boolean option with `-D<FLAG>=ON`. Do not enable coverage,
+sanitizers, or profiler integration in a production build unless those tools
+are intentionally required.
+
+{{< pagebreak >}}
+
+## Installed dependencies
+
+OPALX fetches and builds these dependencies by default. Set a switch to `ON`
+only when a compatible installation is already available in the active
+toolchain environment.
+
+| Flag | Default | Effect when enabled |
+|---|---:|---|
+| `OPALX_USE_INSTALLED_HDF5` | `OFF` | Find a system HDF5 installation instead of fetching HDF5. Version 1.10.0 or newer is required. |
+| `OPALX_USE_INSTALLED_H5HUT` | `OFF` | Find a system H5hut installation instead of fetching H5hut. |
+| `OPALX_USE_INSTALLED_GTEST` | `OFF` | Find system GoogleTest when unit tests are enabled instead of fetching GoogleTest. |
+
+The installed HDF5 and H5hut packages must match the MPI implementation and
+compiler used for OPALX. A package built against a different MPI library can
+configure successfully and still fail at link or runtime.
+
+## Dependency versions and source revisions
+
+| Flag | Default | Effect |
+|---|---:|---|
+| `IPPL_GIT_TAG` | `master` | IPPL branch, tag, commit, or release to fetch. A numeric value such as `3.2.0` resolves to `IPPL-3.2.0`. |
+| `Kokkos_VERSION` | `5.1.1` | Kokkos version requested through IPPL. Prefix a tag, branch, or commit with `git.` to request that source revision. |
+| `Heffte_VERSION` | `2.4.0` | heFFTe version requested through IPPL when FFT support is enabled. The same `git.<ref>` form selects a source revision. |
+
+Plain Kokkos and heFFTe versions allow a compatible installed package of that
+version or newer. Pin a source revision only for reproducible testing or when a
+specific upstream fix is required.
+
+## IPPL settings managed by OPALX
+
+OPALX currently enables IPPL FFT and solver support, forwards `PLATFORMS`, and
+disables IPPL Alpine support and IPPL's own tests. These values are set by
+OPALX rather than being independent user options:
+
+| README flag | Current CMake variable | Value |
+|---|---|---:|
+| `IPPL_ENABLE_ALPINE` | `IPPL_ENABLE_ALPINE` | `OFF` |
+| `IPPL_ENABLE_TEST` | `IPPL_ENABLE_TESTS` | `OFF` |
+
+The singular `IPPL_ENABLE_TEST` spelling appears in the OPALX README; the
+actual variable forwarded to IPPL is `IPPL_ENABLE_TESTS`. Because OPALX sets
+these cache values with `FORCE`, command-line overrides are not currently
+supported.
+
+## Inspect a configured build
+
+After configuration, use CMake's cache listing to confirm the effective values:
+
+```bash
+cmake -N -LA build_cuda
+```
+
+The configure log should identify the selected build type, execution backend,
+architecture, dependency sources, output layout, and high-signal feature
+toggles. Delete and recreate the build directory if those values do not match
+the intended toolchain.

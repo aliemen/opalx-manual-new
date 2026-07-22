@@ -1,0 +1,36 @@
+---
+title: "Presentations and Reports"
+description: "Year-sorted catalog of OPALX presentations, design reports, and bug investigations."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+---
+
+This catalog is the manual's single entry point for OPALX reports and
+presentations. Entries are grouped by year and sorted newest first. Each link
+opens an unnumbered detail page with a searchable text summary and a link to
+the original file in `opalx-documents`.
+
+The detail pages are deliberately outside the numbered book structure. Adding
+reports therefore does not expand the manual sidebar, renumber its chapters,
+or add an unbounded archive to the downloadable PDF.
+
+## 2026
+
+| Date | Entry | Kind | Status |
+|---|---|---|---|
+| 2026-07-14 | [CUDA extended-lambda linkage bug](reports/2026/cuda-extended-lambda-linkage-bug.html) | Bug investigation | Resolved with workaround |
+| 2026-04-30 | [OpalElement layout proposal](reports/2026/opal-element-layout-proposal.html) | Design report | Experimental |
+| 2026-04-06 | [OPALX overview](reports/2026/opalx-overview.html) | Architecture presentation | Current |
+
+## Add an entry
+
+Create the detail page under `resources/reports/YYYY/` and add it to the
+matching year above. The report archive renders those pages separately, so no
+per-report entry belongs in the book chapters in `_quarto.yml`. Put the
+original PDF or presentation in the matching category and year in
+`opalx-documents`, then link it through `documents-base-url`.
+
+The [Documentation Workflow](../developer-guide/documentation-workflow.qmd)
+contains the link template and asset rules. Supporting datasets and examples
+should remain linked from the manual page that explains how they are used.
