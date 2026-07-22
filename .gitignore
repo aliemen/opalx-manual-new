@@ -11,6 +11,8 @@
 *.out
 *.run.xml
 *.tex
+!includes/tikz-preamble.tex
+!*.tikz.tex
 *.toc
 
 
