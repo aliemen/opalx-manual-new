@@ -1,19 +1,288 @@
 ---
 title: "Elements"
-description: "Assemble supported OPALX elements into a beamline."
+description: "Configure the OPALX element types exercised by the maintained regression suite."
 audience: user
-status: experimental
+status: current
 last-reviewed: "2026-07-22"
+body-classes: "opalx-sidebar-page-toc"
 ---
 
-Elements are named objects assembled into a `LINE`. The current executable
-registers drifts, bending and focusing magnets, RF structures, diagnostics,
-lasers, markers, time-dependence objects, and specialized elements.
+Elements are named objects placed in three dimensions and assembled into a
+`LINE`. This page covers every element type found in the current
+`regression-tests-x` input files and audits its input attributes against OPALX
+source commit `d1e762f15a2a`:
 
-Element placement and field support are three-dimensional. Overlapping active
-elements are handled by the orbit-threading and local-frame machinery rather
-than by a single owner along the longitudinal coordinate.
+| Type | Regression use | External data |
+|---|---|---|
+| `DRIFT` | Field-free transport | none |
+| `CONSTANTEFIELDCAVITY` | Uniform electric field | none |
+| `QUADRUPOLE` | Normalized quadrupole | none |
+| `MULTIPOLE` | Normalized dipole/quadrupole arrays | none |
+| `MULTIPOLET` | Physical multipole coefficients with fringe fields | optional time model |
+| `SOLENOID` | Mapped solenoid field | field map |
+| `RFCAVITY` | Standing-wave RF field | field map |
+| `TRAVELINGWAVE` | Traveling-wave RF field | field map |
 
-Use the [Element Reference](../reference/elements.qmd) for the source-derived
-inventory and the [Element Physics](../physics/elements/index.qmd) chapter for
-models that require detailed derivations and benchmarks.
+: {tbl-colwidths="[28, 42, 30]"}
+
+Registered element types without a maintained regression input are outside
+this page's verified scope. The [Element Physics](../physics/elements/index.qmd)
+chapter contains derivations and benchmarks where available.
+
+## Common element syntax {#common-element-syntax}
+
+Every element uses
+
+```opal
+name: ELEMENTTYPE, L=length, placement, type_specific_parameters;
+```
+
+and accepts the following common attributes.
+
+| Parameter | Default | Current behavior |
+|---|---:|---|
+| `L` | unset ($0\,\mathrm m$ when read) | Nominal element length. Use a positive value for the element kernels documented here. |
+| `ELEMEDGE` | unset | Places the entrance at path length $s$ in metres. May be combined with `PSI`, but not with absolute pose attributes. |
+| `X`, `Y`, `Z` | `0 m` | Absolute lab-frame origin. Explicitly set at least one of `X`, `Y`, `Z`, `THETA`, or `PHI` to select pose placement. |
+| `THETA`, `PHI`, `PSI` | `0 rad` | Absolute rotations about local $y$, $x$, and $z$. `PSI` is also the optional roll for `ELEMEDGE` placement. |
+| `DX`, `DY`, `DZ` | `0 m` | Local translational misalignment applied after placement. |
+| `DTHETA`, `DPHI`, `DPSI` | `0 rad` | Local rotational misalignment. |
+| `APERTURE` | `ELLIPSE(1,1)` equivalent | Transverse aperture string, for example `CIRCLE(0.02)`, `ELLIPSE(0.03,0.02)`, `RECTANGLE(0.03,0.02)`, or `SQUARE(0.02)`. Dimensions are full widths in metres. |
+| `DELETEONTRANSVERSEEXIT` | `TRUE` | Requests particle deletion when an element reports a transverse aperture exit. |
+| `TYPE` | unset | Type-specific design selector; currently relevant to `RFCAVITY` below. |
+| `WAKEF`, `PARTICLEMATTERINTERACTION`, `OUTFN` | unset | Parsed common compatibility attributes, but not acted on by the eight element implementations on this page. |
+
+: {tbl-colwidths="[28, 15, 57]"}
+
+Exactly one placement strategy is required. Supplying both `ELEMEDGE` and an
+absolute pose fails; supplying neither also fails. `PSI` alone does not select
+absolute placement.
+
+## `DRIFT` {#drift}
+
+`DRIFT` defines a field-free interval. It advances particles only through the
+normal tracker integration and provides the reference-path geometry between
+active elements.
+
+```opal
+D1: DRIFT, L=0.5, ELEMEDGE=0.0;
+```
+
+| Parameter | Default | Current behavior |
+|---|---:|---|
+| `L` | unset | Drift length in metres; use a positive value. |
+| `GEOMETRY` | unset | Parsed boundary-geometry name, but not transferred by the current `DRIFT` implementation. |
+| `NSLICES` | `1` | Map-tracking compatibility value; inactive in the current `PARALLEL` tracking path. |
+
+## `CONSTANTEFIELDCAVITY` {#constant-electric-field-cavity}
+
+`CONSTANTEFIELDCAVITY` adds a uniform Cartesian electric field over its local
+body interval. It is a DC element and is not processed by the RF autophaser.
+
+```opal
+Gun: CONSTANTEFIELDCAVITY,
+    L=0.5, ELEMEDGE=0.0,
+    EX=0.0, EY=0.0, EZ=-5.0;
+```
+
+| Parameter | Default | Unit | Current behavior |
+|---|---:|---:|---|
+| `EX` | `0` | MV/m | Uniform local $E_x$. |
+| `EY` | `0` | MV/m | Uniform local $E_y$. |
+| `EZ` | `0` | MV/m | Uniform local $E_z$. A negative value accelerates electrons toward local $+z$. |
+
+: {tbl-colwidths="[18, 12, 14, 56]"}
+
+The field is applied for local $0<z\le L$ in the particle kernel. Use
+`RFCAVITY` or `TRAVELINGWAVE` when an oscillating mapped RF field is required.
+
+## `QUADRUPOLE` {#quadrupole}
+
+`QUADRUPOLE` is a convenience wrapper around `MULTIPOLE`. It converts
+normalized strengths to physical gradients using the reference rigidity.
+
+```opal
+Q1: QUADRUPOLE, L=0.5, ELEMEDGE=0.0, K1=0.54;
+```
+
+| Parameter | Default | Unit | Current behavior |
+|---|---:|---:|---|
+| `K1` | `0` | $\mathrm m^{-2}$ | Normal normalized quadrupole strength. |
+| `K1S` | `0` | $\mathrm m^{-2}$ | Skew normalized quadrupole strength. |
+| `DK1` | `0` | $\mathrm m^{-2}$ | Parsed and stored normal error, but not applied by the current field kernel. |
+| `DK1S` | `0` | $\mathrm m^{-2}$ | Parsed and stored skew error, but not applied by the current field kernel. |
+
+: {tbl-colwidths="[18, 12, 18, 52]"}
+
+Use a positive `L`. Although inherited help text mentions integrated zero-length
+strengths, the current particle kernel has no nonzero field interval when
+`L=0`.
+
+## `MULTIPOLE` {#multipole}
+
+`MULTIPOLE` accepts arrays of normalized normal and skew strengths. Array index
+zero is dipole and index one is quadrupole.
+
+```opal
+M1: MULTIPOLE, L=0.5, ELEMEDGE=0.0, KN={0.0,0.54};
+```
+
+| Parameter | Default | Current behavior |
+|---|---:|---|
+| `KN` | empty | Normal normalized strengths: index 0 dipole, index 1 quadrupole. |
+| `KS` | empty | Skew normalized strengths with the same indexing. |
+| `DKN` | empty | Parsed and stored normal-error array, but not applied by the current field kernel. Missing entries are padded with zero. |
+| `DKS` | empty | Parsed and stored skew-error array, but not applied by the current field kernel. Missing entries are padded with zero. |
+
+::: {.callout-warning title="Current order limit"}
+The parser accepts longer arrays, but the current particle and reference
+kernels do not agree: the bulk particle kernel applies only indices 0 and 1,
+while the host/reference kernel evaluates higher orders. A higher-order entry
+can therefore change the threaded reference orbit without applying the same
+field to tracked particles. Use `MULTIPOLET` instead.
+:::
+
+Strengths are multiplied by the reference rigidity before tracking. As for
+`QUADRUPOLE`, use positive length; zero-length integrated operation is not
+effective in the current parallel kernel.
+
+## `MULTIPOLET` {#multipolet}
+
+`MULTIPOLET` defines straight or constant-radius curved magnetic multipoles
+using physical field coefficients and a smooth fringe model. It is distinct
+from the normalized `MULTIPOLE` interface.
+
+```opal
+MT1: MULTIPOLET,
+    L=0.5, ELEMEDGE=0.0,
+    TP={0.0,1.80},
+    LFRINGE=0.05, RFRINGE=0.05,
+    HAPERT=0.04, VAPERT=0.04;
+```
+
+| Parameter | Default | Unit | Current behavior |
+|---|---:|---:|---|
+| `TP` | empty | $\mathrm T\,\mathrm m^{-k}$ | Physical coefficients $b_k$: index 0 dipole field, index 1 quadrupole gradient, and higher orders through index 5. |
+| `LFRINGE`, `RFRINGE` | unset | m | Left and right tanh-fringe length scales. Set positive values. |
+| `HAPERT`, `VAPERT` | unset | m | Internal horizontal and vertical aperture dimensions used by this field model. |
+| `MAXFORDER` | `3` | terms | Longitudinal fringe expansion order. Must be in $[1,9]$; real input is converted to an integer. |
+| `MAXXORDER` | `20` | terms | Polynomial expansion order used by the curved implementation; real input is converted to an integer. |
+| `ROTATION` | unset | rad | Rotation about the central axis for a straight skew element. Must be zero when `ANGLE` is nonzero. |
+| `EANGLE` | unset | rad | Entrance angle for curved geometry. |
+| `BBLENGTH` | unset | m | Half-length used for the field calculation's bounding region. |
+| `ANGLE` | `0` | rad | Nonzero selects the constant-radius curved implementation; zero selects straight geometry. |
+| `VARRADIUS` | `FALSE` | Boolean | Variable-radius selector. Variable-radius curved magnets are currently rejected. |
+| `ENTRYOFFSET` | `0` | m | Accepted only with `VARRADIUS=TRUE`; there is no supported variable-radius curved configuration yet. |
+| `SCALING_MODEL` | unset | name | Optional `TIMEDEPENDENCE` object multiplying the magnetic field as a function of time. |
+
+: {tbl-colwidths="[20, 12, 15, 53]"}
+
+The dedicated `HAPERT` and `VAPERT` values configure this model's internal
+aperture; do not substitute the common `APERTURE` string for them. The six-entry
+`TP` capacity is a runtime limit even though the parser accepts a longer array.
+
+## `SOLENOID` {#solenoid}
+
+`SOLENOID` loads a magnetic field map and scales it with a normalized solenoid
+strength. The map defines the actual longitudinal field-support interval,
+which may differ from nominal `L`.
+
+```opal
+S1: SOLENOID,
+    L=0.5, ELEMEDGE=0.0,
+    KS=0.12, FMAPFN="solenoid.T7";
+```
+
+| Parameter | Default | Current behavior |
+|---|---:|---|
+| `KS` | unset ($0$ when read) | Normalized field-map scale in $\mathrm m^{-1}$. It is converted using the reference rigidity. |
+| `DKS` | unset ($0$ when read) | Additive scale error for tracked particles; the reference-particle field omits this error. |
+| `FMAPFN` | unset | Required field-map filename. Tracking cannot apply a solenoid without a loaded map. |
+| `FAST` | `TRUE` | Passed to the field-map loader as its fast/accuracy selection. |
+
+The element does not generate an analytic hard-edge solenoid when `FMAPFN` is
+missing. Keep the field map beside the input or use an unambiguous relative
+path.
+
+## `RFCAVITY` {#rfcavity}
+
+`RFCAVITY` applies a time-dependent standing-wave field from a supported 1D or
+2D dynamic field map. The [autophased example](../getting-started/worked-inputs.qmd#example-rfcavity)
+shows the complete connection to a beam and tracker.
+
+```opal
+Gun: RFCAVITY,
+    L=0.2927, ELEMEDGE=0.0,
+    TYPE="STANDING", VOLT=60.0,
+    FREQ=1300.0, LAG=0.0,
+    FMAPFN="fieldmaps/DriveGun.T7";
+```
+
+| Parameter | Default | Unit | Current behavior |
+|---|---:|---:|---|
+| `TYPE` | unset | name | `STANDING` is the maintained regression configuration. `SINGLEGAP` is recognized internally; other common design strings fall back to standing-wave behavior. |
+| `VOLT`, `DVOLT` | unset | MV | Nominal field-map amplitude and additive amplitude error. |
+| `FREQ` | unset | MHz | RF frequency. A field-map value differing by more than 1% replaces it with a warning. |
+| `LAG`, `DLAG` | unset | rad | Nominal phase and additive phase error. |
+| `FMAPFN` | unset | path | Required dynamic field map. Current particle application supports `FM2DDynamic` and `Astra1DDynamic` maps. |
+| `FAST` | `TRUE` | Boolean | Passed to the field-map loader. |
+| `APVETO` | `FALSE` | Boolean | If true, excludes this cavity from automatic phase optimization. |
+| `DESIGNENERGY` | `-1` | MeV | Positive target exit kinetic energy; the autophaser also adjusts amplitude to reach it. Negative disables the target. |
+| `GEOMETRY` | unset | name | Parsed boundary-geometry compatibility attribute; not connected by the current update path. |
+| `RMIN`, `RMAX`, `ANGLE`, `PDIS`, `GAPWIDTH`, `PHI0` | unset | mm or deg | Cyclotron-cavity compatibility inputs; not used by ordinary `PARALLEL` RF-field application. |
+| `PHASE_MODEL`, `AMPLITUDE_MODEL`, `FREQUENCY_MODEL` | unset | name | Names are stored, but ordinary `RFCAVITY` tracking does not currently resolve them into time-dependence objects. |
+
+: {tbl-colwidths="[24, 12, 15, 49]"}
+
+The instantaneous map scale is set by the configured amplitude and
+$\cos(2\pi f t+\mathrm{LAG})$; the magnetic map component uses the corresponding
+sine factor. `OPTION.AUTOPHASE>0` searches the reference-particle phase for
+maximum exit energy, using the option value as the number of refinement passes.
+
+## `TRAVELINGWAVE` {#travelingwave}
+
+`TRAVELINGWAVE` applies a mapped traveling-wave RF structure. It shares the
+autophase controls with `RFCAVITY` and additionally describes the repeated-cell
+geometry.
+
+```opal
+TW1: TRAVELINGWAVE,
+    L=2.8, ELEMEDGE=0.5,
+    VOLT=15.0, FREQ=2998.0, LAG=0.0,
+    FMAPFN="traveling-wave.T7",
+    NUMCELLS=84, MODE=0.3333333333;
+```
+
+| Parameter | Default | Unit | Current behavior |
+|---|---:|---:|---|
+| `VOLT`, `DVOLT` | unset | MV/m | Nominal field-map amplitude and additive error. |
+| `FREQ` | unset | MHz | RF frequency converted internally to angular frequency. |
+| `LAG`, `DLAG` | unset | rad | Nominal phase and additive phase error. |
+| `FMAPFN` | unset | path | Required traveling-wave field map. |
+| `FAST` | `TRUE` | Boolean | Passed to the field-map loader. |
+| `APVETO` | `FALSE` | Boolean | Excludes the structure from automatic phase optimization when true. |
+| `NUMCELLS` | unset | cells | Number of cells, converted from real input to an integer. Use a positive integer. |
+| `MODE` | `1/3` | turns | RF phase advance between neighboring cells, expressed as a fraction of $2\pi$. |
+| `DESIGNENERGY` | `-1` | MeV | Positive autophaser target exit kinetic energy; negative disables the target. |
+
+: {tbl-colwidths="[20, 12, 15, 53]"}
+
+Use a regression-matched map, cell count, and mode as one consistent set. As
+with `RFCAVITY`, `AUTOPHASE=0` disables phase searching globally and
+`APVETO=TRUE` disables it for this element only.
+
+## Current limitations {#element-limitations}
+
+- This inventory is deliberately regression-driven. `MONITOR`, `MARKER`,
+  `PROBE`, bends, and other registered objects need separate source and runtime
+  verification before they are added here.
+- `QUADRUPOLE` and `MULTIPOLE` strength-error inputs are parser-visible but do
+  not affect the current field kernels.
+- The current bulk-particle `MULTIPOLE` kernel applies dipole and quadrupole
+  components only, while its host/reference kernel also evaluates higher
+  orders. Do not use higher-order `MULTIPOLE` arrays for production tracking.
+- Field-map elements require their external maps; generated maps and large
+  binary support data belong outside the manual repository.
+- Establish step-size, placement, aperture, and field-map convergence for each
+  production lattice rather than treating a regression configuration as an
+  accuracy prescription.

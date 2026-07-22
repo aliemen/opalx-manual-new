@@ -1,0 +1,235 @@
+---
+title: "Worked Input Files"
+description: "Three complete OPALX inputs: a drift, an autophased RF cavity, and binned open-boundary space charge during emission."
+audience: user
+status: current
+last-reviewed: "2026-07-22"
+---
+
+The examples below are complete input files: no declarations are omitted from
+their code blocks. They reduce maintained regression configurations to one
+idea at a time. Copy a complete block into a file ending in `.in` and run it as
+shown in [Run a First Simulation](first-simulation.qmd).
+
+## Drift without self-fields {#example-drift}
+
+This is the smallest useful particle-tracking example. It derives the
+reference momentum `P0` from an electron kinetic energy `Edes`, samples a
+Gaussian bunch, and tracks it through a $0.5\,\mathrm m$ drift with
+`FIELDSOLVER.TYPE=NONE`.
+
+```opal
+OPTION, PSDUMPFREQ=1000;
+OPTION, STATDUMPFREQ=1;
+OPTION, AUTOPHASE=0;
+OPTION, VERSION=10900;
+
+TITLE, STRING="Minimal drift without self-fields";
+
+REAL n_particles=1000;
+REAL bunch_charge=1e-12;
+
+// EMASS, Edes, and P0 are in GeV-based OPAL units.
+REAL Edes=1e-3;
+REAL gamma=(Edes+EMASS)/EMASS;
+REAL beta=sqrt(1.0-1.0/(gamma*gamma));
+REAL P0=gamma*beta*EMASS;
+
+VALUE, {Edes, P0};
+
+D1: DRIFT, L=0.5, ELEMEDGE=0.0;
+DriftLine: LINE=(D1);
+
+FSNone: FIELDSOLVER, TYPE=NONE,
+    NX=8, NY=8, NZ=8,
+    PARFFTX=TRUE, PARFFTY=TRUE, PARFFTZ=TRUE,
+    BCFFTX=OPEN, BCFFTY=OPEN, BCFFTZ=OPEN;
+
+Dist: DISTRIBUTION, TYPE=GAUSS,
+    NPARTDIST=n_particles,
+    SIGMAX=2e-4, SIGMAY=2e-4, SIGMAZ=2e-4,
+    SIGMAPX=1e-5, SIGMAPY=1e-5, SIGMAPZ=1e-5;
+
+Source: EMISSIONSOURCE, DISTRIBUTION=Dist;
+Sources: EMISSIONSOURCELIST=(Source);
+
+Beam1: BEAM, PARTICLE=ELECTRON,
+    PC=P0, NALLOC=n_particles,
+    BCHARGE=bunch_charge, CHARGE=-1,
+    SOURCES=Sources;
+
+TRACK, LINE=DriftLine, BEAM=Beam1,
+    DT={1e-11}, MAXSTEPS={1000}, ZSTOP={0.5};
+  RUN, METHOD=PARALLEL, FIELDSOLVER=FSNone;
+ENDTRACK;
+
+QUIT;
+```
+
+`PC=P0` gives the beam and non-file distribution their reference momentum.
+The sampled momentum offsets are expressed in normalized momentum
+$\boldsymbol p/(mc)$, while `P0` itself is in $\mathrm{GeV}/c$. `ZSTOP=0.5`
+ends tracking when the reference trajectory reaches the end of the drift;
+`MAXSTEPS` is the safety limit. Although `NONE` performs no mesh solve, the
+current constructor still requires mesh dimensions, uniform boundary values,
+and all three `PARFFT*` flags.
+
+## Autophased RF cavity {#example-rfcavity}
+
+This example is based on the maintained `RFCavity` regression. It needs the
+[`DriveGun.T7`]({{< meta regression-tests-source-url >}}/RegressionTests/RFCavity/fieldmaps/DriveGun.T7)
+field map in a local `fieldmaps/` directory.
+
+```opal
+OPTION, PSDUMPFREQ=1000;
+OPTION, STATDUMPFREQ=1;
+OPTION, AUTOPHASE=4;
+OPTION, VERSION=10900;
+
+TITLE, STRING="Autophased standing-wave cavity";
+
+REAL n_particles=1000;
+REAL bunch_charge=1e-12;
+REAL rf_frequency=1300.0; // MHz
+
+REAL Edes=1.4e-9;
+REAL gamma=(Edes+EMASS)/EMASS;
+REAL beta=sqrt(1.0-1.0/(gamma*gamma));
+REAL P0=gamma*beta*EMASS;
+
+VALUE, {Edes, P0};
+
+Gun: RFCAVITY,
+    L=0.2927, ELEMEDGE=0.0,
+    TYPE="STANDING",
+    VOLT=60.0,
+    FREQ=rf_frequency,
+    LAG=0.0,
+    FMAPFN="fieldmaps/DriveGun.T7",
+    APVETO=FALSE;
+
+D1: DRIFT, L=0.2073, ELEMEDGE=0.2927;
+GunLine: LINE=(Gun, D1);
+
+FSNone: FIELDSOLVER, TYPE=NONE,
+    NX=8, NY=8, NZ=8,
+    PARFFTX=TRUE, PARFFTY=TRUE, PARFFTZ=TRUE,
+    BCFFTX=OPEN, BCFFTY=OPEN, BCFFTZ=OPEN;
+
+Dist: DISTRIBUTION, TYPE=GAUSS,
+    NPARTDIST=n_particles,
+    SIGMAX=1e-4, SIGMAY=1e-4, SIGMAZ=1e-5,
+    SIGMAPX=1e-6, SIGMAPY=1e-6, SIGMAPZ=1e-6;
+
+Source: EMISSIONSOURCE, DISTRIBUTION=Dist, R0Z=1e-5;
+Sources: EMISSIONSOURCELIST=(Source);
+
+Beam1: BEAM, PARTICLE=ELECTRON,
+    PC=P0, NALLOC=n_particles,
+    BCHARGE=bunch_charge, CHARGE=-1,
+    SOURCES=Sources;
+
+TRACK, LINE=GunLine, BEAM=Beam1,
+    DT={1e-12}, MAXSTEPS={2000}, ZSTOP={0.5};
+  RUN, METHOD=PARALLEL, FIELDSOLVER=FSNone;
+ENDTRACK;
+
+QUIT;
+```
+
+`RFCAVITY` multiplies the field-map fields by the configured RF amplitude and
+phase. With `OPTION.AUTOPHASE=4`, OPALX tracks the reference particle through
+each `RFCAVITY` or `TRAVELINGWAVE`, searches for the phase giving maximum exit
+energy, and performs four refinement passes around that maximum. The optimized
+phase is added to the nominal `LAG`, stored for the run, and reported in
+`Gun_AP.dat`. Set `AUTOPHASE=0` globally or `APVETO=TRUE` on this cavity to
+retain the supplied phase without the search.
+
+The field map also contains an RF frequency. If it differs from `FREQ` by more
+than one percent, OPALX warns and uses the map frequency.
+
+## Emission with binned open-boundary space charge {#example-space-charge}
+
+This AWA-gun-style example uses no external data. A short pulse is emitted at
+a grounded plane into one `CONSTANTEFIELDCAVITY`. The field solver uses
+adaptive velocity bins, the open Hockney backend, and the shifted-Green
+Dirichlet correction.
+
+```opal
+OPTION, PSDUMPFREQ=1000;
+OPTION, STATDUMPFREQ=10;
+OPTION, AUTOPHASE=0;
+OPTION, VERSION=10900;
+
+TITLE, STRING="Minimal emitted bunch with binned space charge";
+
+REAL n_particles=4096;
+REAL bunch_charge=1e-10;
+REAL Edes=1e-9;
+REAL gamma=(Edes+EMASS)/EMASS;
+REAL beta=sqrt(1.0-1.0/(gamma*gamma));
+REAL P0=gamma*beta*EMASS;
+
+VALUE, {Edes, P0};
+
+Gun: CONSTANTEFIELDCAVITY,
+    L=0.5, ELEMEDGE=0.0,
+    EX=0.0, EY=0.0, EZ=-5.0;
+GunLine: LINE=(Gun);
+
+Bins: BINNING,
+    MAXBINS=64,
+    DESIREDWIDTH=0.2,
+    BINNINGALPHA=1.1,
+    BINNINGBETA=1.6,
+    PARAMETER=GAMMAZ,
+    ADAPTIVEBINNING=TRUE,
+    TABLEPRINTFREQ=20;
+
+FSOpen: FIELDSOLVER, TYPE=OPEN, BINS=Bins,
+    NX=16, NY=16, NZ=16,
+    PARFFTX=TRUE, PARFFTY=TRUE, PARFFTZ=TRUE,
+    BCFFTX=OPEN, BCFFTY=OPEN, BCFFTZ=OPEN,
+    GREENSF=INTEGRATED,
+    BBOXINCR=5.0;
+
+Pulse: DISTRIBUTION, TYPE=FLATTOP,
+    NPARTDIST=n_particles,
+    SIGMAX=7.5e-4, SIGMAY=7.5e-4,
+    TRISE=1e-12, TFALL=1e-12,
+    TPULSEFWHM=3e-12,
+    CUTOFFLONG=3.0,
+    EMITTED=TRUE;
+
+Cathode: EMISSIONSOURCE,
+    DISTRIBUTION=Pulse,
+    R0Z=0.0, P0Z=0.0,
+    EMISSIONMODEL=ASTRA, EKIN=0.2,
+    SHIFTED_GREENS_FUNCTION=TRUE,
+    ZEROFACE_MAXSTEPS=300;
+Sources: EMISSIONSOURCELIST=(Cathode);
+
+Beam1: BEAM, PARTICLE=ELECTRON,
+    PC=P0, NALLOC=n_particles,
+    BCHARGE=bunch_charge, CHARGE=-1,
+    SOURCES=Sources;
+
+TRACK, LINE=GunLine, BEAM=Beam1,
+    DT={1e-12}, MAXSTEPS={2000}, ZSTOP={0.5};
+  RUN, METHOD=PARALLEL, FIELDSOLVER=FSOpen;
+ENDTRACK;
+
+QUIT;
+```
+
+For an electron, the negative `EZ` accelerates motion in $+z$. `ASTRA`
+emission gives each particle a forward thermal momentum with magnitude set by
+`EKIN`. During emission, `BINNING` groups particles by longitudinal gamma;
+OPALX solves each bin in its approximate rest frame and accumulates the
+lab-frame electric and magnetic fields.
+
+`SHIFTED_GREENS_FUNCTION` adds the image contribution needed for zero
+potential at the cathode plane `R0Z=0`. It requires both `TYPE=OPEN` and named
+binning. The correction stops after 300 global steps; this cutoff and the
+$16^3$ mesh are deliberately small tutorial values and must be converged for a
+production calculation.

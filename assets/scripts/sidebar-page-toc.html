@@ -48,9 +48,10 @@
       items: [
         {
           id: "solver-backends",
-          text: "Solver backends",
+          text: "Solver types",
           suffix: "1",
           stateKey: "page-toc:field-solver:backends",
+          toggleLabel: "Toggle solver types",
           children: [
             { id: "solver-none", text: "NONE", suffix: "1.1" },
             { id: "solver-fft", text: "FFT", suffix: "1.2" },
@@ -115,6 +116,36 @@
           id: "accuracy-cost",
           text: "Accuracy, cost, and reproducibility",
           suffix: "7"
+        }
+      ]
+    },
+    {
+      path: "/user-guide/elements.html",
+      stateKey: "page-toc:elements",
+      targetId: "opalx-sidebar-elements",
+      toggleLabel: "Toggle Elements sections",
+      items: [
+        {
+          id: "common-element-syntax",
+          text: "Common element syntax",
+          suffix: "1"
+        },
+        { id: "drift", text: "DRIFT", suffix: "2" },
+        {
+          id: "constant-electric-field-cavity",
+          text: "CONSTANTEFIELDCAVITY",
+          suffix: "3"
+        },
+        { id: "quadrupole", text: "QUADRUPOLE", suffix: "4" },
+        { id: "multipole", text: "MULTIPOLE", suffix: "5" },
+        { id: "multipolet", text: "MULTIPOLET", suffix: "6" },
+        { id: "solenoid", text: "SOLENOID", suffix: "7" },
+        { id: "rfcavity", text: "RFCAVITY", suffix: "8" },
+        { id: "travelingwave", text: "TRAVELINGWAVE", suffix: "9" },
+        {
+          id: "element-limitations",
+          text: "Current limitations",
+          suffix: "10"
         }
       ]
     }

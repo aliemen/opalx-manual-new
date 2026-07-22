@@ -28,6 +28,8 @@ errors << "render does not contain OPALX sidebar-state persistence" unless combi
 errors << "render does not contain the distribution sidebar manifest" unless combined_html.include?("page-toc:beam-distributions")
 errors << "render does not contain the structures sidebar manifest" unless combined_html.include?("page-toc:structures")
 errors << "render does not contain the field-solver sidebar manifest" unless combined_html.include?("page-toc:field-solver")
+errors << "render does not contain the elements sidebar manifest" unless combined_html.include?("page-toc:elements")
+errors << "render does not contain the regression-test source URL" unless combined_html.include?("https://github.com/OPALX-project/regression-tests-x/blob/master")
 
 distribution_html_path = SITE / "user-guide/beam-distributions.html"
 if distribution_html_path.file?
@@ -83,6 +85,7 @@ if field_solver_html_path.file?
   end
   errors << "field-solver does not suppress its duplicate margin TOC" unless field_solver_html.include?("opalx-sidebar-page-toc")
   errors << "field-solver sidebar lacks an accessible chapter toggle" unless field_solver_html.include?("Toggle Field Solver sections")
+  errors << "field-solver sidebar lacks an accessible solver-type toggle" unless field_solver_html.include?("Toggle solver types")
   errors << "field-solver sidebar lacks accessible subsection toggles" unless field_solver_html.include?("Toggle ${item.text} subsections")
   %w[
     page-toc:field-solver page-toc:field-solver:backends
@@ -92,6 +95,49 @@ if field_solver_html_path.file?
   end
 else
   errors << "render is missing user-guide/field-solver/index.html"
+end
+
+elements_html_path = SITE / "user-guide/elements.html"
+if elements_html_path.file?
+  elements_html = File.read(elements_html_path)
+  element_anchors = %w[
+    common-element-syntax drift constant-electric-field-cavity quadrupole multipole multipolet
+    solenoid rfcavity travelingwave element-limitations
+  ]
+  element_anchors.each do |anchor|
+    errors << "elements render is missing ##{anchor}" unless elements_html.match?(/\bid=["']#{Regexp.escape(anchor)}["']/)
+  end
+  {
+    "common-element-syntax" => /data-number=["']\d+\.1["']/,
+    "drift" => /data-number=["']\d+\.2["']/,
+    "constant-electric-field-cavity" => /data-number=["']\d+\.3["']/,
+    "rfcavity" => /data-number=["']\d+\.8["']/,
+    "travelingwave" => /data-number=["']\d+\.9["']/,
+    "element-limitations" => /data-number=["']\d+\.10["']/
+  }.each do |anchor, numbering|
+    section = elements_html[/<section\s+id=["']#{Regexp.escape(anchor)}["'][\s\S]*?<\/section>/]
+    errors << "elements ##{anchor} has incorrect automatic numbering" unless section&.match?(numbering)
+  end
+  errors << "elements does not suppress its duplicate margin TOC" unless elements_html.include?("opalx-sidebar-page-toc")
+  errors << "elements sidebar lacks an accessible chapter toggle" unless elements_html.include?("Toggle Elements sections")
+  errors << "elements sidebar state key is not rendered" unless elements_html.include?("page-toc:elements")
+else
+  errors << "render is missing user-guide/elements.html"
+end
+
+worked_inputs_html_path = SITE / "getting-started/worked-inputs.html"
+if worked_inputs_html_path.file?
+  worked_inputs_html = File.read(worked_inputs_html_path)
+  {
+    "example-drift" => /data-number=["']\d+\.1["']/,
+    "example-rfcavity" => /data-number=["']\d+\.2["']/,
+    "example-space-charge" => /data-number=["']\d+\.3["']/
+  }.each do |anchor, numbering|
+    section = worked_inputs_html[/<section\s+id=["']#{Regexp.escape(anchor)}["'][\s\S]*?<\/section>/]
+    errors << "worked-inputs ##{anchor} has incorrect automatic numbering" unless section&.match?(numbering)
+  end
+else
+  errors << "render is missing getting-started/worked-inputs.html"
 end
 
 structures_html_path = SITE / "user-guide/structures/index.html"

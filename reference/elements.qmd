@@ -10,14 +10,15 @@ The following objects are registered in the current OPALX configurator.
 
 | Family | Registered objects |
 |---|---|
-| RF and electric fields | `CAVITY`, `TRAVELINGWAVE`, `CONSTANTEFIELDCAVITY`, `VARIABLERFCAVITY` |
+| RF and electric fields | `RFCAVITY`, `TRAVELINGWAVE`, `CONSTANTEFIELDCAVITY`, `VARIABLE_RF_CAVITY` |
 | Transport | `DRIFT`, `QUADRUPOLE`, `RBEND`, `SBEND`, `SOLENOID` |
 | Multipoles and specialized magnets | `MULTIPOLE`, `MULTIPOLET`, `VERTICALFFAMAGNET` |
 | Sources and interactions | `LASER` |
 | Diagnostics and structure | `MONITOR`, `MARKER`, `PROBE`, `LINE` |
 | Time dependence | Polynomial, sinusoidal, and spline time-dependence objects |
 
-Capitalization above follows the user-facing convention; exact attributes and
-defaults come from each implementation class. See the
-[Element Physics](../physics/elements/index.qmd) chapter for detailed bends and
-multipoles and the [API Reference](api.qmd) for source-level definitions.
+Capitalization above follows the user-facing convention. The regression-backed
+[Elements User Guide](../user-guide/elements.qmd) gives source-audited
+attributes and limitations for the eight types currently exercised in input
+tests. See [Element Physics](../physics/elements/index.qmd) for detailed bends
+and multipoles and the [API Reference](api.qmd) for source-level definitions.

@@ -23,6 +23,7 @@ book:
         - getting-started/index.qmd
         - getting-started/clusters/index.qmd
         - getting-started/first-simulation.qmd
+        - getting-started/worked-inputs.qmd
     - part: "User Guide"
       chapters:
         - user-guide/input-language.qmd
@@ -104,6 +105,7 @@ documents-base-url: "https://github.com/aliemen/opalx-documents/blob/main"
 manual-repository-url: "https://github.com/aliemen/opalx-manual-new"
 source-code-url: "https://github.com/OPALX-project/OPALX"
 regression-tests-url: "https://amas.pages.psi.ch/opal-live-doc/opalx-regression-test/overview/index.html"
+regression-tests-source-url: "https://github.com/OPALX-project/regression-tests-x/blob/master"
 doxygen-url: "https://amas.pages.psi.ch/opal-live-doc/opalx-doxygen/index.html"
 legacy-opal-manual-url: "https://opalx-project.github.io/Manual-old/"
 deployment-profile: "personal"

@@ -37,4 +37,5 @@ srun /path/to/build_cuda/src/opalx example.in \
 The [regression-test dashboard]({{< meta regression-tests-url >}}) shows which
 inputs currently pass. Input-file compatibility is still being cataloged, so a
 regression input is safer than copying an example from the historical OPAL
-manual.
+manual. Continue with the three complete [Worked Input Files](worked-inputs.qmd)
+for progressively more detailed starting points.

@@ -27,7 +27,7 @@ ENDTRACK;
 For an active solver, `BEAM.BCHARGE` must be nonzero once more than one
 macroparticle is present. Use `TYPE=NONE` when self-fields should be disabled.
 
-## Solver backends {#solver-backends}
+## Solver types {#solver-backends}
 
 OPALX deposits particle charge on one distributed mesh, solves Poisson's
 equation, and interpolates the resulting field back to the particles:

@@ -124,7 +124,7 @@ end
 
 field_solver_page = ROOT / "user-guide/field-solver/index.qmd"
 field_solver_sections = [
-  ["## Solver backends {#solver-backends}", "solver-backends"],
+  ["## Solver types {#solver-backends}", "solver-backends"],
   ["### `NONE` {#solver-none}", "solver-none"],
   ["### `FFT` {#solver-fft}", "solver-fft"],
   ["### `OPEN` {#solver-open}", "solver-open"],
@@ -176,6 +176,121 @@ if field_solver_page.file?
   end
 end
 
+elements_page = ROOT / "user-guide/elements.qmd"
+element_sections = [
+  ["## Common element syntax {#common-element-syntax}", "common-element-syntax"],
+  ["## `DRIFT` {#drift}", "drift"],
+  ["## `CONSTANTEFIELDCAVITY` {#constant-electric-field-cavity}",
+   "constant-electric-field-cavity"],
+  ["## `QUADRUPOLE` {#quadrupole}", "quadrupole"],
+  ["## `MULTIPOLE` {#multipole}", "multipole"],
+  ["## `MULTIPOLET` {#multipolet}", "multipolet"],
+  ["## `SOLENOID` {#solenoid}", "solenoid"],
+  ["## `RFCAVITY` {#rfcavity}", "rfcavity"],
+  ["## `TRAVELINGWAVE` {#travelingwave}", "travelingwave"],
+  ["## Current limitations {#element-limitations}", "element-limitations"]
+]
+
+if elements_page.file?
+  elements_text = elements_page.read
+  previous_position = -1
+  element_sections.each do |heading, _anchor|
+    position = elements_text.index(heading)
+    if position.nil?
+      errors += error("elements is missing required heading: #{heading}")
+    elsif position <= previous_position
+      errors += error("elements headings are out of order at: #{heading}")
+    else
+      previous_position = position
+    end
+  end
+  {
+    "regression-driven scope" => "every element type found in the current",
+    "MULTIPOLE runtime order warning" =>
+      "bulk particle kernel applies only indices 0 and 1",
+    "strength-error limitation" => "not applied by the current field kernel",
+    "RFCAVITY autophase behavior" => "`OPTION.AUTOPHASE>0`",
+    "unsupported variable-radius MULTIPOLET mode" =>
+      "Variable-radius curved magnets are currently rejected"
+  }.each do |description, required_text|
+    errors += error("elements is missing #{description}") unless elements_text.include?(required_text)
+  end
+end
+
+worked_inputs_page = ROOT / "getting-started/worked-inputs.qmd"
+worked_input_sections = [
+  "## Drift without self-fields {#example-drift}",
+  "## Autophased RF cavity {#example-rfcavity}",
+  "## Emission with binned open-boundary space charge {#example-space-charge}"
+]
+
+if worked_inputs_page.file?
+  worked_inputs_text = worked_inputs_page.read
+  previous_position = -1
+  worked_input_sections.each do |heading|
+    position = worked_inputs_text.index(heading)
+    if position.nil?
+      errors += error("worked-inputs is missing required heading: #{heading}")
+    elsif position <= previous_position
+      errors += error("worked-input headings are out of order at: #{heading}")
+    else
+      previous_position = position
+    end
+  end
+
+  opal_blocks = worked_inputs_text.scan(/^```opal\n(.*?)^```$/m).flatten
+  errors += error("worked-inputs must contain exactly three complete OPAL input blocks") unless opal_blocks.length == 3
+  opal_blocks.each_with_index do |block, index|
+    errors += error("worked input #{index + 1} contains an ellipsis") if block.include?("...")
+    %w[FIELDSOLVER DISTRIBUTION EMISSIONSOURCE EMISSIONSOURCELIST BEAM TRACK RUN ENDTRACK QUIT].each do |statement|
+      errors += error("worked input #{index + 1} is missing #{statement}") unless block.match?(/\b#{statement}\b/i)
+    end
+  end
+  {
+    "drift example" => "D1: DRIFT",
+    "RF cavity example" => "Gun: RFCAVITY",
+    "autophase explanation" => "performs four refinement passes",
+    "constant-field space-charge example" => "Gun: CONSTANTEFIELDCAVITY",
+    "binned OPEN solver" => "FSOpen: FIELDSOLVER, TYPE=OPEN, BINS=Bins",
+    "shifted-Green correction" => "SHIFTED_GREENS_FUNCTION=TRUE",
+    "configurable regression source link" => "meta regression-tests-source-url"
+  }.each do |description, required_text|
+    errors += error("worked-inputs is missing #{description}") unless worked_inputs_text.include?(required_text)
+  end
+end
+
+implicit_capture_report = ROOT / "resources/reports/2026/ippl-implicit-this-capture.qmd"
+if implicit_capture_report.file?
+  implicit_capture_text = implicit_capture_report.read
+  {
+    "merged IPPL pull request" => "https://github.com/IPPL-framework/ippl/pull/561",
+    "implicit member access" => "`this->dview_m`",
+    "class-lambda capture semantics" => "`[=, *this]`",
+    "host-only layout state" => "`Layout_t* layout_m`",
+    "local view capture" => "`KOKKOS_LAMBDA` captures `view` and `expr_` by value",
+    "scalar deep copy" => "`Kokkos::deep_copy(dview_m, value)`",
+    "constructed expression value" => "const E expr_ = static_cast<const E&>(expr);",
+    "separate alignment explanation" => "address different rules",
+    "unrelated halo failure" => "`accumulateHalo` segfault"
+  }.each do |description, required_text|
+    unless implicit_capture_text.include?(required_text)
+      errors += error("implicit-this report is missing #{description}")
+    end
+  end
+
+  {
+    "resources/reports/index.qmd" => "2026/ippl-implicit-this-capture.qmd",
+    "resources/presentations-reports.qmd" => "reports/2026/ippl-implicit-this-capture.html"
+  }.each do |relative, required_link|
+    catalog = ROOT / relative
+    unless catalog.file? && catalog.read.include?(required_link)
+      errors += error("#{relative} is missing the implicit-this report entry")
+    end
+  end
+else
+  errors += error("missing implicit-this capture report")
+end
+
 if distribution_toc.file?
   toc_text = distribution_toc.read
   distribution_sections.each do |_heading, anchor|
@@ -206,6 +321,17 @@ if distribution_toc.file?
   unless toc_text.match?(/path:\s*["']\/user-guide\/field-solver\/index\.html["']/)
     errors += error("field-solver sidebar manifest has an incorrect rendered path")
   end
+  element_sections.each do |_heading, anchor|
+    unless toc_text.match?(/\bid:\s*["']#{Regexp.escape(anchor)}["']/)
+      errors += error("elements sidebar manifest is missing anchor: #{anchor}")
+    end
+  end
+  unless toc_text.include?("page-toc:elements")
+    errors += error("elements sidebar manifest is missing its stable key")
+  end
+  unless toc_text.match?(/path:\s*["']\/user-guide\/elements\.html["']/)
+    errors += error("elements sidebar manifest has an incorrect rendered path")
+  end
 else
   errors += error("missing distribution sidebar manifest: #{distribution_toc.relative_path_from(ROOT)}")
 end
@@ -234,6 +360,15 @@ source_audited_inputs = {
   "user-guide/field-solver/index.qmd" => %w[
     TYPE BINS NX NY NZ PARFFTX PARFFTY PARFFTZ BCFFTX BCFFTY BCFFTZ GREENSF BBOXINCR
     BCHARGE ZEROFACE_R0Z SHIFTED_GREENS_FUNCTION ZEROFACEPLANEDUMP ZEROFACE_MAXSTEPS
+  ],
+  "user-guide/elements.qmd" => %w[
+    TYPE APERTURE L ELEMEDGE WAKEF PARTICLEMATTERINTERACTION X Y Z THETA PHI PSI
+    DX DY DZ DTHETA DPHI DPSI OUTFN DELETEONTRANSVERSEEXIT
+    GEOMETRY NSLICES EX EY EZ K1 DK1 K1S DK1S KN DKN KS DKS
+    TP LFRINGE RFRINGE HAPERT VAPERT MAXFORDER ROTATION EANGLE BBLENGTH ANGLE
+    MAXXORDER VARRADIUS ENTRYOFFSET SCALING_MODEL FMAPFN FAST
+    VOLT DVOLT FREQ LAG DLAG APVETO RMIN RMAX PDIS GAPWIDTH PHI0 DESIGNENERGY
+    PHASE_MODEL AMPLITUDE_MODEL FREQUENCY_MODEL NUMCELLS MODE
   ]
 }
 

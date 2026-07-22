@@ -20,6 +20,7 @@ or add an unbounded archive to the downloadable PDF.
 | Date | Entry | Kind | Status |
 |---|---|---|---|
 | 2026-07-14 | [CUDA extended-lambda linkage bug](reports/2026/cuda-extended-lambda-linkage-bug.html) | Bug investigation | Resolved with workaround |
+| 2026-07-06 | [Implicit `this` capture in IPPL field assignment](reports/2026/ippl-implicit-this-capture.html) | Bug investigation | Resolved in IPPL #561 |
 | 2026-04-30 | [OpalElement layout proposal](reports/2026/opal-element-layout-proposal.html) | Design report | Experimental |
 | 2026-04-06 | [OPALX overview](reports/2026/opalx-overview.html) | Architecture presentation | Current |
 

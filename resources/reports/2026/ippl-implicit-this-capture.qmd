@@ -1,0 +1,166 @@
+---
+title: "Implicit `this` Capture in IPPL Field Assignment"
+description: "Why an IPPL BareField assignment copied host-only class state into a Kokkos device closure, and how the corrected capture pattern avoids it."
+audience: developer
+status: current
+last-reviewed: "2026-07-22"
+number-sections: false
+---
+
+[Return to the Presentations and Reports catalog](../../presentations-reports.html)
+
+**Report date:** 2026-07-06  
+**Author:** Alexander Liemen  
+**Outcome:** Resolved by the merged [IPPL pull request #561](https://github.com/IPPL-framework/ippl/pull/561)
+
+## Summary
+
+An IPPL field assignment could segfault reliably when OPALX was compiled in
+Release mode for a GPU. The assignment kernel referred to `BareField` data
+members from a `KOKKOS_CLASS_LAMBDA`. That macro captures a copy of the entire
+enclosing object, even though the kernel needed only its Kokkos view. The copy
+also contained host-side state such as the raw `Layout_t* layout_m` pointer.
+Moving such an object into a GPU closure does not make its host pointers valid
+on the device.
+
+The correction copies only the device-capable values needed by the kernel into
+local variables and captures those locals with `KOKKOS_LAMBDA`. Scalar fills
+use `Kokkos::deep_copy`, which needs no custom assignment kernel. Expression
+assignment also constructs a real expression value before launching the
+kernel. This latter change fixes a separate alignment and object-lifetime bug
+that occurred in the same code path.
+
+## Where the implicit capture came from
+
+Consider the original scalar-assignment pattern, simplified to its relevant
+parts:
+
+```cpp
+ippl::parallel_for(
+    "BareField::operator=(T)", getRangePolicy(dview_m),
+    KOKKOS_CLASS_LAMBDA(const index_array_type& args) {
+        apply(dview_m, args) = x;
+    });
+```
+
+This code is inside a non-static `BareField` member function. A reference to
+`dview_m` in that scope is shorthand for `this->dview_m`; it is not an
+independent local variable that a lambda can capture on its own.
+
+Kokkos defines `KOKKOS_CLASS_LAMBDA` as the device-annotated equivalent of a
+`[=, *this]` capture. The resulting closure therefore contains a by-value copy
+of the complete `BareField` object. This behavior is intentional and is useful
+when every member of a class is safe and necessary on the selected execution
+space. The [Kokkos macro documentation](https://kokkos.org/kokkos-core-wiki/API/core/macros-special/host_device_macros.html#kokkos-class-lambda)
+also recommends making local copies when the complete object should not be
+captured.
+
+## Why copying `BareField` was unsafe
+
+A Kokkos view is a small handle designed to be copied into a kernel closure. It
+can refer to allocations accessible from the kernel's execution space. A
+general C++ object has no such guarantee.
+
+`BareField` combines its view handle with host-side bookkeeping, including a
+raw layout pointer. Copying the class into the closure is a shallow copy:
+
+1. The closure is constructed on the host.
+2. `*this`, including every pointer value, is copied into that closure.
+3. Kokkos transfers the closure to the GPU for kernel execution.
+4. The numeric address held by a host pointer is unchanged; it is not
+   translated into a device object.
+
+Merely carrying an unused host pointer does not dereference it. The design is
+nevertheless unsafe because any device-side member access or called member
+function can reach state that is not valid in device memory. It also makes the
+kernel silently depend on the complete layout and copyability of `BareField`
+when it needs only `dview_m`. A later change to a member function can therefore
+turn apparently harmless closure state into an invalid GPU access.
+
+Using an ordinary `[=]`-style lambda without changing the body is not a fix.
+The expression `dview_m` would still require `this`, and capturing the host
+`this` pointer would leave the device with a pointer to a host object.
+
+## The safe capture pattern
+
+The required view is first copied to a local variable while execution is still
+on the host. The kernel then refers only to that local:
+
+```cpp
+auto view = dview_m;
+
+ippl::parallel_for(
+    "BareField::operator=(const Expression&)",
+    getRangePolicy(view, nghost_m),
+    KOKKOS_LAMBDA(const index_array_type& args) {
+        apply(view, args) = apply(expr_, args);
+    });
+```
+
+`KOKKOS_LAMBDA` captures `view` and `expr_` by value. Because the lambda body
+contains no non-static member access, it does not capture `this` or `*this`.
+The use of `nghost_m` while constructing the range policy occurs before the
+lambda is created and does not add it to the kernel closure.
+
+For assignment of a single scalar, the final implementation uses
+`Kokkos::deep_copy(dview_m, value)`. A library fill operation states the intent
+directly and avoids both a custom element-wise kernel body and class capture.
+
+## The companion expression-object bug
+
+The implicit-`this` problem was only one side of the failure. The expression
+assignment previously converted an expression to `CapturedExpression<E, N>`,
+whose storage was effectively a `char[N]` byte buffer, and later treated those
+bytes as an `E` using `reinterpret_cast`.
+
+That representation did not establish the alignment or lifetime of a real
+`E` object. An expression tree can contain values with stronger alignment than
+`char`, including a `BareField` operand and its Kokkos view handle. Evaluating
+such a reinterpreted buffer could therefore read a misaligned or nonexistent
+object and eventually produce an invalid device pointer.
+
+The corrected assignment constructs a genuine expression value before the
+kernel launch:
+
+```cpp
+const E expr_ = static_cast<const E&>(expr);
+auto view     = dview_m;
+```
+
+The `static_cast` obtains the derived expression reference, and the
+initialization of `expr_` performs the normal value construction. The resulting
+object has the correct type, alignment, and lifetime. It is also now a local
+value that `KOKKOS_LAMBDA` can copy into the closure without involving
+`BareField::this`.
+
+These fixes reinforce each other but address different rules:
+
+- Local view capture controls **which state enters the device closure**.
+- Constructing `expr_` controls **whether the expression is a valid C++ object**.
+
+## Scope and outcome
+
+[IPPL #561](https://github.com/IPPL-framework/ippl/pull/561), titled
+“Fix opalx release assignment segfault,” applied the expression-capture repair
+to `BareField`, `ParticleAttrib`, and `FEMVector`. It was merged on 2026-07-10.
+The change resolved the field-assignment failures described by
+[OPALX issue #426](https://github.com/OPALX-project/OPALX/issues/426).
+
+The investigation also observed an `accumulateHalo` segfault. That failure
+remained after the assignment fix and was considered a separate problem; it
+should not be treated as part of the implicit-`this` defect.
+
+## General rule for future kernels
+
+Before launching a Kokkos lambda from a class member function:
+
+1. Identify the exact view handles and small values used by the kernel.
+2. Copy them to local variables before the dispatch.
+3. Use `KOKKOS_LAMBDA` and refer only to those locals in the body.
+4. Do not capture a complete class merely to reach one view.
+5. Ensure captured expression templates are real, correctly aligned objects.
+6. Prefer a direct Kokkos operation such as `deep_copy` when it already
+   expresses the operation.
+
+This keeps the closure small, makes its device dependencies visible, and
+prevents host-only class state from crossing the execution-space boundary.
