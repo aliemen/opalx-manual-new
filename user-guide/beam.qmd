@@ -3,9 +3,10 @@ title: "Beam Definitions"
 description: "Define particle species, reference energy, charge, allocation, sources, spin, and decay processes for OPALX tracking."
 audience: user
 status: current
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-23"
 ---
 
+::: {.feature-opalx}
 `BEAM` defines the physical species and reference state for one particle
 container. A typical generated distribution uses:
 
@@ -81,3 +82,8 @@ physics model and validation.
 Photon beams require positive `ENERGY` and `NALLOC`, and reject `MASS`,
 `CHARGE`, `PC`, `GAMMA`, and `SOURCES`. The current source declares the shared
 `BEAM.ENERGY` input unit as GeV; no photon transport path consumes the value yet.
+:::
+
+::: {.feature-opal}
+{{< include _legacy-beam.qmd >}}
+:::

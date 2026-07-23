@@ -3,7 +3,7 @@ title: "Command Reference"
 description: "Source-derived inventory of actions and definitions registered by OPALX."
 audience: user
 status: current
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-23"
 ---
 
 The executable registers parser exemplars in
@@ -14,31 +14,34 @@ to that current OPALX registration point.
 
 | Command | Purpose |
 |---|---|
-| `CALL` | Read and execute another input source. |
-| `DUMPEMFIELDS` | Request electromagnetic-field output. |
-| `ECHO` | Write input-language text to the log. |
-| `HELP` | Request parser help. |
-| `OPTION` | Configure global runtime behavior. |
-| `SELECT` | Select output or object state. |
-| `STOP`, `QUIT` | Stop or leave input processing. |
-| `PSYSTEM`, `SYSTEM` | Invoke supported system actions. |
-| `TITLE` | Attach a title to the calculation. |
-| `TRACK` | Enter a tracking block. |
-| `VALUE` | Inspect or emit expression values. |
+| [`CALL`](../user-guide/control-statements/index.qmd#call-statement) | Read and execute another input source. |
+| [`DUMPEMFIELDS`](../user-guide/diagnostics-output.qmd#dumpemfields-command) | Request electromagnetic-field output. |
+| [`ECHO`](../user-guide/control-statements/index.qmd#echo-statement) | Write input-language text to the log. |
+| [`HELP`](../user-guide/control-statements/index.qmd#help-command) | Request parser help. |
+| [`OPTION`](../user-guide/options.qmd) | Configure global runtime behavior. |
+| [`SELECT`](../user-guide/control-statements/index.qmd#select-element-selection) | Select output or object state. |
+| [`STOP`, `QUIT`](../user-guide/control-statements/index.qmd#stop-quit) | Stop or leave input processing. |
+| [`PSYSTEM`, `SYSTEM`](../user-guide/control-statements/index.qmd#system) | Invoke supported system actions. |
+| [`TITLE`](../user-guide/control-statements/index.qmd#title-statement) | Attach a title to the calculation. |
+| [`TRACK`](../user-guide/tracking.qmd) | Enter a tracking block. |
+| [`VALUE`](../user-guide/control-statements/index.qmd#value-output-of-expressions) | Inspect or emit expression values. |
 
 ## Definitions
 
-The current registry provides value constants and variables, macros, `BEAM`,
-`DISTRIBUTION`, `EMISSIONSOURCE`, `EMISSIONSOURCELIST`, `FIELDSOLVER`, and
-`BINNING`. `LINE` assembles elements into a beamline.
-
-Attribute-level tables will be generated from the corresponding class
-definitions and Doxygen comments. Until then, treat historical OPAL attribute
-lists as unverified rather than assuming one-to-one compatibility.
+The current registry provides [values, constants, variables, and
+macros](../user-guide/control-statements/index.qmd), plus [`BEAM`](../user-guide/beam.qmd),
+[`DISTRIBUTION`, `EMISSIONSOURCE`, and
+`EMISSIONSOURCELIST`](../user-guide/beam-distributions.qmd),
+[`FIELDSOLVER`](../user-guide/field-solver/index.qmd), and
+[`BINNING`](../user-guide/structures/index.qmd#binning). [`LINE`](../user-guide/beam-lines/index.qmd)
+assembles elements into a beamline. The complete statement catalog is in
+[Input Language and Execution](../user-guide/input-language.qmd).
 
 The following high-use interfaces already have source-audited tables:
 
 - [Beam Definitions](../user-guide/beam.qmd)
 - [Tracking](../user-guide/tracking.qmd)
 - [Runtime Options](../user-guide/options.qmd)
+- [Field Output Commands](../user-guide/diagnostics-output.qmd)
+- [Elements](../user-guide/elements.qmd)
 - [Structures / Binning](../user-guide/structures/index.qmd#binning)

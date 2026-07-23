@@ -3,10 +3,11 @@ title: "Beam and Distributions"
 description: "Define OPALX particle distributions, emission sources, and source lists."
 audience: user
 status: current
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-23"
 body-classes: "opalx-sidebar-page-toc"
 ---
 
+::: {.feature-opalx}
 OPALX separates the sampled phase space from its placement in the simulation:
 
 ```text
@@ -338,3 +339,8 @@ Current source limitations are deliberate documentation constraints:
 - `FTOSCAMPLITUDE` and `FTOSCPERIODS` affect only `OPALFLATTOP`;
 - `ASTRA` is supported only by the generated flat-top emitters; and
 - file distributions take momentum from their files, not from `BEAM` energy.
+:::
+
+::: {.feature-opal}
+{{< include _legacy-distributions.qmd >}}
+:::

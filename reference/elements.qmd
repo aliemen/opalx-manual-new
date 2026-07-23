@@ -3,7 +3,7 @@ title: "Element Reference"
 description: "Elements and time-dependence objects registered by the current OPALX executable."
 audience: user
 status: current
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-23"
 ---
 
 The following objects are registered in the current OPALX configurator.
@@ -17,8 +17,10 @@ The following objects are registered in the current OPALX configurator.
 | Diagnostics and structure | `MONITOR`, `MARKER`, `PROBE`, `LINE` |
 | Time dependence | Polynomial, sinusoidal, and spline time-dependence objects |
 
-Capitalization above follows the user-facing convention. The regression-backed
+Capitalization above follows the user-facing convention. The
 [Elements User Guide](../user-guide/elements.qmd) gives source-audited
-attributes and limitations for the eight types currently exercised in input
-tests. See [Element Physics](../physics/elements/index.qmd) for detailed bends
-and multipoles and the [API Reference](api.qmd) for source-level definitions.
+attributes for every registered type and distinguishes maintained regression
+coverage from source-only support. Its OPAL view also retains non-CYCL legacy
+interfaces; that does not imply OPALX registration. See
+[Element Physics](../physics/elements/index.qmd) for detailed bends and
+multipoles and the [API Reference](api.qmd) for source-level definitions.

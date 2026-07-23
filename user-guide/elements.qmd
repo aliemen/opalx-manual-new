@@ -1,16 +1,21 @@
 ---
 title: "Elements"
-description: "Configure the OPALX element types exercised by the maintained regression suite."
+description: "Configure current OPALX elements or consult the retained legacy OPAL element interfaces."
 audience: user
 status: current
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-23"
 body-classes: "opalx-sidebar-page-toc"
 ---
 
 Elements are named objects placed in three dimensions and assembled into a
-`LINE`. This page covers every element type found in the current
-`regression-tests-x` input files and audits its input attributes against OPALX
-source commit `d1e762f15a2a`:
+`LINE`. Shared concepts are described once; select OPALX or OPAL above for
+version-specific interfaces.
+
+::: {.feature-opalx}
+The OPALX view covers every element type found in the current source registry,
+including interfaces without maintained regression inputs. It was audited in
+`opalx/src/OpalConfigure/Configure.cpp` at source commit `d1e762f15a2a`.
+Regression coverage is stated separately from parser registration.
 
 | Type | Regression use | External data |
 |---|---|---|
@@ -22,12 +27,18 @@ source commit `d1e762f15a2a`:
 | `SOLENOID` | Mapped solenoid field | field map |
 | `RFCAVITY` | Standing-wave RF field | field map |
 | `TRAVELINGWAVE` | Traveling-wave RF field | field map |
+| `LASER` | Source registered; no maintained regression input | none |
+| `MONITOR` | Source registered; no maintained regression input | output file |
+| `MARKER` | Source registered; no maintained regression input | none |
+| `PROBE` | Source registered; no maintained regression input | output file |
+| `RBEND`, `SBEND` | Source registered; no maintained regression input | none |
+| `VERTICALFFAMAGNET` | Source registered; no maintained regression input | none |
+| `VARIABLE_RF_CAVITY` | Source registered; no maintained regression input | time models |
 
 : {tbl-colwidths="[28, 42, 30]"}
 
-Registered element types without a maintained regression input are outside
-this page's verified scope. The [Element Physics](../physics/elements/index.qmd)
-chapter contains derivations and benchmarks where available.
+The [Element Physics](../physics/elements/index.qmd) chapter contains
+derivations and benchmarks where available.
 
 ## Common element syntax {#common-element-syntax}
 
@@ -271,11 +282,157 @@ Use a regression-matched map, cell count, and mode as one consistent set. As
 with `RFCAVITY`, `AUTOPHASE=0` disables phase searching globally and
 `APVETO=TRUE` disables it for this element only.
 
+## `LASER` {#laser}
+
+`LASER` defines a passive analytic laser pulse. It is registered by the current
+source but is not exercised by the maintained regression suite.
+
+```opal
+L1: LASER, L=0.0, ELEMEDGE=0.0,
+    WAVELENGTH=800e-9, PULSEENERGY=1.0,
+    PULSELENGTH=30e-15, WAISTX=20e-6, WAISTY=20e-6,
+    DIR={0,0,-1}, STOKES={1,0,0};
+```
+
+| Parameter | Unit | Constraint |
+|---|---:|---|
+| `WAVELENGTH` | m | Required and greater than zero. |
+| `PULSEENERGY` | J | Required and greater than zero. |
+| `PULSELENGTH` | s | Required and greater than zero. |
+| `WAISTX`, `WAISTY` | m | Required and greater than zero. |
+| `DIR` | none | Required nonzero three-vector; OPALX normalizes it. |
+| `STOKES` | none | Optional three-vector with $\xi_1^2+\xi_2^2+\xi_3^2\le1$. |
+| `L` | m | Optional non-negative body length. |
+
+## `MONITOR` {#monitor}
+
+`MONITOR` records bunch crossings at a lattice location.
+
+```opal
+M1: MONITOR, L=0.01, ELEMEDGE=0.5, TYPE=SPATIAL, OUTFN="monitor.h5";
+```
+
+| Parameter | Default | Current behavior |
+|---|---:|---|
+| `L` | at least `0.01` m at update | Physical collection interval. |
+| `TYPE` | non-`TEMPORAL` | `TEMPORAL` selects temporal collection; every other value selects spatial collection. |
+| `OUTFN` | unset | Output filename passed to the monitor implementation. |
+
+## `MARKER` {#marker}
+
+`MARKER` identifies a lattice location without adding a field. It accepts the
+common placement attributes. Built-in `#S` and `#E` markers denote the start
+and end of a line.
+
+```opal
+IP: MARKER, ELEMEDGE=1.2;
+```
+
+## `PROBE` {#probe}
+
+`PROBE` records particle crossings over a rectangular span.
+
+```opal
+P1: PROBE, L=0.001, ELEMEDGE=0.8,
+    XSTART=-10, XEND=10, YSTART=-10, YEND=10,
+    STEP=1, OUTFN="probe.h5";
+```
+
+| Parameter | Unit | Current behavior |
+|---|---:|---|
+| `XSTART`, `XEND` | mm | Horizontal endpoints, converted to metres. |
+| `YSTART`, `YEND` | mm | Vertical endpoints, converted to metres. |
+| `STEP` | mm | Sampling step; default `1`. |
+| `WIDTH` | mm | Accepted but not used by the current update path. |
+| `OUTFN` | path | Output filename. |
+
+## `RBEND` and `SBEND` {#bends}
+
+`RBEND` defines rectangular bend geometry whose `L` is the straight body
+length. `SBEND` defines sector geometry whose `L` is the design-orbit arc
+length. Both apply normal and skew components through octupole order.
+
+```opal
+B1: SBEND, L=0.5, ELEMEDGE=1.0, ANGLE=0.1,
+    K1=0.0, HGAP=0.02, FINT=0.5;
+```
+
+| Parameter | Unit | Current behavior |
+|---|---:|---|
+| `ANGLE` | rad | Requested bend angle. |
+| `K0`, `K0S` | $\mathrm m^{-1}$ | Normal and skew dipole coefficients. If `K0` is omitted, OPALX derives the normal dipole from `ANGLE` and geometry. |
+| `K1`, `K1S` | $\mathrm m^{-2}$ | Normal and skew quadrupole coefficients. |
+| `K2`, `K2S` | $\mathrm m^{-3}$ | Normal and skew sextupole coefficients. |
+| `K3`, `K3S` | $\mathrm m^{-4}$ | Normal and skew octupole coefficients. |
+| `HGAP` | m | Half gap; OPALX stores twice this value as the full gap. |
+| `FINT` | none | Fringe integral; default `0.5`. |
+| `HAPERT` | m | Positive values install a rectangular transverse aperture. |
+| `DESIGNENERGY` | eV | Optional design energy forwarded to the bend. |
+| `E1`, `E2` | rad | Parsed but explicitly rejected by the current native bend port. |
+| `GAP`, `GREATERTHANPI` | - | Rejected compatibility attributes. Use `HGAP`; bends beyond the old compatibility path are unsupported. |
+| `WAKEF`, `PARTICLEMATTERINTERACTION` | name | Rejected by the current native bend port. |
+
+The classes are registered but currently lack maintained regression inputs.
+Treat pole-face, fringe, aperture, and sign conventions as experimental until
+validated for the intended lattice.
+
+## `VERTICALFFAMAGNET` {#verticalffamagnet}
+
+`VERTICALFFAMAGNET` defines a vertical fixed-field alternating-gradient
+magnet with a tanh longitudinal fringe.
+
+| Parameter | Unit | Meaning |
+|---|---:|---|
+| `B0` | T | Nominal dipole field at zero height. |
+| `FIELD_INDEX` | $\mathrm m^{-1}$ | Exponential vertical field index. |
+| `WIDTH` | m | Full horizontal aperture width. |
+| `MAX_HORIZONTAL_POWER` | integer | Highest horizontal expansion power. |
+| `END_LENGTH` | m | Tanh fringe length. |
+| `CENTRE_LENGTH` | m | Flat-top length. |
+| `BB_LENGTH` | m | Bounding-box length. |
+| `HEIGHT_POS_EXTENT`, `HEIGHT_NEG_EXTENT` | m | Positive and negative vertical aperture extents. |
+
+This registered element has no maintained OPALX regression input; validate its
+placement and field before production use.
+
+## `VARIABLE_RF_CAVITY` {#variable-rf-cavity}
+
+`VARIABLE_RF_CAVITY` applies a hard-edge electric field whose phase, amplitude,
+and frequency are supplied by named time-dependence definitions.
+
+```opal
+VC1: VARIABLE_RF_CAVITY, L=0.2, ELEMEDGE=0.0,
+     PHASE_MODEL=Phase, AMPLITUDE_MODEL=Amplitude,
+     FREQUENCY_MODEL=Frequency, WIDTH=0.1, HEIGHT=0.1;
+```
+
+| Parameter | Expected model output |
+|---|---|
+| `PHASE_MODEL` | Phase in radians. |
+| `AMPLITUDE_MODEL` | Electric field in MV/m. |
+| `FREQUENCY_MODEL` | Frequency in MHz. |
+| `WIDTH`, `HEIGHT`, `L` | Full cavity dimensions in metres. |
+
+### Time-dependence definitions {#element-time-dependence-definitions}
+
+`POLYNOMIAL_TIME_DEPENDENCE`
+: Defines $f(t)=\sum_i c_i t^i$ with time in ns. Use either `P0` through `P3`
+  or `COEFFICIENTS`, not both.
+
+`SINUSOIDAL_TIME_DEPENDENCE`
+: Sums components defined by `FREQUENCIES`, optional `PHASE_OFFSETS`,
+  `AMPLITUDES`, and `DC_OFFSETS`. Arrays must describe compatible component
+  counts.
+
+`SPLINE_TIME_DEPENDENCE`
+: Interpolates `VALUES` at strictly increasing `TIMES` in ns. `ORDER=1`
+  selects linear interpolation and `ORDER=3` selects cubic interpolation with
+  quadratic smoothing. The `ORDER` attribute accepts only those two values.
+
 ## Current limitations {#element-limitations}
 
-- This inventory is deliberately regression-driven. `MONITOR`, `MARKER`,
-  `PROBE`, bends, and other registered objects need separate source and runtime
-  verification before they are added here.
+- Registration establishes accepted input syntax, not numerical validation.
+  Elements without a maintained regression input are identified above.
 - `QUADRUPOLE` and `MULTIPOLE` strength-error inputs are parser-visible but do
   not affect the current field kernels.
 - The current bulk-particle `MULTIPOLE` kernel applies dipole and quadrupole
@@ -286,3 +443,12 @@ with `RFCAVITY`, `AUTOPHASE=0` disables phase searching globally and
 - Establish step-size, placement, aperture, and field-map convergence for each
   production lattice rather than treating a regression configuration as an
   accuracy prescription.
+:::
+
+::: {.feature-opal}
+The following retained OPAL material covers the non-OPAL-CYCL element
+interfaces from the legacy manual. It is not a statement that these types or
+attributes are accepted by OPALX.
+
+{{< include _legacy-elements.qmd >}}
+:::

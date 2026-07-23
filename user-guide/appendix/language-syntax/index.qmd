@@ -1,0 +1,199 @@
+---
+title: "Appendix B — Input Language Syntax"
+description: "Compact grammar reference for OPALX and OPAL statements and expressions."
+audience: user
+status: current
+last-reviewed: "2026-07-23"
+---
+
+This appendix reproduces the compact grammar shared by OPALX and OPAL input
+language. Words in italic in the legacy appendix denote syntactic entities,
+while monospaced tokens must be entered literally.
+
+## Statements
+
+| Entity | Form |
+|---|---|
+| _comment_ | `// ...` or `/* ... */` |
+| _identifier_ | `[a-zA-Z][a-zA-Z0-9-]` |
+| _integer_ | `[0-9]+` |
+| _string_ | single-quoted or double-quoted text |
+| _command_ | `_keyword_ _attribute-list_` or `_label_ : _keyword_ _attribute-list_` |
+| _attribute_ | `_attribute-name_`, `_attribute-name_ = _attribute-value_`, or `_attribute-name_ := _attribute-value_` |
+
+The distinction between `=` and `:=` is semantic as well as syntactic:
+
+- `=` evaluates the expression immediately.
+- `:=` stores the expression for later evaluation.
+
+An attribute value may be any of the parser categories used in the original
+appendix:
+
+- string expression
+- logical expression
+- real expression
+- array expression
+- constraint
+- variable reference
+- place
+- range
+- token list
+- token-list array
+- regular expression
+
+## Real Expressions
+
+| Entity | Form |
+|---|---|
+| _real-expression_ | `_real-term_`, unary `+/- _real-term_`, or recursive `+` / `-` combinations |
+| _real-term_ | `_real-factor_` or recursive `*` / `/` combinations |
+| _real-factor_ | `_real-primary_` or recursive exponentiation `_real-factor_ ^ _real-primary_` |
+| _real-primary_ | real literal, symbolic constant, `#`, real name, array lookup, object attribute lookup, table reference, function call, or parenthesized expression |
+
+Built-in scalar functions listed by the legacy appendix are:
+
+- `RANF`, `GAUSS`
+- `ABS`, `TRUNC`, `ROUND`, `FLOOR`, `CEIL`, `SIGN`
+- `SQRT`, `LOG`, `EXP`
+- `SIN`, `COS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `ATAN2`
+- `MAX`, `MIN`, `MOD`, `POW`
+
+Functions of arrays are:
+
+- `VMIN`
+- `VMAX`
+- `VRMS`
+- `VABSMAX`
+
+The grammar also allows:
+
+- `_array_[ _index_ ]`
+- `_object-name_ -> _real-attribute_`
+- `_object-name_ -> _array-attribute_[ _index_ ]`
+- `_table-reference_`
+
+## Real Variables and Constants
+
+| Entity | Form |
+|---|---|
+| _real-prefix_ | empty, `REAL`, `CONST`, or `REAL CONST` |
+| _real-definition_ | `_real-prefix_ _real-name_ = _real-expression_` or `:=` variant |
+| _symbolic-constant_ | `PI`, `TWOPI`, `DEGRAD`, `RADDEG`, `E`, `EMASS`, `PMASS`, `HMMASS`, `UMASS`, `CMASS`, `MMASS`, `DMASS`, `XEMASS`, `CLIGHT` |
+
+The original appendix also lists `_real-name_`, `_object-name_`,
+`_table-name_`, and `_column-name_` as identifiers.
+
+## Logical Expressions and Variables
+
+Logical expressions are built from relations combined with `&&` and `||`.
+The relation grammar allows:
+
+- `_logical-name_`
+- `TRUE`
+- `FALSE`
+- `_real-expression_ _relation-operator_ _real-expression_`
+
+The relation operators are:
+
+- `==`
+- `!=`
+- `<`
+- `>`
+- `>=`
+- `<=`
+
+Logical variables use the prefixes:
+
+- `BOOL`
+- `BOOL CONST`
+
+and the same `=` versus `:=` distinction as for reals.
+
+## String Expressions and Constants
+
+String expressions may be:
+
+- a literal string
+- an identifier interpreted as a string
+- a concatenation `_string-expression_ & _string_`
+
+String definitions use the prefix `STRING`:
+
+- `STRING name = expression`
+- `STRING name := expression`
+
+## Real Array Expressions and Definitions
+
+The legacy appendix distinguishes scalar and array grammars explicitly.
+Array expressions mirror scalar arithmetic:
+
+- unary `+` and `-`
+- binary `+`, `-`, `*`, `/`
+- exponentiation
+- parentheses
+
+The array primaries are:
+
+- `{ _array-literal_ }`
+- `_array-reference_`
+- `_real-function_( _array-expression_ )`
+- `( _array-expression_ )`
+
+The array literal grammar is recursive:
+
+- `_array-literal_ : _real-expression_`
+- `_array-literal_ : _array-literal_ , _real-expression_`
+
+Array references may be:
+
+- `_array-name_`
+- `_object-name_ -> _array-attribute_`
+
+Real array definitions use:
+
+- `_array-prefix_ : REAL VECTOR`
+- `_array-definition_ : _array-prefix_ _array-name_ = _array-expression_`
+- `_array-definition_ : _array-prefix_ _array-name_ := _array-expression_`
+
+## Constraints
+
+Constraints are first-class attribute values in the grammar. The appendix gives
+exactly:
+
+- `_constraint_ : _array-expression_ _constraint-operator_ _array-expression_`
+
+with allowed operators:
+
+- `==`
+- `<`
+- `>`
+
+This is the form used by optimization-related commands when comparing vector or
+sampled quantities.
+
+## Variable References
+
+The variable-reference grammar in the appendix is intentionally small:
+
+- `_variable-reference_ : _real-name_`
+- `_variable-reference_ : _object-name_ -> _attribute-name_`
+
+This is the basic hook that lets later statements reuse parser-visible values
+and object attributes.
+
+## Token Lists and Regular Expressions
+
+The final grammar sections define parser tokens that are not scalar numbers.
+
+Token lists:
+
+- `_token-list_ : _anything-except-comma_`
+- `_token-list-array_ : _token-list_`
+- `_token-list-array_ : _token-list-array_ , _token-list_`
+
+Regular expressions:
+
+- `_regular-expression_ : "` _UNIX-regular-expression_ `"`
+
+These forms appear mostly in higher-level command attributes and parser-side
+matching constructs rather than in beam-dynamics expressions.

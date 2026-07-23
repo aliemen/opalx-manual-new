@@ -1,0 +1,479 @@
+
+
+Space-charge effects are attached to the tracking setup through a
+`FIELDSOLVER` command and then referenced from `RUN` as described in the
+tracking chapter. The standard model is fully three-dimensional. The field
+solve is based on Poisson's equation with open boundaries, either through
+FFT-based convolution, iterative irregular-domain solvers, or adaptive mesh
+refinement.
+
+## FFT Based Particle-Mesh (PM) Solver {#opal-field-solver-fft-based-particle-mesh-pm-solver}
+
+The classical particle-mesh solver discretizes the charge density on a regular
+Cartesian mesh
+
+$$
+\Omega = [-L_x, L_x] \times [-L_y, L_y] \times [-L_t, L_t]
+$$
+
+with the corresponding grid points. Instead of computing all pairwise
+particle-particle interactions, the charge is distributed across the
+mesh and Poisson's equation is solved there.
+
+For isolated bunches the potential satisfies
+
+$$
+\nabla^2 \phi = -\rho / \epsilon_0
+$$ {#eq-fieldsolver-poisson}
+
+and can be written as a convolution of the charge density with the open-space
+Green function. The FFT-based solver uses the Hockney zero-padding
+construction so that the open-boundary convolution can be evaluated with
+periodic FFTs on an enlarged mesh.
+
+### FFT-based Convolutions and Zero Padding {#opal-field-solver-fft-based-convolutions-and-zero-padding}
+
+The key idea is:
+
+1. deposit the physical charge density on the unpadded mesh
+2. enlarge the mesh so the convolution can be represented as a periodic one
+3. construct the periodic Green-function array
+4. solve the convolution in Fourier space
+5. retain the potential and field only in the physical region
+
+This gives the physical open-boundary solution while preserving the efficiency
+of FFTs.
+
+### Algorithm {#opal-field-solver-algorithm}
+
+In practical terms, the FFT space-charge solve proceeds as:
+
+1. deposit charge to the mesh
+2. build or reuse the Green-function array
+3. perform the FFT-based convolution solve
+4. compute the electric field on the mesh
+5. interpolate the field back to particles
+
+The method scales much better than direct particle-particle summation and is
+the standard stable space-charge path.
+
+### Interpolation Schemes {#opal-field-solver-interpolation-schemes}
+
+The interpolation from mesh fields back to particles follows the standard
+particle-mesh deposition/interpolation choices used. The
+legacy manual reserves the detailed interpolation discussion for later
+revisions, but the solver is intended for ordinary 3D PIC workflows.
+
+## Particle-Particle-Particle-Mesh (P3M) Solver {#opal-field-solver-particle-particle-particle-mesh-p3m-solver}
+
+The `P3M` solver splits the total electrostatic force into a short-range
+direct part and a long-range mesh part,
+
+$$
+F = F_{\mathrm{sr}} + F_{\mathrm{lr}}
+$$ {#eq-fieldsolver-p3m-force}
+
+so that close encounters are handled by direct summation inside a cutoff
+radius, while the smooth long-range contribution is handled on the mesh.
+
+In this formulation the Green function is likewise split into short-range and
+long-range components. `OPAL` supports two practical choices:
+
+- `STANDARD`: the Ewald-type splitting with interaction parameter `ALPHA`
+- `INTEGRATED`: an integrated polynomial form with a convenient closed-form
+  cell integration
+
+### Use of `P^3M` solver {#opal-field-solver-use-of-p-3m-solver}
+
+The legacy implementation notes are important:
+
+- `P3M` is only available in `OPAL-T`
+- emission must not be active
+- the solver uses `OPEN` boundary conditions
+- `ALPHA` is only used together with `GREENSF=STANDARD`
+
+Example:
+
+```text
+REAL inter_rad = 3.125e-5;
+
+FS_P3M: FIELDSOLVER, FSTYPE="P3M", MX=64, MY=64, MT=64,
+        PARFFTX=decx, PARFFTY=decy, PARFFTT=decz,
+        RC=inter_rad, GREENSF=INTEGRATED;
+```
+
+## Iterative Space Charge Solver {#opal-field-solver-iterative-space-charge-solver}
+
+The iterative Poisson solver is intended for irregular geometries where the
+plain FFT open-boundary solve is not the best model. The discretization is
+based on finite differences, and the resulting linear system is solved by a
+preconditioned iterative method with smoothed-aggregation algebraic multigrid
+preconditioning.
+
+Compilation requirements:
+
+- `ENABLE_SAAMG_SOLVER=ON`
+- Parmetis
+- Trilinos
+
+This is the solver family behind `FSTYPE=SAAMG`.
+
+## Energy Binning {#opal-field-solver-energy-binning}
+
+When the bunch energy spread is too large for a single boosted-frame
+electrostatic approximation, `OPAL` can split the bunch into several energy
+bins and perform multiple field solves. This is the basis of the
+multi-Lorentz-frame approximation.
+
+In cyclotron multi-bunch mode the number of energy bins should be at least the
+number of neighboring bunches represented by `NNEIGHBB`. The companion control
+parameter `MINSTEPFORREBIN` defines after how many integration steps the energy
+bins are merged again.
+
+## The `FIELDSOLVER` Command {#opal-field-solver-the-fieldsolver-command}
+
+The `FIELDSOLVER` command selects the solver type, mesh resolution, domain
+decomposition, boundary conditions, and optional solver-specific parameters.
+
+
+### Core command attributes {#opal-field-solver-core-command-attributes}
+
+| Attribute | Meaning |
+|---|---|
+| `FSTYPE` | Solver type: `FFT`, `FFTPERIODIC`, `SAAMG`, `P3M`, `NONE` |
+| `PARFFTX` | Distribute the `x` direction over MPI ranks |
+| `PARFFTY` | Distribute the `y` direction over MPI ranks |
+| `PARFFTT` | Distribute the `z` direction over MPI ranks |
+| `MX` | Number of mesh points in `x` |
+| `MY` | Number of mesh points in `y` |
+| `MT` | Number of mesh points in `z` |
+| `BCFFTX` | Boundary condition in `x` |
+| `BCFFTY` | Boundary condition in `y` |
+| `BCFFTZ` | Boundary condition in `z` |
+| `GREENSF` | Green-function choice for FFT-based solvers |
+| `BBOXINCR` | Bounding-box enlargement factor in percent |
+| `GEOMETRY` | Geometry list for irregular-domain solves |
+| `ITSOLVER` | Iterative linear solver |
+| `INTERPL` | Boundary-point interpolation scheme |
+| `TOL` | Iterative solver tolerance |
+| `MAXITERS` | Maximum number of iterations |
+| `PRECMODE` | Preconditioner reuse policy |
+| `RC` | P3M short-range cutoff radius |
+| `ALPHA` | P3M interaction splitting parameter |
+| `ENBINS` | Number of energy bins |
+| `MINSTEPFORREBIN` | Merge energy bins after this many steps |
+
+### Fieldsolver type {#opal-field-solver-fieldsolver-type}
+
+`FSTYPE` selects the actual solver backend.
+
+- `FFT`: standard open-boundary FFT-based particle-mesh solver
+- `FFTPERIODIC`: FFT solver with periodic longitudinal treatment
+- `SAAMG`: iterative irregular-domain solver
+- `P3M`: mixed mesh plus short-range direct solver
+- `NONE`: disable space-charge field solving
+
+`FFT` solver is the most stable default path.
+
+### Domain Decomposition {#opal-field-solver-domain-decomposition}
+
+`PARFFTX`, `PARFFTY`, and `PARFFTT` decide whether the corresponding mesh
+direction is distributed over MPI processes.
+
+Legacy default:
+
+- `PARFFTX = FALSE`
+- `PARFFTY = FALSE`
+- `PARFFTT = TRUE`
+
+So the conventional decomposition is serial in `x` and `y`, parallel in `z`.
+
+### Number of Grid Points {#opal-field-solver-number-of-grid-points}
+
+`MX`, `MY`, and `MT` define the rectangular mesh resolution in `x`, `y`, and
+`z`. These values determine both the field resolution and the FFT problem
+size, so they are the main tuning parameters for accuracy and cost.
+
+### Boundary Conditions {#opal-field-solver-boundary-conditions}
+
+Boundary conditions are specified independently per axis:
+
+- `BCFFTX`: `OPEN`
+- `BCFFTY`: `OPEN`
+- `BCFFTZ`: `OPEN` or `PERIODIC`
+
+Using `PERIODIC` in `z` is the standard way to model a DC beam rather than an
+isolated bunch.
+
+### Greens Function {#opal-field-solver-greens-function}
+
+`GREENSF` controls the Green-function model for FFT-based solvers and `P3M`.
+
+Allowed values:
+
+- `INTEGRATED`
+- `STANDARD`
+
+The default is `INTEGRATED`. This is the usual recommendation for FFT-based
+space-charge calculations.
+
+### Bounding Box Enlargement {#opal-field-solver-bounding-box-enlargement}
+
+The solver constructs a minimal rectangular box that encloses all particles.
+`BBOXINCR` enlarges that box by a user-specified percentage before the solve.
+
+Default:
+
+- `BBOXINCR = 2.0`
+
+This is often used to avoid an overly tight computational box around the
+bunch.
+
+### Geometry {#opal-field-solver-geometry}
+
+`GEOMETRY` attaches a list of geometry objects that define the boundary of the
+computational domain for the irregular-domain solver. This option is relevant
+to `SAAMG` workflows.
+
+### Iterative Solver {#opal-field-solver-iterative-solver}
+
+`ITSOLVER` selects the Krylov or direct linear solver used by the iterative
+field-solver family.
+
+For `SAAMG`, the documented choices are:
+
+- `CG` (default)
+- `BICGSTAB`
+- `GMRES`
+
+### Interpolation for Boundary Points {#opal-field-solver-interpolation-for-boundary-points}
+
+`INTERPL` controls how grid points near the irregular boundary are
+interpolated.
+
+Allowed values:
+
+- `CONSTANT`
+- `LINEAR` (default)
+- `QUADRATIC`
+
+This parameter is specific to `SAAMG`.
+
+### Tolerance {#opal-field-solver-tolerance}
+
+`TOL` is the convergence tolerance for the iterative solver.
+
+Default:
+
+- `TOL = 1e-8`
+
+### Maximal Iterations {#opal-field-solver-maximal-iterations}
+
+`MAXITERS` limits the number of iterations taken by the iterative solver.
+
+Default:
+
+- `MAXITERS = 100`
+
+### Preconditioner Behavior {#opal-field-solver-preconditioner-behavior}
+
+`PRECMODE` controls how aggressively the `SAAMG` preconditioner is rebuilt or
+reused.
+
+| Value | Behavior |
+|---|---|
+| `STD` | Rebuild the preconditioner every step |
+| `HIERARCHY` | Reuse the hierarchy only; this is the default |
+| `REUSE` | Reuse the full preconditioner |
+
+This parameter should only be changed deliberately, because it affects both
+performance and solver robustness.
+
+### Cut-off Radius {#opal-field-solver-cut-off-radius}
+
+`RC` is the short-range cutoff radius for the `P3M` solver in the boosted
+frame. Particles separated by less than this radius are included in the direct
+particle-particle correction.
+
+Default:
+
+- `RC = 0`
+
+This corresponds to disabling the direct short-range correction.
+
+### Interaction splitting parameter {#opal-field-solver-interaction-splitting-parameter}
+
+`ALPHA` controls the balance between the short-range and mesh parts of the
+`P3M` Green-function split. Large `ALPHA` gives greater weight to the mesh
+part; small `ALPHA` gives greater weight to the particle-particle part.
+
+It is commonly chosen as
+
+$$
+\alpha = C / r_c
+$$ {#eq-fieldsolver-alpha}
+
+with `C` of order one and `r_c` the cutoff radius.
+
+Default:
+
+- `ALPHA = 1e8`
+
+This parameter is only used for `GREENSF=STANDARD`.
+
+### Number of Energy Bins {#opal-field-solver-number-of-energy-bins}
+
+`ENBINS` selects how many energy bins are used when the bunch is split for
+multi-frame space-charge treatment. In cyclotron multi-bunch mode this should
+not be smaller than `NNEIGHBB`.
+
+`MINSTEPFORREBIN` defines after how many steps the temporarily split energy-bin
+representation is merged back into one.
+
+## Adaptive Mesh Refinement (AMR) Solver {#opal-field-solver-adaptive-mesh-refinement-amr-solver}
+
+The AMR path extends the `FIELDSOLVER` command with hierarchy and refinement
+controls. It is enabled by compiling `OPAL` with `ENABLE_AMR=ON` and enabling
+`OPTION, AMR=TRUE`.
+
+The legacy interface describes three AMR solver types:
+
+- `FMG`
+- `ML`
+- `AMR_MG`
+
+The hierarchy is defined from the base grid by the number of AMR levels,
+refinement ratios, blocking factors, and maximum grid sizes.
+
+### AMR extensions to `FIELDSOLVER` {#opal-field-solver-amr-extensions-to-fieldsolver}
+
+| Attribute | Meaning |
+|---|---|
+| `AMR_MAXLEVEL` | Maximum AMR refinement level |
+| `AMR_REFX`, `AMR_REFY`, `AMR_REFZ` | Refinement ratio per coordinate |
+| `AMR_MAXGRIDX`, `AMR_MAXGRIDY`, `AMR_MAXGRIDZ` | Maximum base-level box size |
+| `AMR_BFX`, `AMR_BFY`, `AMR_BFZ` | Blocking factors |
+| `AMR_TAGGING` | Mesh-refinement rule |
+| `AMR_DENSITY` | Density threshold for `CHARGE_DENSITY` tagging |
+| `AMR_MAX_NUM_PART` | Threshold for `MAX_NUM_PARTICLES` tagging |
+| `AMR_MIN_NUM_PART` | Threshold for `MIN_NUM_PARTICLES` tagging |
+| `AMR_SCALING` | Scaling threshold for `POTENTIAL`, `EFIELD`, `MOMENTA` |
+| `AMR_DOMAIN_RATIO` | Computational-domain aspect ratio |
+
+### Mesh refinement strategies {#opal-field-solver-mesh-refinement-strategies}
+
+The manual documents these tagging modes:
+
+| `AMR_TAGGING` | Refinement criterion |
+|---|---|
+| `POTENTIAL` | refine where the potential exceeds a scaled level maximum |
+| `EFIELD` | refine where any field component exceeds a scaled level maximum |
+| `MOMENTA` | refine cells containing particles above a scaled momentum threshold |
+| `CHARGE_DENSITY` | refine cells whose density exceeds `AMR_DENSITY` |
+| `MIN_NUM_PARTICLES` | refine cells based on `AMR_MIN_NUM_PART` |
+| `MAX_NUM_PARTICLES` | refine cells based on `AMR_MAX_NUM_PART` |
+
+`AMR_TAGGING` is a string attribute and therefore must be quoted in the input
+deck.
+
+### Hardware-Architecture Independent AMR Poisson Solver {#opal-field-solver-hardware-architecture-independent-amr-poisson-solver}
+
+The `AMR_MG` path is the Trilinos-based AMR Poisson solver. It requires
+`ENABLE_AMR_MG_SOLVER=ON` and a working Trilinos installation. The legacy
+manual lists these core packages:
+
+- Tpetra
+- Ifpack2
+- Amesos2
+- Belos
+- MueLu
+
+Some base-level linear solvers require additional third-party packages such as
+`SUPERLU`, `UMFPACK`, `PARDISO_MKL`, `MUMPS`, or `LAPACK`.
+
+The AMR multigrid extensions are:
+
+| Attribute | Meaning |
+|---|---|
+| `AMR_MG_SMOOTHER` | `GS`, `JACOBI`, or `SGS`; default `GS` |
+| `AMR_MG_NSWEEPS` | Number of smoothing sweeps; default `8` |
+| `AMR_MG_PREC` | Bottom-level preconditioner; default `NONE` |
+| `AMR_MG_INTERP` | Prolongation operator; default `PC` |
+| `AMR_MG_NORM` | Convergence norm; default `LINF_NORM` |
+| `AMR_MG_VERBOSE` | Write solver diagnostics; default `FALSE` |
+| `AMR_MG_REBALANCE` | Rebalance solver/preconditioner communicators; default `FALSE` |
+| `AMR_MG_REUSE` | MueLu reuse mode; default `RAP` |
+| `AMR_MG_TOL` | Solver tolerance; default `1e-10` |
+| `ITSOLVER` | Base-level linear solver; default `CG` |
+
+For `ITSOLVER` on the AMR base level, the legacy interface documents:
+
+- `BICGSTAB`
+- `MINRES`
+- `PCPG`
+- `CG`
+- `GMRES`
+- `STOCHASTIC_CG`
+- `RECYCLING_CG`
+- `RECYCLING_GMRES`
+- `KLU2`
+- `SUPERLU`
+- `UMFPACK`
+- `PARDISO_MKL`
+- `MUMPS`
+- `LAPACK`
+- `SA`
+
+### Use of AMR {#opal-field-solver-use-of-amr}
+
+The legacy manual states that AMR is available only in `OPAL-cycl`
+multi-bunch mode. Once more than one bunch is present, the AMR hierarchy is
+built. In this setup the AMR backend manages the MPI parallelism itself, so
+the other Poisson-solver backends are not combined with the AMR run mode.
+
+### AMR Example {#opal-field-solver-amr-example}
+
+```text
+OPTION, AMR              = TRUE;
+OPTION, AMR_REGRID_FREQ  = 10;
+OPTION, AMR_YT_DUMP_FREQ = 100000;
+
+REAL Edes      = .072;
+REAL turns     = 8;
+REAL nstep     = 360;
+REAL frequency = 50.650;
+
+ring: CYCLOTRON, ...;
+rf0: RFCAVITY, ...;
+rf1: RFCAVITY, ...;
+rf2: RFCAVITY, ...;
+rf3: RFCAVITY, ...;
+rf4: RFCAVITY, ...;
+l1: LINE = (ring, rf0, rf1, rf2, rf3, rf4);
+
+Dist1: DISTRIBUTION, ...;
+
+Fs1: FIELDSOLVER, FSTYPE=AMR_MG,
+                  MX=128, MY=128, MT=128,
+                  PARFFTX=TRUE, PARFFTY=TRUE, PARFFTT=TRUE,
+                  BCFFTX=OPEN, BCFFTY=OPEN, BCFFTZ=OPEN,
+                  BBOXINCR=20, AMR_MAXLEVEL=2,
+                  AMR_MAXGRIDX=32, AMR_MAXGRIDY=32, AMR_MAXGRIDZ=32,
+                  AMR_BFX=16, AMR_BFY=16, AMR_BFZ=16,
+                  AMR_REFX=2, AMR_REFY=2, AMR_REFZ=2,
+                  AMR_DOMAIN_RATIO={1.0, 0.75, 0.75},
+                  AMR_TAGGING="CHARGE_DENSITY", AMR_DENSITY=1.0e-9,
+                  AMR_MG_VERBOSE=TRUE, AMR_MG_REBALANCE=TRUE, AMR_MG_REUSE=FULL,
+                  ITSOLVER=SA, AMR_MG_NORM=LINF_NORM, AMR_MG_NSWEEPS=12;
+
+beam1: BEAM, PARTICLE=PROTON, PC=P0, NPART=1e5, BCURRENT=2.0E-3, CHARGE=1.0, BFREQ=frequency;
+
+SELECT, LINE=l1;
+
+TRACK, LINE=l1, BEAM=beam1, MAXSTEPS=nstep*turns, STEPSPERTURN=nstep;
+RUN, METHOD="CYCLOTRON-T", BEAM=beam1, FIELDSOLVER=Fs1, DISTRIBUTION=Dist1,
+    MBMODE=FORCE, TURNS=11, MB_BINNING=GAMMA_BINNING, MB_ETA=0.25;
+
+ENDTRACK;
+STOP;
+```

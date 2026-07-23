@@ -27,7 +27,9 @@ trying to accomplish and then provides a complete lookup catalog.
 ### Values and variables {.unnumbered .unlisted}
 
 Define named real, Boolean, string, and vector values before using them in
-later attributes.
+later attributes. See [Command Format](command-format/index.qmd) for expression
+syntax and [Control Statements](control-statements/index.qmd) for executable
+language constructs.
 :::
 
 ::: {.doc-card}
@@ -73,7 +75,7 @@ sources, time step, and solver to one execution.
 ### Actions and options {.unnumbered .unlisted}
 
 Set global [runtime options](options.qmd), compose input files, inspect values,
-and terminate parsing explicitly.
+and terminate parsing with the [control statements](control-statements/index.qmd).
 :::
 ::::
 
@@ -81,6 +83,9 @@ and terminate parsing explicitly.
 
 Statements normally end with a semicolon. Names are case-insensitive in normal
 OPALX input, while string values and file paths retain their contents.
+The complete lexical, expression, array, selection, and constraint rules are in
+[Command Format](command-format/index.qmd); the formal grammar is in
+[Appendix B](appendix/language-syntax/index.qmd).
 
 | Form | Example | Meaning |
 |---|---|---|
@@ -153,7 +158,7 @@ user-guide section.
 
 | Definition | Short explanation | Maintained guide |
 |---|---|---|
-| `LINE` | Orders named elements into the lattice selected by `TRACK.LINE`. |  |
+| `LINE` | Orders named elements into the lattice selected by `TRACK.LINE`. | [Beam Lines](beam-lines/index.qmd) |
 | `DRIFT` | Field-free propagation over a finite length. | [DRIFT](elements.qmd#drift) |
 | `CONSTANTEFIELDCAVITY` | Applies a spatially uniform, constant electric field inside the element. | [CONSTANTEFIELDCAVITY](elements.qmd#constant-electric-field-cavity) |
 | `QUADRUPOLE` | Defines a thick normal or skew quadrupole. | [QUADRUPOLE](elements.qmd#quadrupole) |
@@ -162,14 +167,14 @@ user-guide section.
 | `SOLENOID` | Defines a solenoid from normalized strength or a field map. | [SOLENOID](elements.qmd#solenoid) |
 | `RFCAVITY` | Defines a standing-wave or single-gap RF cavity, normally from a field map. | [RFCAVITY](elements.qmd#rfcavity) |
 | `TRAVELINGWAVE` | Defines a traveling-wave RF structure with cell and phase-advance controls. | [TRAVELINGWAVE](elements.qmd#travelingwave) |
-| `RBEND` | Defines a rectangular bending magnet. |  |
-| `SBEND` | Defines a sector bending magnet. |  |
-| `VERTICALFFAMAGNET` | Defines a vertical fixed-field alternating-gradient magnet. |  |
-| `VARIABLE_RF_CAVITY` | Defines an RF cavity whose phase, amplitude, and frequency are provided by named time models. |  |
-| `LASER` | Defines a passive analytic laser pulse with direction and polarization. |  |
-| `MONITOR` | Records beam diagnostics at an element location. | [Diagnostics and output](diagnostics-output.qmd) |
-| `PROBE` | Records particle crossings over a configured probe span and accumulates peak diagnostics. | [Diagnostics and output](diagnostics-output.qmd) |
-| `MARKER` | Marks a named lattice location without applying a field. |  |
+| `RBEND` | Defines a rectangular bending magnet. | [RBEND](elements.qmd#bends) |
+| `SBEND` | Defines a sector bending magnet. | [SBEND](elements.qmd#bends) |
+| `VERTICALFFAMAGNET` | Defines a vertical fixed-field alternating-gradient magnet. | [VERTICALFFAMAGNET](elements.qmd#verticalffamagnet) |
+| `VARIABLE_RF_CAVITY` | Defines an RF cavity whose phase, amplitude, and frequency are provided by named time models. | [VARIABLE_RF_CAVITY](elements.qmd#variable-rf-cavity) |
+| `LASER` | Defines a passive analytic laser pulse with direction and polarization. | [LASER](elements.qmd#laser) |
+| `MONITOR` | Records beam diagnostics at an element location. | [MONITOR](elements.qmd#monitor) |
+| `PROBE` | Records particle crossings over a configured probe span and accumulates peak diagnostics. | [PROBE](elements.qmd#probe) |
+| `MARKER` | Marks a named lattice location without applying a field. | [MARKER](elements.qmd#marker) |
 
 ## Time-dependence definitions {#time-dependence-definitions}
 
@@ -190,7 +195,7 @@ The `TRACK` action switches to a small nested command set. `RUN` and
 | Structure | Short explanation | Maintained guide |
 |---|---|---|
 | `TRACK` | Selects the lattice, beam or beams, source list, stepping limits, time integrator, and tracking interval. | [Tracking](tracking.qmd) |
-| `RUN` | Constructs and executes the selected parallel tracking method and field solver. | [Tracking](tracking.qmd#run) |
+| `RUN` | Constructs and executes the selected parallel tracking method and field solver. | [Tracking](tracking.qmd#run-command) |
 | `ENDTRACK` | Leaves tracking mode and returns input processing to the main parser. | [Tracking](tracking.qmd) |
 
 ## Executable actions {#executable-actions}
@@ -201,17 +206,17 @@ not merely describe a later simulation object.
 | Action | Short explanation | Maintained guide |
 |---|---|---|
 | `OPTION` | Sets global logging, output, random-number, space-charge, load-balancing, and synchronization behavior. | [Runtime options](options.qmd) |
-| `TITLE` | Sets the calculation title. |  |
-| `CALL` | Temporarily reads and executes another input file, then resumes the caller. |  |
-| `ECHO` | Writes a message to the OPALX echo stream. |  |
-| `HELP` or `CLASS?` | Prints parser help for a registered class or object. |  |
-| `VALUE` | Evaluates and prints one or more real expressions. |  |
-| `SELECT` | Selects lattice positions by range, class, type, or name pattern for subsequent selection-aware commands. |  |
+| `TITLE` | Sets the calculation title. | [Control statements](control-statements/index.qmd#title-statement) |
+| `CALL` | Temporarily reads and executes another input file, then resumes the caller. | [Control statements](control-statements/index.qmd#call-statement) |
+| `ECHO` | Writes a message to the OPALX echo stream. | [Control statements](control-statements/index.qmd#echo-statement) |
+| `HELP` or `CLASS?` | Prints parser help for a registered class or object. | [Control statements](control-statements/index.qmd#help-command) |
+| `VALUE` | Evaluates and prints one or more real expressions. | [Control statements](control-statements/index.qmd#value-output-of-expressions) |
+| `SELECT` | Selects lattice positions by range, class, type, or name pattern for subsequent selection-aware commands. | [Control statements](control-statements/index.qmd#select-element-selection) |
 | `DUMPEMFIELDS` | Schedules electromagnetic-field sampling on a Cartesian or cylindrical space-time grid. | [Diagnostics and output](diagnostics-output.qmd) |
-| `SYSTEM` | Runs an operating-system command on rank zero. |  |
-| `PSYSTEM` | Runs an operating-system command on every rank. Use with particular care in MPI jobs. |  |
-| `STOP` | Stops further input processing. |  |
-| `QUIT` | Stops input processing; conventionally the final statement in an input file. |  |
+| `SYSTEM` | Runs an operating-system command on rank zero. | [Control statements](control-statements/index.qmd#system) |
+| `PSYSTEM` | Runs an operating-system command on every rank. Use with particular care in MPI jobs. | [Control statements](control-statements/index.qmd#psystem) |
+| `STOP` | Stops further input processing. | [Control statements](control-statements/index.qmd#stop-quit) |
+| `QUIT` | Stops input processing; conventionally the final statement in an input file. | [Control statements](control-statements/index.qmd#stop-quit) |
 
 ## Execution order and name resolution {#execution-order}
 

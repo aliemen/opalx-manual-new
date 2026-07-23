@@ -1,0 +1,86 @@
+---
+title: "Introduction"
+description: "Understand what OPALX is, how it is organized, and where to find maintained project resources."
+audience: user
+status: current
+last-reviewed: "2026-07-23"
+---
+
+OPALX is a modern particle-accelerator simulation program built for portable
+execution on CPUs and GPUs. It retains OPAL's MAD-inspired input language while
+reworking the runtime around current C++, MPI, Kokkos, and IPPL interfaces.
+
+This manual documents OPALX. Historical OPAL behavior appears only on pages
+where the **Documentation version** selector is present.
+
+## What OPALX models
+
+OPALX tracks charged macro-particles through ordered beamline elements and can
+couple them to external electromagnetic fields and self-consistent
+particle-mesh space charge. A normal calculation combines:
+
+- One or more particle distributions and emission sources.
+- A beam definition and ordered beamline.
+- External-field elements such as magnets and RF cavities.
+- An optional field solver for collective fields.
+- A `TRACK` block that defines time steps and stopping conditions.
+
+The current executable supports serial, OpenMP, CUDA, and HIP Kokkos backends,
+subject to the build configuration and the backend support of each algorithm.
+
+## Where to begin
+
+New users should follow the [installation instructions](../../getting-started/index.qmd),
+then run one of the [worked input files](../../getting-started/worked-inputs.qmd).
+The [Input Language and Execution](../input-language.qmd) page explains how
+definitions and actions fit together.
+
+The maintained project entry points are:
+
+- [OPALX source]({{< meta source-code-url >}})
+- [OPALX API documentation]({{< meta doxygen-url >}})
+- [Regression-test results]({{< meta regression-tests-url >}})
+- [This manual's repository]({{< meta manual-repository-url >}})
+
+## Parallel execution
+
+OPALX combines MPI domain decomposition with a selected Kokkos execution
+backend. GPU runs normally use one MPI rank per device. Numerical results can
+depend on mesh resolution, time step, decomposition, reduction order, and
+random sampling, so production studies should record all five.
+
+## Output and logging
+
+The command-line option `--info <level>` controls stdout detail:
+
+| Level | Intended use |
+|---:|---|
+| `1` | Coarse status and important events; recommended for production. |
+| `2` | Normal progress and run summaries. |
+| `3` | Detailed algorithm progress. |
+| `4` | Fine-grained implementation detail. |
+| `5` | Full debug or trace output. |
+
+For example:
+
+```sh
+opalx inputfile.in --info 1
+```
+
+Input-level output frequencies and diagnostics are controlled through
+[`OPTION`](../options.qmd), diagnostic elements, and
+[field-output commands](../diagnostics-output.qmd).
+
+## Documentation status
+
+OPALX is evolving. A page marked **current** has been checked against the
+current source, while **experimental** identifies a working interface that may
+still change. An explicit unavailable notice means that the accompanying OPAL
+documentation is retained for comparison and planning, not accepted by OPALX.
+
+## Citation
+
+A release-specific OPALX citation has not yet been published. Until one is
+available, record the exact source revision and cite the publications attached
+to the physical models used in the calculation. See
+[Publications and Citation](../../resources/publications.qmd).

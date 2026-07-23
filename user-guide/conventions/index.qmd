@@ -1,0 +1,75 @@
+---
+title: "Conventions"
+description: "Units, symbols, coordinate conventions, and common accelerator-code conversions used by OPALX."
+audience: user
+status: current
+last-reviewed: "2026-07-23"
+---
+
+OPALX uses SI units internally. Input attributes that use another convention
+state it explicitly in their parameter tables.
+
+## Physical units
+
+| Quantity | Input convention |
+|---|---|
+| Length | $\mathrm{m}$ |
+| Angle | $\mathrm{rad}$ |
+| Time | $\mathrm{s}$ unless an attribute states otherwise |
+| Quadrupole coefficient | $\mathrm{T\,m^{-1}}$ |
+| Multipole coefficient, $2n$ poles | $\mathrm{T\,m^{-n+1}}$ |
+| Electric voltage | $\mathrm{MV}$ |
+| Electric field strength | $\mathrm{MV\,m^{-1}}$ |
+| Magnetic field strength | $\mathrm{T}$ in current OPALX field output |
+| Frequency | $\mathrm{MHz}$ |
+| Charged-particle `BEAM.ENERGY` | $\mathrm{GeV}$ |
+| Photon `BEAM.ENERGY` | $\mathrm{eV}$, following the CAIN convention |
+| Particle mass | $\mathrm{GeV\,c^{-2}}$ in `BEAM.MASS` |
+| Normalized momentum | $\beta\gamma$ where explicitly stated |
+| Beam current | $\mathrm{A}$ |
+| Particle charge | elementary-charge units |
+| Normalized and geometric emittance | $\mathrm{m\,rad}$ |
+
+The analytic `LASER` definition uses `WAVELENGTH`, `WAISTX`, and `WAISTY` in
+meters, `PULSEENERGY` in joules, and `PULSELENGTH` in seconds. `DIR` and
+`STOKES` are dimensionless three-vectors.
+
+## Symbols
+
+| Symbol | Definition |
+|---|---|
+| $X$, $Y$ | Ellipse axes in the transverse plane; $X=Y=R$ for a circular beam. |
+| $R$ | Circular beam radius. |
+| $R^*$ | Effective elliptical radius, $(X+Y)/2$. |
+| $\sigma_x$, $\sigma_y$, $\sigma_z$ | RMS beam sizes in the respective coordinates. |
+| $\sigma_r$ | Circular-beam RMS radius, $\langle r^2\rangle^{1/2}$. |
+| $\beta$, $\gamma$ | Relativistic velocity and Lorentz factors. |
+| $p_0$ | Reference momentum. Input files commonly expose it as `P0`. |
+| $I$ | Beam current. |
+| $I_0$ | Species-dependent Alfvén current. |
+| $k_p$ | Generalized beam perveance. |
+| $q$, $m$ | Particle charge and mass. |
+
+Coordinate frames and transformations are defined in the
+[Physics coordinate-system chapter](../../physics/coordinate-systems/index.qmd).
+
+## Multipole conversion
+
+When importing a normalized quadrupole strength $k_1$ from codes such as
+Elegant, convert it to the magnetic gradient required by OPALX using the
+reference rigidity. In the historical convention,
+
+$$
+\frac{dB_y}{dx} = \frac{E[\mathrm{GeV}]}{0.29979}\,k_1,
+$$
+
+with the sign fixed by the coordinate and charge conventions of the source
+code. A convenient conversion for energy in MeV is
+
+```python
+def k1_to_gradient(k1, energy_mev):
+    return 3.33564095e-3 * energy_mev * k1
+```
+
+Always verify the imported sign with a single-particle trajectory before using
+the result in a lattice study.

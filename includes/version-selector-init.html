@@ -1,0 +1,16 @@
+<script>
+(() => {
+  const storageKey = "opalx-documentation-version-v1";
+  const validModes = new Set(["opalx", "opal", "both"]);
+  let mode = "opalx";
+
+  try {
+    const storedMode = window.localStorage.getItem(storageKey);
+    if (validModes.has(storedMode)) mode = storedMode;
+  } catch (_) {
+    // The OPALX view remains the safe default when storage is unavailable.
+  }
+
+  document.documentElement.dataset.opalDocumentationVersion = mode;
+})();
+</script>

@@ -1,0 +1,426 @@
+---
+title: "Command Format"
+description: "Complete syntax for statements, attributes, expressions, selections, constraints, and arrays in OPALX input."
+audience: user
+status: current
+last-reviewed: "2026-07-23"
+---
+
+
+OPALX and OPAL use the same MAD-like command grammar. The dialect is close to
+MAD9; for older MAD-style inputs, see the
+[conversion guide](../../user-guide/appendix/opal-madx/index.qmd).
+
+## Statements and Comments
+
+Input is free format. Statements are tokenized and terminated by semicolons.
+Comments may be introduced by `//`, and C-style block comments are also
+accepted.
+
+General command form:
+
+```text
+keyword, attribute, ..., attribute;
+label: keyword, attribute, ..., attribute;
+```
+
+The three parts are:
+
+1. `label`: optional for executable commands, required for definitions stored
+   for later use
+2. `keyword`: identifies the command or element type
+3. `attribute`: one of
+
+```text
+attribute-name
+attribute-name = attribute-value
+attribute-name := attribute-value
+```
+
+`=` evaluates the expression immediately. `:=` stores the expression and
+re-evaluates it when dependent values change. A logical attribute may be given
+without a value, in which case it implies `TRUE`.
+
+If a labeled command is stored, it can later be re-executed by label only or
+re-executed with modified attributes:
+
+```text
+QF: QUADRUPOLE, L=1, K1=0.01;
+QF, L=2;
+
+LMD: LMDIF, CALLS=10;
+LMD;
+LMD, CALLS=100, TOLERANCE=1E-5;
+```
+
+## Identifiers or Labels
+
+An identifier names a keyword, element, beamline, variable, or array. Unquoted
+identifiers begin with a letter and may contain letters, digits, periods, and
+underscores. Quoted identifiers may contain other special characters, though
+the source manual discourages that because it complicates downstream
+post-processing.
+
+Unquoted names are converted to upper case before storage.
+
+## Command Attribute Types
+
+Object attributes are referenced as
+
+```text
+object-name->attribute-name
+object-name->attribute-name[index]
+```
+
+The attribute categories used throughout OPAL are:
+
+| Attribute Type |
+|---|
+| String |
+| Logical |
+| Real expression |
+| Deferred expression |
+| Place |
+| Range |
+| Constraint |
+| Variable reference |
+| Regular expression |
+| Array |
+| Array of logical |
+| Array of real |
+| Array of string |
+| Array of token lists |
+
+## String Attributes
+
+String attributes carry titles, file names, class names, or options. Strings
+may be quoted with single or double quotes. Concatenation uses `&`, and the
+function `STRING(X)` converts a real expression to a string.
+
+| Operator / Function | Meaning |
+|---|---|
+| `X & Y` | concatenate strings |
+| `STRING(X)` | convert real expression `X` to a string |
+
+Examples:
+
+```text
+TITLE, "This is a title for the program run ""test""";
+CALL, FILE="save";
+
+REAL X=1;
+STRING L2=LEP&STRING(X+1);
+```
+
+### Predefined String Attributes
+
+Many string attributes are restricted to a predefined set of accepted values.
+Such attributes do not need to be quoted. If the supplied value is not in the
+allowed set, OPAL raises an exception.
+
+## Logical Expressions
+
+Logical expressions use the same precedence and syntax style as C. They are
+built from relations combined with `&&` and `||`.
+
+Grammar sketch:
+
+```text
+relation      ::= TRUE | FALSE | real-expr rel-operator real-expr
+rel-operator  ::= == | != | < | > | >= | <=
+and-expr      ::= relation | and-expr && relation
+logical-expr  ::= and-expr | logical-expr || and-expr
+```
+
+| Operator | Meaning |
+|---|---|
+| `X < Y` | true if `X` is less than `Y` |
+| `X <= Y` | true if `X` is not greater than `Y` |
+| `X > Y` | true if `X` is greater than `Y` |
+| `X >= Y` | true if `X` is not less than `Y` |
+| `X == Y` | true if `X` equals `Y` |
+| `X != Y` | true if `X` differs from `Y` |
+| `X && Y` | true if both are true |
+| `X \|\| Y` | true if at least one is true |
+
+Examples:
+
+```text
+OPTION, ECHO=TRUE;
+OPTION, ECHO;
+X>10 && Y<20 || Z==15
+```
+
+## Real Expressions
+
+Any real value may be given as an arithmetic expression. Expression definitions
+may be entered in any order; OPAL evaluates them when the required operands are
+available.
+
+Grammar sketch:
+
+```text
+real-ref  ::= real-variable |
+              real-array[index] |
+              object->real-attribute |
+              object->array-attribute[index]
+
+table-ref ::= table@place->column-name
+
+primary   ::= literal-constant |
+              symbolic-constant |
+              # |
+              real-ref |
+              table-ref |
+              function-name(arguments) |
+              (real-expression)
+
+factor    ::= primary | factor ^ primary
+term      ::= factor | term * factor | term / factor
+real-expr ::= term | +term | -term | real-expr + term | real-expr - term
+```
+
+## Operators
+
+| Operator | Meaning |
+|---|---|
+| `+X` | unary plus |
+| `-X` | unary minus |
+| `X + Y` | addition |
+| `X - Y` | subtraction |
+| `X * Y` | multiplication |
+| `X / Y` | division |
+| `X ^ Y` | power |
+
+## Real Functions
+
+The source chapter lists the following built-ins:
+
+- no arguments: `RANF()`, `GAUSS()`, `GETEKIN()`, `USER0()`
+- one argument: `TRUNC`, `ROUND`, `FLOOR`, `CEIL`, `SIGN`, `SQRT`, `LOG`,
+  `EXP`, `SIN`, `COS`, `ABS`, `TAN`, `ASIN`, `ACOS`, `ATAN`, `TGAUSS`,
+  `USER1`, `EVAL`
+- two arguments: `ATAN2`, `MAX`, `MIN`, `MOD`, `USER2`
+
+Functions of arrays:
+
+- `VMAX`
+- `VMIN`
+- `VRMS`
+- `VABSMAX`
+
+The source manual explicitly warns that random generators inside ordinary
+expressions may be re-evaluated at unexpected times. `EVAL(...)` can be used to
+force immediate evaluation and store the result as a constant.
+
+## Operands in Expressions
+
+### Literal Constants
+
+Numerical values follow FORTRAN-style literal syntax. Examples:
+
+```text
+1, 10.35, 5E3, 314.1592E-2
+```
+
+### Symbolic Constants
+
+The predefined symbolic constants include mathematical constants and particle
+masses:
+
+| Name | Meaning / Value |
+|---|---|
+| `PI`, `TWOPI`, `RADDEG`, `DEGRAD`, `E` | usual mathematical constants |
+| `EMASS`, `MUMASS`, `PMASS`, `DMASS`, `HMMASS`, `H2PMASS`, `ALPHAMASS`, `CMASS`, `XEMASS`, `UMASS` | predefined particle masses |
+| `CLIGHT`, `AMU` | speed of light and atomic mass unit |
+| `_OPALVERSION_` | OPAL version constant |
+| `RANK` | MPI rank |
+
+### Variable Labels
+
+Global real and vector variables are defined with:
+
+```text
+REAL X=expression;
+REAL X:=expression;
+VECTOR X=vector-expression;
+VECTOR X:=vector-expression;
+```
+
+Example:
+
+```text
+REAL L=1.0;
+REAL X:=L;
+D1: DRIFT, L:=X;
+D2: DRIFT, L:=2.0-X;
+```
+
+### Element or Command Attributes
+
+Attributes can appear directly in arithmetic expressions:
+
+```text
+element-name->attribute-name
+command-name->attribute-name
+element-name->attribute-name[index]
+command-name->attribute-name[index]
+```
+
+Example:
+
+```text
+D1: DRIFT, L=1.0;
+D2: DRIFT, L=2.0-D1->L;
+```
+
+### Deferred Expressions and Random Values
+
+Expressions containing random generators may be deferred and sampled when the
+target command actually executes. Such a value cannot safely be used as an
+operand inside another deferred expression.
+
+## Element Selection
+
+Element selection is not available in `OPAL-T` and `OPAL-CYCL`, but it is part
+of the general language.
+
+### Element Selection
+
+A `place` denotes a specific element occurrence or the position immediately
+before or after the full line:
+
+```text
+place ::= element-name |
+          element-name[index] |
+          #S |
+          #E |
+          line-name::place
+```
+
+Examples from the source chapter:
+
+- `C[1]`: first occurrence of `C`
+- `#S`: beginning of the line
+- `M[2]`: second occurrence of `M`
+- `#E`: end of the line
+- `S[1]::M[1]`: marker `M` nested in the first occurrence of sub-line `S`
+
+### Range Selection
+
+A range is one place or two places joined by `/`:
+
+```text
+range ::= place | place/place
+```
+
+Examples:
+
+- `#S/#E`: the full line
+- `A[1]/A[2]`: from the first `A` through the second `A`
+- `S[1]/S[2]`: from entry of first `S` through exit of second `S`
+
+## Constraints
+
+Constraints are mainly used in matching and optimization:
+
+```text
+constraint          ::= array-expr constraint-operator array-expr
+constraint-operator ::= == | < | >
+```
+
+## Variable Names
+
+Variable references can be:
+
+```text
+real-variable
+object->real-attribute
+```
+
+## Regular Expressions
+
+Some commands accept UNIX-style regular expressions. The pattern must be quoted.
+The source chapter documents the usual forms:
+
+- `.`
+- `[abc]`
+- `[a-zA-Z]`
+- `*`
+- `\character`
+
+Examples:
+
+```text
+SELECT, PATTERN="D.."
+SELECT, PATTERN="K.*QD.*\\.R1"
+```
+
+## Arrays
+
+An array is normally entered as a list in braces:
+
+```text
+{value, ..., value}
+```
+
+If the array has only one value, the braces may be omitted.
+
+### Logical Arrays
+
+```text
+logical-array ::= { logical-list }
+logical-list  ::= logical-expr | logical-list , logical-expr
+```
+
+Example:
+
+```text
+{true,true,a==b,false,x>y && y>z,true,false}
+```
+
+### Real Arrays
+
+Real arrays mirror scalar arithmetic and support:
+
+- array variables and object array attributes
+- `TABLE(...)`
+- `ROW(...)`
+- `COLUMN(...)`
+- component-wise real functions
+
+Example:
+
+```text
+{a, a+b, a+2*b}
+```
+
+Important generator forms:
+
+```text
+TABLE(n2, expression)
+TABLE(n1:n2, expression)
+TABLE(n1:n2:n3, expression)
+ROW(table, place)
+ROW(table, place, column-list)
+COLUMN(table, column)
+COLUMN(table, column, range)
+```
+
+In `TABLE(...)`, the special symbol `#` is replaced by the running index.
+
+### String Arrays
+
+String arrays are lists of string expressions. Example:
+
+```text
+{A, "xyz", A & STRING(X)}
+```
+
+### Token List Arrays
+
+Token-list arrays are lists of token lists. Example:
+
+```text
+{X:12:8, Y:12:8}
+```

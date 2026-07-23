@@ -1,0 +1,350 @@
+---
+title: "Control Statements"
+description: "Control parsing, variables, included files, flow, macros, messages, and operating-system actions."
+audience: user
+status: current
+last-reviewed: "2026-07-23"
+---
+
+
+These statements control OPALX parsing, variables, file inclusion, and simple
+flow. Global runtime settings are documented separately under
+[`OPTION`](../../user-guide/options.qmd).
+
+## Getting Help
+
+### `HELP` Command
+
+The `HELP` command prints information about a command or object type.
+
+```text
+HELP;                 // Help on the HELP command itself
+HELP, NAME=label;     // Show attribute types of label
+HELP, label;          // Shortcut form
+```
+
+Examples:
+
+```text
+HELP;
+HELP, NAME=FIELDSOLVER;
+HELP, FIELDSOLVER;
+```
+
+## `STOP` / `QUIT`
+
+```text
+STOP;
+QUIT;
+```
+
+`STOP` and `QUIT` terminate execution of the current input stream. In a nested
+`CALL` file they return to the caller; in the main input file they end the run.
+Any statements after `STOP` or `QUIT` in the same file are ignored.
+
+## Parameter Statements
+
+### Variable Definitions
+
+OPALX supports real scalars, real vectors, logical variables, and string
+constants.
+
+#### Real Scalar Variables
+
+```text
+REAL variable-name = real-expression;
+```
+
+The expression form
+
+```text
+REAL variable-name := real-expression;
+```
+
+retains the expression tree so it can be reevaluated. With `=`, the right-hand
+side is evaluated immediately.
+
+Circular expression definitions are not allowed.
+
+Examples:
+
+```text
+REAL GEV = 100;
+P0 = GEV;
+```
+
+`P0` is a reserved global reference momentum used to normalize magnetic-field
+coefficients.
+
+#### Real Vector Variables
+
+```text
+REAL VECTOR variable-name = vector-expression;
+```
+
+This creates a real vector. `VECTOR` without `REAL` is also accepted by the
+current parser.
+
+Examples:
+
+```text
+REAL VECTOR A = TABLE(10, #);
+REAL VECTOR B = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+```
+
+#### Logical Variables
+
+```text
+BOOL variable-name = logical-expression;
+```
+
+Example:
+
+```text
+BOOL FLAG = X != 0;
+```
+
+### Symbolic Constants
+
+Built-in mathematical and physical constants are provided. Additional constants
+can be defined with:
+
+```text
+REAL CONST label: CONSTANT = real-expression;
+```
+
+The value is evaluated immediately when the line is read and cannot be
+redefined later.
+
+Example:
+
+```text
+CONST IN = 0.0254;
+```
+
+### Vector Values
+
+Vectors can also be defined directly from expressions:
+
+```text
+REAL VECTOR vector-name = vector-expression;
+```
+
+Examples:
+
+```text
+VECTOR A_AMPL = {2.5e-3, 3.4e-2, 0, 4.5e-8};
+VECTOR A_ON = TABLE(10, 1);
+```
+
+### Assignment to Variables
+
+To force immediate evaluation and assign the resulting value as a constant, use
+`EVAL(...)`:
+
+```text
+variable-name = EVAL(real-expression);
+```
+
+This behaves like assignment in C or Fortran.
+
+Example:
+
+```text
+REAL X = 0;
+WHILE (X <= 0.10) {
+  VALUE, VALUE={X};
+  X = EVAL(X + .01);
+}
+```
+
+### `VALUE`: Output of Expressions
+
+```text
+VALUE, VALUE = expression-vector;
+```
+
+`VALUE` evaluates its arguments with the current variable state and prints the
+result. It is useful for debugging and tabulating expressions.
+
+Example:
+
+```text
+REAL A = 4;
+VALUE, VALUE = TABLE(5, #*A);
+REAL P1 = 5;
+REAL P2 = 7;
+VALUE, VALUE = {P1, P2, P1*P2-3};
+```
+
+## Miscellaneous Commands
+
+### `ECHO` Statement
+
+```text
+ECHO, MESSAGE=message;
+ECHO, message;
+```
+
+The given string is written immediately to the echo stream.
+
+### `SYSTEM`
+
+```text
+SYSTEM, CMD=string;
+SYSTEM, string;
+```
+
+`SYSTEM` executes an operating-system command on rank zero, then returns
+control to OPALX.
+
+Example:
+
+```text
+SYSTEM, "ls -l";
+```
+
+It can also be used to generate helper files externally and then include them
+with `CALL`.
+
+### `PSYSTEM`
+
+`PSYSTEM` is the parallel counterpart to `SYSTEM`: the command is executed on
+all ranks instead of only one.
+
+## `TITLE` Statement
+
+```text
+TITLE, STRING=page-header;
+TITLE, page-header;
+TITLE, STRING="";
+```
+
+`TITLE` stores the calculation title used by subsequent output.
+
+## File Handling
+
+### `CALL` Statement
+
+```text
+CALL, FILE=file-name;
+CALL, file-name;
+```
+
+`CALL` switches input processing to another file. Reading continues there until
+end-of-file or a `STOP` / `QUIT`, after which control returns to the caller.
+
+Example:
+
+```text
+CALL, FILE="structure";
+CALL, "structure";
+```
+
+### `init.opal`
+
+Before the main input file is processed, OPALX executes `$HOME/init.opal` if it
+exists. This behaves like an implicit
+
+```text
+CALL, FILE="$HOME/init.opal";
+```
+
+at the beginning of every run.
+
+Typical uses are:
+
+- shared `OPTION` settings
+- reusable `MACRO` definitions
+- global physics constants
+
+Because it is implicit, it can also be a source of confusion when switching
+machines. For portable input decks, an explicit `CALL` is often easier to
+manage.
+
+## `SELECT`: Element Selection
+
+`SELECT` marks lattice elements for commands that consume the selection state.
+It can select all elements, clear a selection, or match a line range, class,
+type, or name pattern.
+
+```text
+SELECT, LINE=Line1, RANGE=#S/#E, CLASS=QUADRUPOLE;
+SELECT, LINE=Line1, PATTERN="Q.*";
+SELECT, LINE=Line1, CLEAR=TRUE;
+```
+
+| Attribute | Meaning |
+|---|---|
+| `LINE` | Name of the line to inspect. |
+| `FULL` | Select every position in the line. |
+| `CLEAR` | Clear all selections. |
+| `RANGE` | Restrict selection to a lattice range. |
+| `CLASS` | Match an element class. |
+| `TYPE` | Match an element type name. |
+| `PATTERN` | Match element names with a regular expression. |
+
+## `IF`: Conditional Execution
+
+The input language supports C-like conditional execution:
+
+```text
+IF (logical) statement;
+IF (logical) statement; ELSE statement;
+IF (logical) { statement-group; }
+IF (logical) { statement-group; }
+  ELSE { statement-group; }
+```
+
+Statements inside the block still end with semicolons, but the closing brace
+does not.
+
+## `WHILE`: Repeated Execution
+
+Repeated execution is expressed as:
+
+```text
+WHILE (logical) statement;
+WHILE (logical) { statement-group; }
+```
+
+The logical condition is re-evaluated on every iteration. Some variable inside
+the loop must change in a way that allows termination.
+
+## `MACRO`: Macro Statements
+
+Macros provide subroutine-like token substitution.
+
+Definitions:
+
+```text
+name(formals): MACRO { token-list }
+name(): MACRO { token-list }
+```
+
+Calls:
+
+```text
+name(actuals);
+name();
+```
+
+The actual arguments replace all occurrences of the corresponding formal names
+inside the stored token list.
+
+Example:
+
+```text
+SHOWIT(X): MACRO {
+   VALUE, VALUE={X};
+}
+
+KS(X,Y): MACRO {
+   Y = 3e-3*X + 0.5e-3;
+}
+
+SHOWIT(PI);
+REAL X = 2;
+REAL Y;
+KS(X,Y);
+```

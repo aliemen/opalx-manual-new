@@ -1,23 +1,216 @@
 ---
-title: "Diagnostics and Output"
-description: "Plan diagnostics, field dumps, statistics, and reproducible run artifacts."
+title: "Field Output Commands"
+description: "Write static and time-dependent electromagnetic field samples with the OPAL and OPALX field-output commands."
 audience: user
-status: planned
-last-reviewed: "2026-07-22"
+status: current
+last-reviewed: "2026-07-23"
 ---
 
-The current executable registers monitor and probe elements plus the
-`DUMPEMFIELDS` action. Statistics, particle dumps, loss data, and element
-diagnostics are controlled by the input model and build configuration.
+:::: {.feature-opal}
+OPAL provides two commands for writing external fields:
 
-The output-format reference is being rebuilt directly from the OPALX writers.
-For production work, store the following together:
+- `DUMPFIELDS`: write out a static magnetic field map on a Cartesian grid
+- `DUMPEMFIELDS`: write out an electromagnetic field map on a 4D grid in
+  space-time; Cartesian and cylindrical grids are supported
 
-- Input file and small supporting text files.
-- OPALX revision and build options.
-- MPI rank count and execution backend.
-- Random seeds and macro-particle counts.
-- Logs, statistics, and checksums for large external datasets.
+`DUMPEMFIELDS` is an extension of `DUMPFIELDS`.
+::::
 
-Large outputs are simulation data and do not belong in either documentation
-repository.
+:::: {.feature-opalx}
+`OPALX` currently supports a single field-output command:
+
+- `DUMPEMFIELDS`: write out the external electromagnetic field on a 4D grid in
+  space-time; Cartesian and cylindrical grids are supported
+::::
+
+:::: {.feature-opal}
+## `DUMPFIELDS` Command
+
+`DUMPFIELDS` writes the static magnetic field on a 3D Cartesian grid. The file
+format is:
+
+```text
+<number of rows>
+1 x [m]
+2 y [m]
+3 z [m]
+4 Bx [kGauss]
+5 By [kGauss]
+6 Bz [kGauss]
+0
+<x0> <y0> <z0> <Bx0> <By0> <Bz0>
+<x1> <y1> <z1> <Bx1> <By1> <Bz1>
+...
+```
+
+Attributes:
+
+| Attribute | Meaning |
+|---|---|
+| `FILE_NAME` | output file name; existing files are overwritten |
+| `X_START`, `Y_START`, `Z_START` | grid origin in `m` |
+| `DX`, `DY`, `DZ` | grid spacing in `m` |
+| `X_STEPS`, `Y_STEPS`, `Z_STEPS` | number of steps; must be positive integers |
+
+Example:
+
+```text
+DUMPFIELDS, X_START=0., X_STEPS=101, DX=0.100,
+            Y_START=0., Y_STEPS=101, DY=0.100,
+            Z_START=0., Z_STEPS=1, DZ=0.100,
+            FILE_NAME="FieldMapXY.dat";
+```
+
+This writes a mid-plane map in the `x-y` plane, starting at `(0,0)` with
+`101 x 101` samples and `z = 0`.
+::::
+
+## `DUMPEMFIELDS` Command
+
+`DUMPEMFIELDS` writes electromagnetic field data on a 4D grid. Two coordinate
+systems are supported:
+
+- Cartesian: `(x, y, z, t)`
+- cylindrical about the `z` axis: `(r, phi, z, t)` in OPAL, `(r, phi, y, t)` in OPALX
+
+### Cartesian Mode
+
+Cartesian mode is selected with `COORDINATE_SYSTEM = CARTESIAN`.
+
+:::: {.feature-opal}
+The file format is:
+
+```text
+<number of rows>
+1  x [m]
+2  y [m]
+3  z [m]
+4  t [ns]
+5  Bx [kGauss]
+6  By [kGauss]
+7  Bz [kGauss]
+8  Ex [MV/m]
+9  Ey [MV/m]
+10 Ez [MV/m]
+0
+<x0> <y0> <z0> <t0> <Bx0> <By0> <Bz0> <Ex0> <Ey0> <Ez0>
+...
+```
+::::
+
+:::: {.feature-opalx}
+The file format is:
+
+```text
+<number of rows>
+1  x [m]
+2  y [m]
+3  z [m]
+4  t [ns]
+5  Bx [T]
+6  By [T]
+7  Bz [T]
+8  Ex [MV/m]
+9  Ey [MV/m]
+10 Ez [MV/m]
+0
+<x0> <y0> <z0> <t0> <Bx0> <By0> <Bz0> <Ex0> <Ey0> <Ez0>
+...
+```
+::::
+
+Attributes in Cartesian mode:
+
+| Attribute | Meaning |
+|---|---|
+| `FILE_NAME` | output file name; existing files are overwritten |
+| `COORDINATE_SYSTEM` | must be `CARTESIAN` |
+| `X_START`, `Y_START`, `Z_START` | grid origin in `m` |
+| `DX`, `DY`, `DZ` | spatial step size in `m` |
+| `X_STEPS`, `Y_STEPS`, `Z_STEPS` | spatial step counts; must be positive integers |
+| `T_START` | start time in `ns` |
+| `DT` | time step size in `ns` |
+| `T_STEPS` | number of time steps; must be a positive integer |
+
+### Cylindrical Mode
+
+Cylindrical mode is selected with `COORDINATE_SYSTEM = CYLINDRICAL`.
+
+:::: {.feature-opal}
+The file format is:
+
+```text
+<number of rows>
+1 r [m]
+2 phi [deg]
+3 z [m]
+4 t [ns]
+5 Br   [kGauss]
+6 Bphi [kGauss]
+7 Bz   [kGauss]
+8 Er   [MV/m]
+9 Ephi [MV/m]
+10 Ez  [MV/m]
+0
+<r0> <phi0> <z0> <t0> <Br0> <Bphi0> <Bz0> <Er0> <Ephi0> <Ez0>
+...
+```
+::::
+
+:::: {.feature-opalx}
+The file format is:
+
+```text
+<number of rows>
+1 r [m]
+2 phi [deg]
+3 y [m]
+4 t [ns]
+5 Br   [T]
+6 Bphi [T]
+7 By   [T]
+8 Er   [MV/m]
+9 Ephi [MV/m]
+10 Ey  [MV/m]
+0
+<r0> <phi0> <y0> <t0> <Br0> <Bphi0> <By0> <Er0> <Ephi0> <Ey0>
+...
+```
+::::
+
+Attributes in cylindrical mode:
+
+| Attribute | Meaning |
+|---|---|
+| `FILE_NAME` | output file name; existing files are overwritten |
+| `COORDINATE_SYSTEM` | must be `CYLINDRICAL` |
+| `R_START` | radial start point in `m` |
+| `DR` | radial step size in `m` |
+| `R_STEPS` | number of radial steps; must be a positive integer |
+| `PHI_START` | start point in `phi` |
+| `DPHI` | azimuthal step size |
+| `PHI_STEPS` | number of azimuthal steps; must be a positive integer |
+| `T_START` | start time in `ns` |
+| `DT` | time step size in `ns` |
+| `T_STEPS` | number of time steps; must be a positive integer |
+
+:::: {.feature-opal}
+Additional OPAL cylindrical attributes:
+
+| Attribute | Meaning |
+|---|---|
+| `Z_START` | start point in `z [m]` |
+| `DZ` | step size in `z [m]` |
+| `Z_STEPS` | number of `z` steps; must be a positive integer |
+::::
+
+:::: {.feature-opalx}
+Additional OPALX cylindrical attributes:
+
+| Attribute | Meaning |
+|---|---|
+| `Y_START` | start point in `y [m]` |
+| `DY` | step size in `y [m]` |
+| `Y_STEPS` | number of `y` steps; must be a positive integer |
+| `CYL_ORIGIN_X`, `CYL_ORIGIN_Y`, `CYL_ORIGIN_Z` | optional cylindrical-origin coordinates in `m`; defaults are `0` |
+::::

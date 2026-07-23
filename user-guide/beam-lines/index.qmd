@@ -1,0 +1,74 @@
+---
+title: "Beam Lines"
+description: "Compose named elements and nested lines into the lattice selected by TRACK."
+audience: user
+status: current
+last-reviewed: "2026-07-23"
+---
+
+
+The accelerator to be studied is represented as a sequence of physical
+elements called a beam line. A beam line is built from simpler beam lines whose
+definitions can be nested to any level. A `LINE` command provides the formal
+definition:
+
+```text
+label: LINE = (member, ..., member);
+```
+
+Each `member` may be:
+
+- an element label,
+- a beamline label,
+- a sub-line enclosed in parentheses.
+
+## Simple Beam Lines
+
+The simplest beam line is a list of elements:
+
+```text
+label: LINE = (member, ..., member);
+```
+
+Example:
+
+```text
+L: LINE = (A, B, C, D, A, D);
+```
+
+Line attributes:
+
+`ORIGIN`
+: position vector of the origin of the line. Elements placed using
+  `ELEMEDGE` use this as reference.
+
+`ORIENTATION`
+: orientation vector of Tait-Bryan angles at the line origin.
+
+## Sub-lines
+
+Instead of referring directly to an element, a beamline member can refer to
+another named beam line. This provides shorthand notation for repeated lattice
+segments. Lines and sub-lines can be entered in any order, but when a line is
+used, all of its sub-lines must already be known to the parser.
+
+Example:
+
+```text
+L: LINE = (A, B, S, B, A, S, A, B);
+S: LINE = (C, D, E);
+```
+
+The source manual expands this in two steps.
+
+1. Replace `S` by its definition:
+
+```text
+(A, B, (C, D, E), B, A, (C, D, E), A, B)
+```
+
+2. Omit parentheses:
+
+```text
+A, B, C, D, E, B, A, C, D, E, A, B
+```

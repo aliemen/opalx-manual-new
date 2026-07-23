@@ -1,10 +1,43 @@
 schema-version: 1
 sources:
   - source: Manual
-    decision: excluded
-    rationale: The copied repository was predominantly the historical OPAL manual. OPAL-only chapters and examples remain in the separate archived OPAL manual.
-    migrated:
-      - OPALX overview PDF moved to opalx-documents presentations/2026/features.
+    revision: 91aa0183863191df7dc54252bfb43195a17a2e86
+    decision: curated
+    rationale: Retained OPAL user-guide material is available behind page-local version controls; current OPALX source overrides conflicting behavior.
+    chapters:
+      - {id: 1, source-page: introduction, decision: migrated, destination: user-guide/introduction/index.qmd, treatment: OPALX-only rewrite}
+      - {id: 2, source-page: conventions, decision: merged, destination: user-guide/conventions/index.qmd, treatment: shared conventions}
+      - {id: 3, source-page: pitfalls, decision: merged, destination: troubleshooting/common-problems.qmd, treatment: hard-edge and time-step warnings}
+      - {id: 4, source-page: tutorial, decision: represented-elsewhere, destination: getting-started, treatment: current worked inputs replace legacy tutorials}
+      - {id: 5, source-page: OPAL-T, decision: excluded, destination: null, treatment: OPALX has no product-mode chapter}
+      - {id: 6, source-page: OPAL-CYCL, decision: excluded, destination: null, treatment: explicitly mode-specific legacy material}
+      - {id: 7, source-page: OPAL-MAP, decision: excluded, destination: null, treatment: explicitly mode-specific legacy material}
+      - {id: 8, source-page: command-format, decision: migrated, destination: user-guide/command-format/index.qmd, treatment: shared complete syntax}
+      - {id: 9, source-page: control-statements, decision: migrated, destination: user-guide/control-statements/index.qmd, treatment: shared and source-audited; OPTION remains separate}
+      - {id: 10, source-page: elements, decision: migrated, destination: user-guide/elements.qmd, treatment: dual OPALX and non-CYCL OPAL interfaces}
+      - {id: 11, source-page: field-output, decision: migrated, destination: user-guide/diagnostics-output.qmd, treatment: dual DUMPEMFIELDS plus OPAL DUMPFIELDS}
+      - {id: 12, source-page: beam-lines, decision: migrated, destination: user-guide/beam-lines/index.qmd, treatment: shared syntax}
+      - {id: 13, source-page: beam, decision: migrated, destination: user-guide/beam.qmd, treatment: dual source-audited interfaces}
+      - {id: 14, source-page: distributions, decision: migrated, destination: user-guide/beam-distributions.qmd, treatment: dual interfaces on one page}
+      - {id: 15, source-page: emission-sources, decision: merged, destination: user-guide/beam-distributions.qmd, treatment: current sources plus retained OPAL emission material}
+      - {id: 16, source-page: energy-bins, decision: merged, destination: user-guide/structures/index.qmd, treatment: shared BINNING guide}
+      - {id: 17, source-page: field-solver, decision: migrated, destination: user-guide/field-solver/index.qmd, treatment: dual solver interfaces}
+      - {id: 18, source-page: tracking, decision: migrated, destination: user-guide/tracking.qmd, treatment: dual TRACK RUN ENDTRACK behavior}
+      - {id: 19, source-page: wakefields, decision: migrated, destination: user-guide/wakefields/index.qmd, treatment: complete OPAL interface and OPALX unavailable notice}
+      - {id: 20, source-page: geometry, decision: migrated, destination: user-guide/geometry/index.qmd, treatment: complete OPAL interface and OPALX unavailable notice}
+      - {id: 21, source-page: collision-physics, decision: represented-elsewhere, destination: physics/collective-effects.qmd, treatment: physics-only material}
+      - {id: 22, source-page: particle-matter-interactions, decision: migrated, destination: user-guide/particle-matter/index.qmd, treatment: complete OPAL interface and OPALX unavailable notice}
+      - {id: 23, source-page: optimization, decision: migrated, destination: user-guide/optimization/index.qmd, treatment: complete OPAL interface and OPALX not-yet-available notice}
+      - {id: 24, source-page: sampler, decision: migrated, destination: user-guide/sampler/index.qmd, treatment: complete OPAL interface and OPALX unavailable notice}
+      - {id: 25, source-page: literature, decision: represented-elsewhere, destination: resources/publications.qmd, treatment: publication catalog}
+    appendices:
+      - {id: A, source-page: field-maps, decision: migrated, destination: user-guide/appendix/field-maps/index.qmd, treatment: dual current factory types and legacy formats}
+      - {id: B, source-page: language-syntax, decision: migrated, destination: user-guide/appendix/language-syntax/index.qmd, treatment: shared complete grammar}
+      - {id: C, source-page: opal-madx-conversion, decision: migrated, destination: user-guide/appendix/opal-madx/index.qmd, treatment: shared conversion guidance}
+      - {id: D, source-page: auto-phasing, decision: migrated, destination: user-guide/appendix/autophase/index.qmd, treatment: dual derivation and implementation}
+      - {id: E, source-page: benchmarks, decision: excluded, destination: null, treatment: explicitly legacy OPAL benchmarks}
+      - {id: F, source-page: ics-design-note, decision: represented-elsewhere, destination: physics, treatment: physics design material}
+      - {id: G, source-page: developer-build, decision: represented-elsewhere, destination: developer-guide, treatment: current build and development guidance}
   - source: PhysicsManual
     decision: curated
     rationale: Current OPALX physics chapters are integrated into the Physics part; generated files and datasets are excluded from the text repository.

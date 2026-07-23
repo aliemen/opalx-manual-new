@@ -25,6 +25,9 @@ errors << "render does not contain the profile's document base URL" unless combi
 errors << "render does not contain the profile's manual repository URL" unless combined_html.include?(expected_repository)
 errors << "render does not contain Quarto's color-scheme persistence" unless combined_html.include?("quarto-color-scheme")
 errors << "render does not contain OPALX sidebar-state persistence" unless combined_html.include?("opalx-sidebar-state-v1")
+errors << "render does not contain documentation-version persistence" unless combined_html.include?("opalx-documentation-version-v1")
+errors << "render does not contain the accessible documentation-version selector" unless combined_html.include?("Select documentation version")
+errors << "render does not contain direct-anchor version handling" unless combined_html.include?("revealHashTarget")
 errors << "render does not contain the distribution sidebar manifest" unless combined_html.include?("page-toc:beam-distributions")
 errors << "render does not contain the structures sidebar manifest" unless combined_html.include?("page-toc:structures")
 errors << "render does not contain the field-solver sidebar manifest" unless combined_html.include?("page-toc:field-solver")
@@ -102,7 +105,8 @@ if elements_html_path.file?
   elements_html = File.read(elements_html_path)
   element_anchors = %w[
     common-element-syntax drift constant-electric-field-cavity quadrupole multipole multipolet
-    solenoid rfcavity travelingwave element-limitations
+    solenoid rfcavity travelingwave laser monitor marker probe bends verticalffamagnet
+    variable-rf-cavity element-limitations
   ]
   element_anchors.each do |anchor|
     errors << "elements render is missing ##{anchor}" unless elements_html.match?(/\bid=["']#{Regexp.escape(anchor)}["']/)
@@ -113,7 +117,10 @@ if elements_html_path.file?
     "constant-electric-field-cavity" => /data-number=["']\d+\.3["']/,
     "rfcavity" => /data-number=["']\d+\.8["']/,
     "travelingwave" => /data-number=["']\d+\.9["']/,
-    "element-limitations" => /data-number=["']\d+\.10["']/
+    "laser" => /data-number=["']\d+\.10["']/,
+    "bends" => /data-number=["']\d+\.14["']/,
+    "variable-rf-cavity" => /data-number=["']\d+\.16["']/,
+    "element-limitations" => /data-number=["']\d+\.17["']/
   }.each do |anchor, numbering|
     section = elements_html[/<section\s+id=["']#{Regexp.escape(anchor)}["'][\s\S]*?<\/section>/]
     errors << "elements ##{anchor} has incorrect automatic numbering" unless section&.match?(numbering)
@@ -155,6 +162,21 @@ else
   errors << "render is missing user-guide/input-language.html"
 end
 
+tracking_html_path = SITE / "user-guide/tracking.html"
+if tracking_html_path.file?
+  tracking_html = File.read(tracking_html_path)
+  {
+    "track-command" => /data-number=["']\d+\.1["']/,
+    "run-command" => /data-number=["']\d+\.2["']/,
+    "endtrack-command" => /data-number=["']\d+\.3["']/
+  }.each do |anchor, numbering|
+    section = tracking_html[/<section\s+id=["']#{Regexp.escape(anchor)}["'][\s\S]*?<\/section>/]
+    errors << "tracking ##{anchor} is missing or incorrectly numbered" unless section&.match?(numbering)
+  end
+else
+  errors << "render is missing user-guide/tracking.html"
+end
+
 physics_field_solver_html_path = SITE / "physics/field-solver/index.html"
 if physics_field_solver_html_path.file?
   physics_field_solver_html = File.read(physics_field_solver_html_path)
@@ -193,6 +215,61 @@ if structures_html_path.file?
   errors << "structures sidebar does not label subsection 1 as Binning" unless structures_html.include?('text: "Binning"')
 else
   errors << "render is missing user-guide/structures/index.html"
+end
+
+dual_pages = %w[
+  user-guide/options.html
+  user-guide/elements.html
+  user-guide/diagnostics-output.html
+  user-guide/beam.html
+  user-guide/beam-distributions.html
+  user-guide/field-solver/index.html
+  user-guide/tracking.html
+  user-guide/wakefields/index.html
+  user-guide/geometry/index.html
+  user-guide/particle-matter/index.html
+  user-guide/optimization/index.html
+  user-guide/sampler/index.html
+  user-guide/appendix/field-maps/index.html
+  user-guide/appendix/autophase/index.html
+]
+dual_pages.each do |relative|
+  path = SITE / relative
+  if !path.file?
+    errors << "render is missing dual page #{relative}"
+    next
+  end
+  html = File.read(path)
+  errors << "#{relative} is missing rendered OPALX blocks" unless html.match?(/class=["'][^"']*feature-opalx(?:\s|["'])/)
+  errors << "#{relative} is missing rendered OPAL blocks" unless html.match?(/class=["'][^"']*feature-opal(?:\s|["'])/)
+end
+
+shared_pages = %w[
+  user-guide/introduction/index.html
+  user-guide/conventions/index.html
+  user-guide/input-language.html
+  user-guide/command-format/index.html
+  user-guide/control-statements/index.html
+  user-guide/beam-lines/index.html
+  user-guide/structures/index.html
+]
+shared_pages.each do |relative|
+  path = SITE / relative
+  next unless path.file?
+  html = File.read(path)
+  if html.match?(/class=["'][^"']*feature-opalx(?:\s|["'])/) ||
+     html.match?(/class=["'][^"']*feature-opal(?:\s|["'])/)
+    errors << "shared page unexpectedly renders version blocks: #{relative}"
+  end
+end
+
+%w[
+  user-guide/appendix/field-maps/index.html
+  user-guide/appendix/language-syntax/index.html
+  user-guide/appendix/opal-madx/index.html
+  user-guide/appendix/autophase/index.html
+].each do |relative|
+  errors << "render is missing User Guide appendix #{relative}" unless (SITE / relative).file?
 end
 
 html_cache = {}

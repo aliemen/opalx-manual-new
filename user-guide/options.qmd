@@ -3,10 +3,12 @@ title: "Runtime Options"
 description: "Complete source-audited reference for values accepted by the OPALX OPTION statement."
 audience: user
 status: current
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-23"
 ---
 
-`OPTION` changes process-wide parser, tracking, output, and diagnostic settings:
+`OPTION` changes process-wide parser, tracking, output, and diagnostic settings.
+
+::: {.feature-opalx}
 
 ```opal
 OPTION, VERSION=10900, PSDUMPFREQ=10, STATDUMPFREQ=1,
@@ -110,3 +112,59 @@ the OPALX `ParallelTracker` source. Do not rely on them to change a simulation.
 | `LOGBENDTRAJECTORY` | `FALSE` | Historical request to write each bend trajectory. |
 | `MEMORYDUMP` | `FALSE` | Historical SDDS memory output request; the current `OPTION` execution path does not apply it. |
 | `DELPARTFREQ` | `1` | Historical particle-deletion frequency. |
+:::
+
+::: {.feature-opal}
+The legacy OPAL form is:
+
+```opal
+OPTION, VERSION=integer, ECHO=logical, INFO=logical, TRACE=logical,
+        WARN=logical, SEED=real, PSDUMPFREQ=integer,
+        STATDUMPFREQ=integer,
+        REPARTFREQ=integer, REBINFREQ=integer, TELL=logical;
+```
+
+The most frequently used controls are:
+
+| Option | Legacy OPAL meaning |
+|---|---|
+| `VERSION` | Input-file compatibility tag, conventionally encoded as major, minor, and patch digits. |
+| `ECHO`, `INFO`, `TRACE`, `WARN` | Control input echo, information, trace, and warning streams. |
+| `TELL` | Print the effective option settings. |
+| `SEED` | Random-number seed; `-1` requests time-dependent seeding. |
+| `RNGTYPE` | `RANDOM`, `HALTON`, `SOBOL`, or `NIEDERREITER`. |
+| `ASCIIDUMP` | Select ASCII output for supported loss and diagnostic elements. |
+| `AUTOPHASE` | Number of auto-phasing refinements; `0` disables auto-phasing. |
+| `PSDUMPFREQ`, `STATDUMPFREQ` | Phase-space and statistics output frequencies. |
+| `REPARTFREQ`, `REBINFREQ` | Particle repartition and energy-bin reset frequencies. |
+| `SCSOLVEFREQ` | Space-charge solve reuse frequency for supported integrators. |
+| `ENABLEHDF5`, `ENABLEVTK` | Enable or disable the corresponding output families. |
+
+### Legacy defaults
+
+| Option | Default | Option | Default |
+|---|---:|---|---:|
+| `AMR` | `FALSE` | `AMR_REGRID_FREQ` | `10` |
+| `AMR_YT_DUMP_FREQ` | `10` | `ASCIIDUMP` | `FALSE` |
+| `AUTOPHASE` | `6` | `BEAMHALOBOUNDARY` | `0.0` |
+| `COMPUTEPERCENTILES` | `FALSE` | `CSRDUMP` | `FALSE` |
+| `CZERO` | `FALSE` | `DELPARTFREQ` | `1` |
+| `DUMPBEAMMATRIX` | `FALSE` | `EBDUMP` | `FALSE` |
+| `ECHO` | `FALSE` | `ENABLEHDF5` | `TRUE` |
+| `ENABLEVTK` | `TRUE` | `HALOSHIFT` | `0.0` |
+| `IDEALIZE` | `FALSE` | `INFO` | `TRUE` |
+| `LOGBENDTRAJECTORY` | `FALSE` | `MEMORYDUMP` | `FALSE` |
+| `MINBINEMITTED` | `10` | `MINSTEPFORREBIN` | `200` |
+| `NLHS` | `1` | `NUMBLOCKS` | `0` |
+| `PSDUMPFREQ` | `10` |  |  |
+| `RECYCLEBLOCKS` | `0` | `REBINFREQ` | `100` |
+| `REMOTEPARTDEL` | `0.0` | `REPARTFREQ` | `10` |
+| `RHODUMP` | `FALSE` | `RNGTYPE` | `RANDOM` |
+| `SCSOLVEFREQ` | `1` | `SEED` | `123456789` |
+| `STATDUMPFREQ` | `10` |  |  |
+| `TELL` | `FALSE` | `TRACE` | `FALSE` |
+| `VERSION` | unset | `WARN` | `TRUE` |
+
+Legacy defaults varied by OPAL release and mode. Preserve the version tag and
+the exact executable revision when reproducing an older calculation.
+:::

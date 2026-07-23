@@ -51,6 +51,18 @@ jobs:
       - name: Render HTML
         run: quarto render --profile "${QUARTO_PROFILE}" --to html
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install browser-test dependencies
+        run: npm ci
+
+      - name: Test interactive documentation controls
+        run: npm run test:browser
+
       - name: Render unnumbered report archive
         run: quarto render resources/reports --profile "${QUARTO_PROFILE}" --to html
 

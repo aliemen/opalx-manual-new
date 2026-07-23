@@ -1,0 +1,136 @@
+---
+title: "Appendix C — OPAL-MADX Conversion Guide"
+description: "Unit and coordinate conversions used when translating MAD-X lattices and output."
+audience: user
+status: current
+last-reviewed: "2026-07-23"
+---
+
+## Purpose
+
+This appendix summarizes the unit and convention changes needed when
+translating between `MADX` and `OPAL`.
+
+The legacy discussion is built around the transverse beam sigma matrix,
+
+$$
+\sigma_{\mathrm{beam}} =
+\begin{pmatrix}
+\sigma_x & \sigma_{x p_x} \\
+\sigma_{x p_x} & \sigma_{p_x}
+\end{pmatrix}
+=
+\epsilon
+\begin{pmatrix}
+\beta & -\alpha \\
+-\alpha & \gamma
+\end{pmatrix},
+$$ {#eq-opal-madx-sigma}
+
+with the correlation convention
+
+$$
+\sigma_{x p_x} = \delta\,\sqrt{\sigma_x\sigma_{p_x}}.
+$$ {#eq-opal-madx-correlation}
+
+The relativistic quantities used throughout the appendix are
+
+$$
+\gamma = \frac{E_{\mathrm{kin}} + m_p}{m_p},
+\qquad
+\beta = \sqrt{1 - \frac{1}{\gamma^2}},
+\qquad
+\beta\gamma = \frac{\beta}{\sqrt{1-\beta^2}},
+$$ {#eq-opal-madx-relativistic}
+
+and the magnetic rigidity is
+
+$$
+B\rho = \frac{(\beta\gamma)\,m_p\,10^9}{c} \; [\mathrm{T\,m}],
+$$ {#eq-opal-madx-brho}
+
+with `m_p = 0.939277 GeV` and `c = 299792458 m/s`.
+
+## `MADX` to `OPAL` Output Conventions
+
+The legacy appendix lists the following quantity-by-quantity conversion rules.
+
+| Quantity | `MADX` | `OPAL` output | Conversion |
+|---|---|---|---|
+| transverse momentum | `\bar p_x [rad]` | `\bar p_x [\beta\gamma]` | `\bar p_x[\beta\gamma] = \bar p_x[rad] \,(\beta\gamma)` |
+| correlation | `\delta` | `\delta` | `\delta = \sigma_{x p_x}/(\bar p_x\bar x)` |
+| emittance | `\epsilon_x [m\,rad]` | `\epsilon_x [m\,\beta\gamma]` | `\epsilon_x = \sqrt{\sigma_x\sigma_{p_x} - \sigma_{x p_x}^2}` |
+| Twiss `\alpha` | dimensionless | dimensionless | `\alpha = -\sigma_{x p_x}/\epsilon_x` |
+| Twiss `\beta_T` | `m/rad` | `m/(\beta\gamma)` | `\beta_T = \sigma_x / \epsilon_x` |
+| Twiss `\gamma_T` | `rad/m` | `(\beta\gamma)/m` | `\gamma_T = \sigma_{p_x} / \epsilon_x` |
+| quadrupole strength | `k_1 [m^{-2}]` | `k_1 [T/m]` | `k_1[T/m] = k_1[m^{-2}]\,B\rho` |
+
+The same rules apply plane by plane in both transverse directions.
+
+## Equivalent Explicit Formulas
+
+The original appendix writes the most frequently used conversions explicitly:
+
+$$
+\bar p_x = \sqrt{\sigma_{p_x}},
+\qquad
+\bar x = \sqrt{\sigma_x},
+$$ {#eq-opal-madx-rms}
+
+$$
+\epsilon_x
+=
+\sqrt{\left(\bar p_x \bar x\right)^2 - \left(\delta\,\bar x\bar p_x\right)^2}
+=
+\sqrt{\sigma_x\sigma_{p_x} - \sigma_{x p_x}^2},
+$$ {#eq-opal-madx-emittance}
+
+$$
+\alpha = -\frac{\delta\,\bar x\bar p_x}{\epsilon_x},
+\qquad
+\beta_T = \frac{\bar x^2}{\epsilon_x},
+\qquad
+\gamma_T = \frac{\bar p_x^2}{\epsilon_x}.
+$$ {#eq-opal-madx-twiss}
+
+These are the formulas to use when reconstructing an `OPAL` beam from `MADX`
+Twiss or sigma-matrix output.
+
+## `MADX` Element Positions to `OPAL` Input
+
+The appendix highlights one convention difference that shows up repeatedly:
+
+- `MADX at :=` gives the element center.
+- `OPAL ELEMEDGE` expects the element entrance.
+
+So the conversion is
+
+$$
+\mathrm{ELEMEDGE} = \text{element center} - \frac{1}{2}\text{element length}.
+$$ {#eq-opal-madx-elemedge}
+
+| Quantity | `MADX` | `OPAL` input |
+|---|---|---|
+| element position | `at :=` center of element | `ELEMEDGE` at start of element |
+| conversion | center minus half length | entrance position |
+
+## `OPAL` Output to `OPAL` Input Energy-Style Conversion
+
+The appendix also gives the conversion from transverse momentum in
+`\beta\gamma` form to an energy-style input quantity in eV:
+
+$$
+p_x[\mathrm{eV}] = m_p\,10^9\left(\sqrt{\bar p_x^2 + 1} - 1\right).
+$$ {#eq-opal-madx-opal-output-to-input}
+
+This is the relation to use when an `OPAL` output quantity must be mapped back
+into an input-style energy convention.
+
+## Practical Use
+
+This guide is most useful when:
+
+- reconstructing an `OPAL` beam from `MADX` Twiss or sigma-matrix output
+- translating focusing strengths and element positions
+- reconciling unit conventions in transverse and longitudinal phase-space
+  descriptions

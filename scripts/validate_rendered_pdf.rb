@@ -33,6 +33,34 @@ expected_headings.each do |number, title|
   errors << "missing PDF heading: #{number} #{title}" unless text.match?(pattern)
 end
 
+tracking_match = text.match(/^[\f \t]*(\d+)[ \t]+Tracking[ \t]*$/)
+if tracking_match
+  tracking_chapter = tracking_match[1]
+  %w[TRACK RUN ENDTRACK].each_with_index do |title, index|
+    number = "#{tracking_chapter}.#{index + 1}"
+    errors << "missing PDF heading: #{number} #{title}" unless
+      text.match?(/^[\f \t]*#{Regexp.escape(number)}[ \t]+#{title}[ \t]*$/)
+  end
+else
+  errors << "PDF does not contain the numbered Tracking chapter"
+end
+
+{
+  "static OPALX variant labels" => "OPALX",
+  "static OPAL variant labels" => "OPAL",
+  "retained OPAL distribution types" => "BINOMIAL",
+  "retained OPAL field-solver material" => "Particle-Particle-Particle-Mesh",
+  "User Guide Appendix A" => "Field Maps",
+  "User Guide Appendix B" => "Language Syntax",
+  "User Guide Appendix C" => "OPAL-MADX Conversion",
+  "User Guide Appendix D" => "Auto-phasing"
+}.each do |description, required_text|
+  errors << "PDF is missing #{description}" unless text.include?(required_text)
+end
+if text.match?(/Documentation version\s+OPALX\s+OPAL\s+Both/)
+  errors << "PDF unexpectedly contains the interactive selector control"
+end
+
 info, info_error, info_status = Open3.capture3("pdfinfo", pdf.to_s)
 if !info_status.success?
   errors << "pdfinfo failed: #{info_error.strip}"

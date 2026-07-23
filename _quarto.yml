@@ -4,6 +4,9 @@ project:
   pre-render:
     - ruby scripts/validate_manual.rb
 
+filters:
+  - filters/version-block-labels.lua
+
 book:
   title: "OPALX Documentation"
   subtitle: "User guide, physics manual, reference, and developer handbook"
@@ -26,15 +29,31 @@ book:
         - getting-started/worked-inputs.qmd
     - part: "User Guide"
       chapters:
+        - user-guide/introduction/index.qmd
+        - user-guide/conventions/index.qmd
         - user-guide/input-language.qmd
-        - user-guide/beam.qmd
-        - user-guide/beam-distributions.qmd
-        - user-guide/tracking.qmd
+        - user-guide/command-format/index.qmd
+        - user-guide/control-statements/index.qmd
         - user-guide/options.qmd
         - user-guide/elements.qmd
+        - user-guide/diagnostics-output.qmd
+        - user-guide/beam-lines/index.qmd
+        - user-guide/beam.qmd
+        - user-guide/beam-distributions.qmd
         - user-guide/structures/index.qmd
         - user-guide/field-solver/index.qmd
-        - user-guide/diagnostics-output.qmd
+        - user-guide/tracking.qmd
+        - user-guide/wakefields/index.qmd
+        - user-guide/geometry/index.qmd
+        - user-guide/particle-matter/index.qmd
+        - user-guide/optimization/index.qmd
+        - user-guide/sampler/index.qmd
+    - part: "User Guide Appendix"
+      chapters:
+        - user-guide/appendix/field-maps/index.qmd
+        - user-guide/appendix/language-syntax/index.qmd
+        - user-guide/appendix/opal-madx/index.qmd
+        - user-guide/appendix/autophase/index.qmd
     - part: "Physics"
       chapters:
         - physics/overview/index.qmd
@@ -91,9 +110,12 @@ format:
     code-overflow: wrap
     html-math-method: mathjax
     link-external-newwindow: true
+    include-in-header:
+      - includes/version-selector-init.html
     include-after-body:
       - assets/scripts/sidebar-page-toc.html
       - assets/scripts/persist-sidebar-state.html
+      - assets/scripts/version-selector.html
   pdf:
     documentclass: scrreprt
     papersize: a4

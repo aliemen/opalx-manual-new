@@ -3,10 +3,25 @@ title: "Field Solvers"
 description: "Configure OPALX particle-in-cell space charge, boundary conditions, binning, and cathode-plane corrections."
 audience: user
 status: current
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-23"
 body-classes: "opalx-sidebar-page-toc"
 ---
 
+## Shared particle-mesh model {.unnumbered .unlisted}
+
+Both manuals use `FIELDSOLVER` to connect a particle-mesh space-charge model
+to tracking. Charge is deposited on a mesh, Poisson's equation
+
+$$
+\nabla^2\phi=-\frac{\rho}{\epsilon_0},
+\qquad \mathbf E=-\nabla\phi,
+$$
+
+is solved with the selected boundary model, and the field is interpolated back
+to the particles. The version-specific sections below describe the available
+backends, parameters, and compatibility restrictions.
+
+::: {.feature-opalx}
 `FIELDSOLVER` selects the mesh Poisson backend and the space-charge mode used
 by a tracking run. Define the object before `TRACK`, then attach it by name on
 `RUN`:
@@ -308,3 +323,8 @@ input. Do not combine cathode corrections with `FFT` periodic physics.
 - Start from a maintained regression input with the intended backend. Record
   all mesh, boundary, Green-function, binning, and correction settings with the
   result.
+:::
+
+::: {.feature-opal}
+{{< include ../_legacy-field-solver.qmd >}}
+:::

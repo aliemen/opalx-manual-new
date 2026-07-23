@@ -1,0 +1,194 @@
+---
+title: "Wakefields"
+description: "Legacy OPAL wakefield commands and the current OPALX availability boundary."
+audience: user
+status: planned
+last-reviewed: "2026-07-23"
+---
+
+
+::: {.feature-opalx}
+`WAKE` and `FILTER` are not registered by the current OPALX executable. The
+OPAL view preserves the complete legacy interface as a compatibility reference
+and a visible reminder of functionality that may be ported later.
+:::
+
+::: {.feature-opal}
+`OPAL-T` provides methods to model coherent synchrotron radiation and
+short-range geometric wakefields.
+
+## Geometric Wakefields
+
+The legacy wakefield interface supports two main routes:
+
+1. compute the wakefield of a round metallic beam pipe from an impedance model
+2. import a discretized wake function from file
+
+For a round metallic beam pipe with radius `a`, `OPAL` distinguishes `DC` and
+`AC` conductivity models. The classical Drude-style conductivities are
+
+$$
+\sigma_{\mathrm{DC}} = \frac{n e^2 \tau}{m}
+$$ {#eq-wake-dc-conductivity}
+
+and
+
+$$
+\sigma_{\mathrm{AC}} = \frac{\sigma_{\mathrm{DC}}}{1 - i \omega \tau}.
+$$ {#eq-wake-ac-conductivity}
+
+With these ingredients, the longitudinal impedance can be transformed back into
+the longitudinal wake. For the `DC` case the impedance model is
+
+$$
+Z_{L,\mathrm{DC}}(k) = \frac{1}{c a} \frac{2}{\lambda/k - i k a / 2}
+$$ {#eq-wake-longitudinal-impedance}
+
+with
+
+$$
+\lambda = \sqrt{\frac{2 \pi \sigma |k|}{c}} \left(i + \operatorname{sign}(k)\right).
+$$ {#eq-wake-lambda}
+
+The longitudinal wake is then obtained from the inverse cosine transform of the
+real part of the impedance,
+
+$$
+W_L(s) = 10^{-12} \frac{2 c}{\pi} \Re \left( \int_0^\infty \Re(Z_L(k)) \cos(k s)\, dk \right),
+$$ {#eq-wake-longitudinal}
+
+and the transverse wake follows through the Panofsky-Wenzel relation.
+
+`OPAL` evaluates these integrals numerically with Simpson integration on an
+equidistant wave-number mesh. Since this is usually done once during
+initialization, the computational overhead is typically acceptable.
+
+## CSR Wakefields
+
+The CSR model in `OPAL-T` is built around one-dimensional steady-state or
+quasi-steady-state approximations. The derivation starts from the
+Liénard-Wiechert fields of particles moving on a circular orbit and leads to
+impedance and wakefield models that act on trailing particles only.
+
+The legacy manual distinguishes:
+
+- `1D-CSR`
+- `1D-CSR-IGF`
+
+The `1D-CSR` model follows the staged bend-entry, steady-state, and exit
+picture of Saldin, Schneidmiller, and Yurkov. The `1D-CSR-IGF` variant uses an
+integrated Green function for faster wake evaluation.
+
+Both models neglect transverse structure and several transient corrections, but
+they capture the dominant longitudinal CSR effect for short bunches in many
+beamline studies.
+
+## The `WAKE` Command
+
+`WAKE` defines the wakefield data attached to an element.
+
+General syntax:
+
+```text
+label: WAKE, TYPE=string, NBIN=integer, CONST_LENGTH=bool,
+             CONDUCT=string, Z0=real, FORM=string, RADIUS=real,
+             SIGMA=real, TAU=real, FNAME=string, FILTERS={...};
+```
+
+For CSR wakes the reduced syntax is:
+
+```text
+label: WAKE, TYPE=string, NBIN=integer, FILTERS={...};
+```
+
+### Core attributes
+
+| Attribute | Meaning |
+|---|---|
+| `TYPE` | Wake type: `1D-CSR`, `1D-CSR-IGF`, `LONG-SHORT-RANGE`, `TRANSV-SHORT-RANGE` |
+| `NBIN` | Number of bins used to build the bunch line density |
+| `CONST_LENGTH` | Keep bunch length constant during wake evaluation |
+| `CONDUCT` | Beam-pipe conductivity model: `AC` or `DC` |
+| `Z0` | Beam-pipe impedance in ohms |
+| `FORM` | Beam-pipe form; the documented choice is `ROUND` |
+| `RADIUS` | Beam-pipe radius in meters |
+| `SIGMA` | Material conductivity parameter |
+| `TAU` | Relaxation time entering the `AC` conductivity model |
+| `FNAME` | SDDS file containing a tabulated wake function |
+| `FILTERS` | Ordered list of filter names applied to the line density |
+
+### Practical behavior
+
+- `TYPE` decides whether the command describes CSR or a short-range geometric
+  wake.
+- `CONDUCT`, `Z0`, `FORM`, `RADIUS`, `SIGMA`, and `TAU` have no effect on CSR
+  wake types.
+- `FNAME` imports a wake from SDDS data. Once a file is provided, `OPAL`
+  ignores the analytic round-pipe parameters and uses the imported wake.
+- `FILTERS` are applied in the given order, and the last filter is also used to
+  compute the derivatives needed by the wake model.
+
+## The `FILTER` Command
+
+`FILTER` defines a smoothing or differentiation filter applied to the
+longitudinal histogram of the bunch.
+
+Syntax:
+
+```text
+label: FILTER, TYPE=string, NFREQ=integer, THRESHOLD=real,
+               NPOINTS=integer, NLEFT=integer, NRIGHT=integer,
+               POLYORDER=integer;
+```
+
+### Filter types
+
+Supported filters are:
+
+- `SAVITZKY-GOLAY`
+- `STENCIL`
+- `FIXEDFFTLOWPASS`
+- `RELATIVEFFTLOWPASS`
+
+### Filter attributes
+
+| Attribute | Meaning |
+|---|---|
+| `TYPE` | Select the filter algorithm |
+| `NFREQ` | Number of Fourier modes to keep for `FIXEDFFTLOWPASS` |
+| `THRESHOLD` | Relative spectral cutoff for `RELATIVEFFTLOWPASS` |
+| `NPOINTS` | Moving-window width for `SAVITZKY-GOLAY` |
+| `NLEFT` | Number of points to the left for `SAVITZKY-GOLAY` |
+| `NRIGHT` | Number of points to the right for `SAVITZKY-GOLAY` |
+| `POLYORDER` | Least-squares polynomial order for `SAVITZKY-GOLAY` |
+
+### Implemented smoothing logic
+
+`SAVITZKY-GOLAY` and the FFT-based filters naturally provide derivative
+information. For the `STENCIL` filter, `OPAL` applies two smoothing stencils
+consecutively:
+
+$$
+f_i = \frac{7 f_{i-4} + 24 f_{i-2} + 34 f_i + 24 f_{i+2} + 7 f_{i+4}}{96}
+$$ {#eq-wake-stencil-even}
+
+and
+
+$$
+f_i = \frac{7 f_{i-2} + 24 f_{i-1} + 34 f_i + 24 f_{i+1} + 7 f_{i+2}}{96}.
+$$ {#eq-wake-stencil-odd}
+
+The derivative is then computed with the second-order stencil
+
+$$
+f'_i = \frac{f_{i-2} - 8 f_{i-1} + 8 f_{i+1} - f_{i+2}}{h}.
+$$ {#eq-wake-stencil-derivative}
+
+For the FFT-based smoothers, the line-density Fourier coefficients are
+computed, high-frequency content is removed according to the chosen criterion,
+and the smoothed profile is reconstructed by inverse transform.
+
+- `FIXEDFFTLOWPASS` keeps the `NFREQ` lowest modes.
+- `RELATIVEFFTLOWPASS` keeps modes above a threshold relative to the dominant
+  coefficient.
+:::

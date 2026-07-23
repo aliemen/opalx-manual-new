@@ -1,0 +1,142 @@
+<script>
+(() => {
+  const storageKey = "opalx-documentation-version-v1";
+  const validModes = new Set(["opalx", "opal", "both"]);
+  const root = document.documentElement;
+
+  const currentMode = () => {
+    const mode = root.dataset.opalDocumentationVersion;
+    return validModes.has(mode) ? mode : "opalx";
+  };
+
+  const variantFor = (element) => {
+    if (!element) return null;
+    if (element.dataset?.opalDocumentationVariant) {
+      return element.dataset.opalDocumentationVariant;
+    }
+    if (element.closest(".feature-opalx")) return "opalx";
+    if (element.closest(".feature-opal")) return "opal";
+    return null;
+  };
+
+  const tagNavigation = () => {
+    document.querySelectorAll('a[href*="#"]').forEach((link) => {
+      let target;
+      try {
+        const url = new URL(link.href, window.location.href);
+        if (url.pathname !== window.location.pathname || !url.hash) return;
+        target = document.getElementById(decodeURIComponent(url.hash.slice(1)));
+      } catch (_) {
+        return;
+      }
+
+      const variant = variantFor(target);
+      if (!variant) return;
+      link.dataset.opalDocumentationVariant = variant;
+      const item = link.closest("li");
+      if (item) item.dataset.opalDocumentationVariant = variant;
+    });
+  };
+
+  const syncControls = (mode) => {
+    document.querySelectorAll('input[name="opal-documentation-version"]').forEach((input) => {
+      input.checked = input.value === mode;
+    });
+  };
+
+  const setMode = (mode, persist = true) => {
+    if (!validModes.has(mode)) mode = "opalx";
+    root.dataset.opalDocumentationVersion = mode;
+    syncControls(mode);
+    if (persist) {
+      try {
+        window.localStorage.setItem(storageKey, mode);
+      } catch (_) {
+        // Keep the selector functional for the current page.
+      }
+    }
+  };
+
+  const revealHashTarget = () => {
+    if (!window.location.hash) return;
+    const target = document.getElementById(decodeURIComponent(window.location.hash.slice(1)));
+    const variant = variantFor(target);
+    if (variant && currentMode() !== "both" && currentMode() !== variant) {
+      setMode(variant);
+    }
+  };
+
+  const createSelector = () => {
+    const opalxBlocks = document.querySelectorAll(".feature-opalx");
+    const opalBlocks = document.querySelectorAll(".feature-opal");
+    if (!opalxBlocks.length || !opalBlocks.length) return;
+
+    root.classList.add("has-opal-version-selector");
+    opalxBlocks.forEach((block) => {
+      block.dataset.opalDocumentationVariant = "opalx";
+      block.querySelectorAll("[id]").forEach((target) => {
+        target.dataset.opalDocumentationVariant = "opalx";
+      });
+    });
+    opalBlocks.forEach((block) => {
+      block.dataset.opalDocumentationVariant = "opal";
+      block.querySelectorAll("[id]").forEach((target) => {
+        target.dataset.opalDocumentationVariant = "opal";
+      });
+    });
+
+    const selector = document.createElement("fieldset");
+    selector.className = "opal-version-selector";
+    selector.setAttribute("aria-label", "Select documentation version");
+
+    const legend = document.createElement("legend");
+    legend.textContent = "Documentation version";
+    selector.append(legend);
+
+    const choices = document.createElement("div");
+    choices.className = "opal-version-selector__choices";
+    [
+      ["opalx", "OPALX"],
+      ["opal", "OPAL"],
+      ["both", "Both"]
+    ].forEach(([value, labelText]) => {
+      const label = document.createElement("label");
+      label.className = "opal-version-selector__choice";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = "opal-documentation-version";
+      input.value = value;
+      input.addEventListener("change", () => setMode(value));
+      const text = document.createElement("span");
+      text.textContent = labelText;
+      label.append(input, text);
+      choices.append(label);
+    });
+    selector.append(choices);
+
+    const content = document.querySelector("main.content, #quarto-document-content");
+    const titleBlock = content?.querySelector("#title-block-header");
+    if (titleBlock) {
+      titleBlock.insertAdjacentElement("afterend", selector);
+    } else if (content) {
+      content.prepend(selector);
+    }
+
+    tagNavigation();
+    setMode(currentMode(), false);
+    revealHashTarget();
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest("a[data-opal-documentation-variant]");
+      const variant = link?.dataset.opalDocumentationVariant;
+      if (validModes.has(variant) && currentMode() !== "both") setMode(variant);
+    });
+    window.addEventListener("hashchange", revealHashTarget);
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", createSelector, { once: true });
+  } else {
+    createSelector();
+  }
+})();
+</script>

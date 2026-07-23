@@ -6,29 +6,56 @@
       stateKey: "page-toc:beam-distributions",
       targetId: "opalx-sidebar-beam-distributions",
       toggleLabel: "Toggle Beam and Distributions sections",
+      defaultVariant: "opalx",
       items: [
-        { id: "emissionsource", text: "EMISSIONSOURCE", suffix: "1" },
-        { id: "emissionsourcelist", text: "EMISSIONSOURCELIST", suffix: "2" },
+        { id: "emissionsource", text: "EMISSIONSOURCE" },
+        { id: "emissionsourcelist", text: "EMISSIONSOURCELIST" },
         {
           id: "distribution",
           text: "DISTRIBUTION",
-          suffix: "3",
           stateKey: "page-toc:beam-distributions:distribution",
           toggleLabel: "Toggle DISTRIBUTION types",
           children: [
-            { id: "gauss", text: "GAUSS", suffix: "3.1" },
-            { id: "multivariategauss", text: "MULTIVARIATEGAUSS", suffix: "3.2" },
-            { id: "flattop", text: "FLATTOP", suffix: "3.3" },
-            { id: "opalflattop", text: "OPALFLATTOP", suffix: "3.4" },
-            { id: "fromfile", text: "FROMFILE", suffix: "3.5" },
-            { id: "emittedfromfile", text: "EMITTEDFROMFILE", suffix: "3.6" }
+            { id: "gauss", text: "GAUSS" },
+            { id: "multivariategauss", text: "MULTIVARIATEGAUSS" },
+            { id: "flattop", text: "FLATTOP" },
+            { id: "opalflattop", text: "OPALFLATTOP" },
+            { id: "fromfile", text: "FROMFILE" },
+            { id: "emittedfromfile", text: "EMITTEDFROMFILE" }
           ]
         },
         {
           id: "reproducibility-limitations",
-          text: "Reproducibility and current limitations",
-          suffix: "4"
-        }
+          text: "Reproducibility and current limitations"
+        },
+        { id: "opal-distribution-units", text: "Units", variant: "opal" },
+        {
+          id: "opal-distribution-general-distribution-attributes",
+          text: "General distribution attributes",
+          variant: "opal",
+          stateKey: "page-toc:beam-distributions:opal-attributes",
+          children: [
+            { id: "opal-distribution-universal-attributes", text: "Universal attributes" },
+            { id: "opal-distribution-injected-distribution-attributes", text: "Injected attributes" },
+            { id: "opal-distribution-emitted-distribution-attributes", text: "Emitted attributes" }
+          ]
+        },
+        {
+          id: "opal-distribution-distribution-types",
+          text: "OPAL distribution types",
+          variant: "opal",
+          stateKey: "page-toc:beam-distributions:opal-types",
+          children: [
+            { id: "opal-distribution-fromfile", text: "FROMFILE" },
+            { id: "opal-distribution-gauss", text: "GAUSS" },
+            { id: "opal-distribution-flattop", text: "FLATTOP" },
+            { id: "opal-distribution-binomial", text: "BINOMIAL" },
+            { id: "opal-distribution-gaussmatched", text: "GAUSSMATCHED" },
+            { id: "opal-distribution-multigauss", text: "MULTIGAUSS" }
+          ]
+        },
+        { id: "opal-distribution-emission-models", text: "Emission models", variant: "opal" },
+        { id: "opal-distribution-distribution-list", text: "Distribution list", variant: "opal" }
       ]
     },
     {
@@ -37,7 +64,7 @@
       targetId: "opalx-sidebar-structures",
       toggleLabel: "Toggle Structures sections",
       items: [
-        { id: "binning", text: "Binning", suffix: "1" }
+        { id: "binning", text: "Binning" }
       ]
     },
     {
@@ -45,77 +72,93 @@
       stateKey: "page-toc:field-solver",
       targetId: "opalx-sidebar-field-solver",
       toggleLabel: "Toggle Field Solver sections",
+      defaultVariant: "opalx",
       items: [
         {
           id: "solver-backends",
           text: "Solver types",
-          suffix: "1",
           stateKey: "page-toc:field-solver:backends",
           toggleLabel: "Toggle solver types",
           children: [
-            { id: "solver-none", text: "NONE", suffix: "1.1" },
-            { id: "solver-fft", text: "FFT", suffix: "1.2" },
-            { id: "solver-open", text: "OPEN", suffix: "1.3" },
-            { id: "solver-cg", text: "CG", suffix: "1.4" }
+            { id: "solver-none", text: "NONE" },
+            { id: "solver-fft", text: "FFT" },
+            { id: "solver-open", text: "OPEN" },
+            { id: "solver-cg", text: "CG" }
           ]
         },
         {
           id: "fieldsolver-parameters",
-          text: "FIELDSOLVER parameters",
-          suffix: "2"
+          text: "FIELDSOLVER parameters"
         },
         {
           id: "mesh-pic-cycle",
-          text: "Mesh and particle-in-cell cycle",
-          suffix: "3"
+          text: "Mesh and particle-in-cell cycle"
         },
         {
           id: "boundary-conditions",
           text: "Boundary conditions",
-          suffix: "4",
           stateKey: "page-toc:field-solver:boundaries",
           children: [
             {
               id: "open-periodic-boundaries",
-              text: "Open and periodic boundaries",
-              suffix: "4.1"
+              text: "Open and periodic boundaries"
             },
             {
               id: "generic-dirichlet-boundaries",
-              text: "Generic all-face Dirichlet boundaries",
-              suffix: "4.2"
+              text: "Generic all-face Dirichlet boundaries"
             }
           ]
         },
         {
           id: "space-charge-modes",
           text: "Space-charge modes",
-          suffix: "5",
           stateKey: "page-toc:field-solver:modes",
           children: [
-            { id: "monolithic-mode", text: "Monolithic electrostatic mode", suffix: "5.1" },
-            { id: "binned-mode", text: "Binned rest-frame mode", suffix: "5.2" },
+            { id: "monolithic-mode", text: "Monolithic electrostatic mode" },
+            { id: "binned-mode", text: "Binned rest-frame mode" },
             {
               id: "explicit-image-charges",
-              text: "Explicit image-charge Dirichlet correction",
-              suffix: "5.3"
+              text: "Explicit image-charge Dirichlet correction"
             },
             {
               id: "shifted-greens-correction",
-              text: "Shifted-Green Dirichlet correction",
-              suffix: "5.4"
+              text: "Shifted-Green Dirichlet correction"
             }
           ]
         },
         {
           id: "compatibility-selection",
-          text: "Compatibility and selection",
-          suffix: "6"
+          text: "Compatibility and selection"
         },
         {
           id: "accuracy-cost",
-          text: "Accuracy, cost, and reproducibility",
-          suffix: "7"
+          text: "Accuracy, cost, and reproducibility"
+        },
+        {
+          id: "opal-field-solver-fft-based-particle-mesh-pm-solver",
+          text: "FFT particle-mesh solver",
+          variant: "opal"
+        },
+        {
+          id: "opal-field-solver-particle-particle-particle-mesh-p3m-solver",
+          text: "P3M solver",
+          variant: "opal"
+        },
+        {
+          id: "opal-field-solver-iterative-space-charge-solver",
+          text: "Iterative solver",
+          variant: "opal"
+        },
+        { id: "opal-field-solver-energy-binning", text: "Energy binning", variant: "opal" },
+        {
+          id: "opal-field-solver-the-fieldsolver-command",
+          text: "OPAL FIELDSOLVER command",
+          variant: "opal"
+        },
+        {
+          id: "opal-field-solver-adaptive-mesh-refinement-amr-solver",
+          text: "AMR solver",
+          variant: "opal"
         }
       ]
     },
@@ -124,29 +167,57 @@
       stateKey: "page-toc:elements",
       targetId: "opalx-sidebar-elements",
       toggleLabel: "Toggle Elements sections",
+      defaultVariant: "opalx",
       items: [
         {
           id: "common-element-syntax",
-          text: "Common element syntax",
-          suffix: "1"
+          text: "Common element syntax"
         },
-        { id: "drift", text: "DRIFT", suffix: "2" },
+        { id: "drift", text: "DRIFT" },
         {
           id: "constant-electric-field-cavity",
-          text: "CONSTANTEFIELDCAVITY",
-          suffix: "3"
+          text: "CONSTANTEFIELDCAVITY"
         },
-        { id: "quadrupole", text: "QUADRUPOLE", suffix: "4" },
-        { id: "multipole", text: "MULTIPOLE", suffix: "5" },
-        { id: "multipolet", text: "MULTIPOLET", suffix: "6" },
-        { id: "solenoid", text: "SOLENOID", suffix: "7" },
-        { id: "rfcavity", text: "RFCAVITY", suffix: "8" },
-        { id: "travelingwave", text: "TRAVELINGWAVE", suffix: "9" },
+        { id: "quadrupole", text: "QUADRUPOLE" },
+        { id: "multipole", text: "MULTIPOLE" },
+        { id: "multipolet", text: "MULTIPOLET" },
+        { id: "solenoid", text: "SOLENOID" },
+        { id: "rfcavity", text: "RFCAVITY" },
+        { id: "travelingwave", text: "TRAVELINGWAVE" },
+        { id: "laser", text: "LASER" },
+        { id: "monitor", text: "MONITOR" },
+        { id: "marker", text: "MARKER" },
+        { id: "probe", text: "PROBE" },
+        { id: "bends", text: "RBEND and SBEND" },
+        { id: "verticalffamagnet", text: "VERTICALFFAMAGNET" },
+        { id: "variable-rf-cavity", text: "VARIABLE_RF_CAVITY" },
         {
           id: "element-limitations",
-          text: "Current limitations",
-          suffix: "10"
-        }
+          text: "Current limitations"
+        },
+        { id: "opal-element-input-format", text: "OPAL element input format", variant: "opal" },
+        { id: "opal-common-attributes-for-all-elements", text: "Common OPAL attributes", variant: "opal" },
+        { id: "opal-drift-spaces", text: "Drift spaces", variant: "opal" },
+        { id: "opal-quadrupole", text: "Quadrupole", variant: "opal" },
+        { id: "opal-sextupole", text: "Sextupole", variant: "opal" },
+        { id: "opal-octupole", text: "Octupole", variant: "opal" },
+        { id: "opal-general-multipole", text: "General multipole", variant: "opal" },
+        { id: "opal-general-multipole-with-fringe-field-model", text: "Multipole with fringe fields", variant: "opal" },
+        { id: "opal-solenoid", text: "Solenoid", variant: "opal" },
+        { id: "opal-rf-cavities", text: "RF cavities", variant: "opal" },
+        { id: "opal-traveling-wave-structure", text: "Traveling-wave structure", variant: "opal" },
+        { id: "opal-monitor", text: "Monitor", variant: "opal" },
+        { id: "opal-collimators", text: "Collimators", variant: "opal" },
+        { id: "opal-correctors", text: "Correctors", variant: "opal" },
+        { id: "opal-bending-magnets", text: "Bending magnets", variant: "opal" },
+        { id: "opal-variable-rf-cavities", text: "Variable RF cavities", variant: "opal" },
+        { id: "opal-septum", text: "Septum", variant: "opal" },
+        { id: "opal-probe", text: "Probe", variant: "opal" },
+        { id: "opal-output-plane", text: "Output plane", variant: "opal" },
+        { id: "opal-stripper", text: "Stripper", variant: "opal" },
+        { id: "opal-degrader", text: "Degrader", variant: "opal" },
+        { id: "opal-vacuum", text: "Vacuum", variant: "opal" },
+        { id: "opal-undulator", text: "Undulator", variant: "opal" }
       ]
     }
   ];
@@ -163,25 +234,45 @@
     document.querySelectorAll("#quarto-sidebar a.sidebar-link[href]")
   ).find((link) => linkPath(link).endsWith(chapter.path));
 
-  const numberedText = (chapterNumber, suffix, text) => {
+  const numberItems = (items) => items.map((item, index) => ({
+    ...item,
+    numberSuffix: String(index + 1),
+    children: item.children?.map((child, childIndex) => ({
+      ...child,
+      numberSuffix: `${index + 1}.${childIndex + 1}`
+    }))
+  }));
+
+  const renderedNumber = (item, chapterNumber) => {
+    const section = document.getElementById(item.id);
+    const number = section?.querySelector(
+      ":scope > h2 .header-section-number, :scope > h3 .header-section-number"
+    )?.textContent.trim();
+    return number || (chapterNumber ? `${chapterNumber}.${item.numberSuffix}` : "");
+  };
+
+  const numberedText = (chapterNumber, item) => {
     const fragment = document.createDocumentFragment();
-    if (chapterNumber) {
+    const rendered = renderedNumber(item, chapterNumber);
+    if (rendered) {
       const number = document.createElement("span");
       number.className = "chapter-number";
-      number.textContent = `${chapterNumber}.${suffix}`;
+      number.textContent = rendered;
       fragment.append(number, document.createTextNode("\u00a0 "));
     }
     const title = document.createElement("span");
     title.className = "chapter-title";
-    title.textContent = text;
+    title.textContent = item.text;
     fragment.append(title);
     return fragment;
   };
 
-  const sectionLink = (baseHref, chapterNumber, item, depth) => {
+  const sectionLink = (baseHref, chapterNumber, item, depth, inheritedVariant) => {
     const li = document.createElement("li");
     li.className = "sidebar-item opalx-page-toc-item";
     li.dataset.opalxTocAnchor = item.id;
+    const variant = item.variant || inheritedVariant;
+    if (variant) li.dataset.opalDocumentationVariant = variant;
 
     const container = document.createElement("div");
     container.className = "sidebar-item-container";
@@ -192,7 +283,7 @@
     link.dataset.opalxTocDepth = String(depth);
     const menuText = document.createElement("span");
     menuText.className = "menu-text";
-    menuText.append(numberedText(chapterNumber, item.suffix, item.text));
+    menuText.append(numberedText(chapterNumber, item));
     link.append(menuText);
     container.append(link);
     li.append(container);
@@ -218,7 +309,7 @@
       children.className = "collapse list-unstyled sidebar-section depth3 opalx-page-toc-children";
       children.dataset.opalxStateKey = item.stateKey;
       item.children.forEach((child) => {
-        children.append(sectionLink(baseHref, chapterNumber, child, depth + 1));
+        children.append(sectionLink(baseHref, chapterNumber, child, depth + 1, variant));
       });
       li.append(children);
     }
@@ -261,8 +352,8 @@
     toc.dataset.opalxStateKey = chapter.stateKey;
     const baseHref = link.getAttribute("href").split("#", 1)[0];
     const chapterNumber = link.querySelector(".chapter-number")?.textContent.trim() || "";
-    chapter.items.forEach((item) => {
-      toc.append(sectionLink(baseHref, chapterNumber, item, 2));
+    numberItems(chapter.items).forEach((item) => {
+      toc.append(sectionLink(baseHref, chapterNumber, item, 2, chapter.defaultVariant));
     });
     host.append(toc);
     markActiveAnchor(chapter, toc);

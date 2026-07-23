@@ -3,8 +3,8 @@
 ## Scope
 
 - This repository is the text-first source for the current OPALX manual. Treat
-  current OPALX source and tests as authoritative; do not import legacy OPAL or
-  unverified behavior.
+  current OPALX source and tests as authoritative. Retain legacy OPAL only where
+  a User Guide page intentionally provides a version comparison.
 - Keep writing concise and user-oriented. Put detailed physics in `physics/`
   and implementation guidance in `developer-guide/`.
 - Do not commit generated `_site/` or `.quarto/` content.
@@ -22,6 +22,19 @@
   ```markdown
   [Download]({{< meta documents-base-url >}}/reports/2026/bugs/example.pdf)
   ```
+
+## OPAL and OPALX variants
+
+- Put current-only material in `::: {.feature-opalx}` and retained legacy
+  material in `::: {.feature-opal}`. Leave genuinely shared prose outside both
+  blocks. A page gets the OPALX/OPAL/Both selector only when it contains both.
+- On dual pages, make OPALX source behavior authoritative. Keep ambiguous
+  differences in separate blocks instead of silently merging them.
+- If an OPAL interface has no current OPALX equivalent, the OPALX block must
+  state clearly that it is unavailable or not yet available.
+- Use unique, stable heading IDs in each variant. Add variant metadata to the
+  manifest in `assets/scripts/sidebar-page-toc.html` for pages with a custom
+  left subsection menu.
 
 ## Resources and large files
 

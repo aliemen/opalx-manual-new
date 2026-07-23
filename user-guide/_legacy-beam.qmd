@@ -1,0 +1,54 @@
+
+
+The `BEAM` command defines the particle species, reference energy or momentum,
+and global beam properties used by tracking and diagnostics.
+
+```text
+label: BEAM, PARTICLE=name, MASS=real, CHARGE=real,
+      ENERGY=real, PC=real, GAMMA=real, BCURRENT=real,
+      NPART=real, BFREQ=real;
+```
+
+The label is optional and defaults to `UNNAMED_BEAM`.
+
+## Particle Definition {#opal-beam-particle-definition}
+
+`PARTICLE` selects one of the predefined species such as `ELECTRON`,
+`POSITRON`, `MUON`, `PROTON`, `DEUTERON`, `HMINUS`, `H2P`, `ALPHA`, `CARBON`,
+`XENON`, or `URANIUM`.
+
+For custom species, the user can provide:
+
+- `MASS` in `GeV`
+- `CHARGE` in elementary-charge units
+
+
+## Beam Energy {#opal-beam-beam-energy}
+
+There are three standard energy attributes, with the usual priority:
+
+- `GAMMA`
+- `ENERGY`
+- `PC`
+
+
+## Other Attributes {#opal-beam-other-attributes}
+
+The other important beam attributes are:
+
+`BFREQ`
+: bunch frequency in `MHz`.
+
+`BCURRENT`
+: bunch current in `A`.
+
+`NPART`
+: number of macro particles used in the simulation.
+
+`NSLICE`
+: number of slices per bunch.
+
+`MOMENTUMTOLERANCE`
+: tolerance used when checking consistency between the distribution and the
+reference momentum.
+

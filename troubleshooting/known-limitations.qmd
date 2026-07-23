@@ -3,18 +3,19 @@ title: "Known Limitations"
 description: "Visible boundaries of the current OPALX implementation and documentation."
 audience: user
 status: experimental
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-23"
 ---
 
 - OPALX is not documented as a drop-in implementation of every historical
   OPAL flavor. OPAL-CYCL and OPAL-MAP material is not part of this manual.
-- Attribute-level command and element tables are incomplete where source and
-  regression behavior have not yet been reconciled.
+- Registered but regression-untested interfaces are identified as
+  source-supported; that label does not claim regression coverage.
 - Some physics chapters document recently implemented models whose interface
   may still change; these pages are marked `experimental`.
-- Field-solver and output-format matrices are still planned.
 - Backend support must be checked for each new algorithm; successful serial
   execution does not establish GPU support.
+- Hard-edge fields and active elements shorter than a few integration steps can
+  create numerical splitting. Always check time-step convergence.
 
 These limitations are documentation status, not a substitute for the issue
 tracker. Report unexpected implemented behavior with a reproducible case.

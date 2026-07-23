@@ -170,6 +170,114 @@ body.opalx-sidebar-page-toc #quarto-margin-sidebar {
   display: none;
 }
 
+.opal-version-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  align-items: center;
+  margin: 0 0 1.4rem;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--opalx-line);
+  border-radius: 0.65rem;
+  background: var(--opalx-surface);
+}
+
+.opal-version-selector legend {
+  float: left;
+  width: auto;
+  margin: 0;
+  color: var(--opalx-ink);
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.opal-version-selector__choices {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--opalx-line);
+  border-radius: 0.5rem;
+}
+
+.opal-version-selector__choice {
+  position: relative;
+  margin: 0;
+  cursor: pointer;
+}
+
+.opal-version-selector__choice input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.opal-version-selector__choice span {
+  display: block;
+  padding: 0.35rem 0.7rem;
+  border-right: 1px solid var(--opalx-line);
+}
+
+.opal-version-selector__choice:last-child span {
+  border-right: 0;
+}
+
+.opal-version-selector__choice input:checked + span {
+  color: white;
+  background: var(--opalx-blue);
+}
+
+.opal-version-selector__choice input:focus-visible + span {
+  outline: 3px solid color-mix(in srgb, var(--opalx-blue) 45%, transparent);
+  outline-offset: -3px;
+}
+
+.feature-opal,
+.feature-opalx {
+  position: relative;
+  margin: 1rem 0;
+  padding: 1rem 1.1rem;
+  border-left: 0.3rem solid var(--opalx-line);
+  border-radius: 0.35rem;
+  background: var(--opalx-surface);
+}
+
+.feature-opal {
+  border-left-color: #3572b0;
+}
+
+.feature-opalx {
+  border-left-color: var(--opalx-teal);
+}
+
+html[data-opal-documentation-version="opalx"] .feature-opal,
+html[data-opal-documentation-version="opal"] .feature-opalx,
+html[data-opal-documentation-version="opalx"] [data-opal-documentation-variant="opal"],
+html[data-opal-documentation-version="opal"] [data-opal-documentation-variant="opalx"] {
+  display: none !important;
+}
+
+html[data-opal-documentation-version="both"] .feature-opal::before,
+html[data-opal-documentation-version="both"] .feature-opalx::before {
+  display: inline-block;
+  margin-bottom: 0.7rem;
+  padding: 0.12rem 0.45rem;
+  color: white;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  border-radius: 0.25rem;
+}
+
+html[data-opal-documentation-version="both"] .feature-opal::before {
+  content: "OPAL";
+  background: #3572b0;
+}
+
+html[data-opal-documentation-version="both"] .feature-opalx::before {
+  content: "OPALX";
+  background: var(--opalx-teal);
+}
+
 @media (max-width: 900px) {
   .doc-grid {
     grid-template-columns: 1fr 1fr;

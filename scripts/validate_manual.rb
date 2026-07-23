@@ -115,11 +115,8 @@ if distribution_page.file?
   unless distribution_text.include?("Accepted but currently ignored")
     errors += error("beam-distributions must flag parser-accepted parameters that are ignored")
   end
-  %w[BINOMIAL GAUSSMATCHED MULTIGAUSS].each do |legacy_type|
-    if distribution_text.match?(/`#{legacy_type}`/)
-      errors += error("beam-distributions contains legacy-only type: #{legacy_type}")
-    end
-  end
+  errors += error("beam-distributions is missing the retained OPAL distribution include") unless
+    distribution_text.include?("_legacy-distributions.qmd")
 end
 
 field_solver_page = ROOT / "user-guide/field-solver/index.qmd"
@@ -148,6 +145,9 @@ field_solver_sections = [
 
 if field_solver_page.file?
   field_solver_text = field_solver_page.read
+  unless field_solver_text.include?("## Shared particle-mesh model {.unnumbered .unlisted}")
+    errors += error("field-solver is missing its shared particle-mesh model")
+  end
   previous_position = -1
   field_solver_sections.each do |heading, _anchor|
     position = field_solver_text.index(heading)
@@ -318,6 +318,13 @@ element_sections = [
   ["## `SOLENOID` {#solenoid}", "solenoid"],
   ["## `RFCAVITY` {#rfcavity}", "rfcavity"],
   ["## `TRAVELINGWAVE` {#travelingwave}", "travelingwave"],
+  ["## `LASER` {#laser}", "laser"],
+  ["## `MONITOR` {#monitor}", "monitor"],
+  ["## `MARKER` {#marker}", "marker"],
+  ["## `PROBE` {#probe}", "probe"],
+  ["## `RBEND` and `SBEND` {#bends}", "bends"],
+  ["## `VERTICALFFAMAGNET` {#verticalffamagnet}", "verticalffamagnet"],
+  ["## `VARIABLE_RF_CAVITY` {#variable-rf-cavity}", "variable-rf-cavity"],
   ["## Current limitations {#element-limitations}", "element-limitations"]
 ]
 
@@ -434,8 +441,8 @@ if distribution_toc.file?
   unless toc_text.match?(/path:\s*["']\/user-guide\/structures\/index\.html["'][\s\S]*?id:\s*["']binning["']/)
     errors += error("structures sidebar manifest is missing the BINNING anchor")
   end
-  unless toc_text.match?(/id:\s*["']binning["'],\s*text:\s*["']Binning["'],\s*suffix:\s*["']1["']/)
-    errors += error("structures sidebar manifest must label BINNING as automatic subsection 1")
+  unless toc_text.include?("const numberItems") && toc_text.include?("renderedNumber")
+    errors += error("sidebar manifest must derive subsection numbers from rendered headings")
   end
   unless toc_text.include?("page-toc:structures")
     errors += error("structures sidebar manifest is missing its stable key")
@@ -464,6 +471,10 @@ if distribution_toc.file?
   end
   unless toc_text.match?(/path:\s*["']\/user-guide\/elements\.html["']/)
     errors += error("elements sidebar manifest has an incorrect rendered path")
+  end
+  errors += error("custom sidebar manifest still hard-codes subsection suffixes") if toc_text.include?("suffix:")
+  unless toc_text.include?('defaultVariant: "opalx"') && toc_text.include?('variant: "opal"')
+    errors += error("custom sidebar manifest is missing version metadata")
   end
 else
   errors += error("missing distribution sidebar manifest: #{distribution_toc.relative_path_from(ROOT)}")
@@ -502,6 +513,12 @@ source_audited_inputs = {
     MAXXORDER VARRADIUS ENTRYOFFSET SCALING_MODEL FMAPFN FAST
     VOLT DVOLT FREQ LAG DLAG APVETO RMIN RMAX PDIS GAPWIDTH PHI0 DESIGNENERGY
     PHASE_MODEL AMPLITUDE_MODEL FREQUENCY_MODEL NUMCELLS MODE
+    WAVELENGTH PULSEENERGY PULSELENGTH WAISTX WAISTY DIR STOKES
+    XSTART XEND YSTART YEND WIDTH STEP
+    K0 K0S K2 K2S K3 K3S ANGLE E1 E2 HGAP FINT GAP GREATERTHANPI
+    B0 FIELD_INDEX MAX_HORIZONTAL_POWER END_LENGTH CENTRE_LENGTH BB_LENGTH
+    HEIGHT_POS_EXTENT HEIGHT_NEG_EXTENT HEIGHT
+    COEFFICIENTS FREQUENCIES PHASE_OFFSETS AMPLITUDES DC_OFFSETS VALUES TIMES ORDER
   ]
 }
 
@@ -519,6 +536,15 @@ source_audited_inputs.each do |relative, attributes|
 end
 
 tracking_text = (ROOT / "user-guide/tracking.qmd").read
+tracking_headings = [
+  "## `TRACK` {#track-command}",
+  "## `RUN` {#run-command}",
+  "## `ENDTRACK` {#endtrack-command}"
+]
+tracking_positions = tracking_headings.map { |heading| tracking_text.index(heading) }
+if tracking_positions.any?(&:nil?) || tracking_positions != tracking_positions.sort
+  errors += error("tracking page must use ordered shared TRACK, RUN, and ENDTRACK headings")
+end
 unless tracking_text.include?("`BEAMS` takes precedence")
   errors += error("tracking page must document BEAMS precedence")
 end
@@ -532,6 +558,101 @@ binning_text = (ROOT / "user-guide/structures/index.qmd").read
 end
 unless binning_text.include?("implements only `VELOCITYZ` and `GAMMAZ`")
   errors += error("binning page must distinguish parser values from runtime support")
+end
+
+dual_pages = %w[
+  user-guide/options.qmd
+  user-guide/elements.qmd
+  user-guide/diagnostics-output.qmd
+  user-guide/beam.qmd
+  user-guide/beam-distributions.qmd
+  user-guide/field-solver/index.qmd
+  user-guide/tracking.qmd
+  user-guide/wakefields/index.qmd
+  user-guide/geometry/index.qmd
+  user-guide/particle-matter/index.qmd
+  user-guide/optimization/index.qmd
+  user-guide/sampler/index.qmd
+  user-guide/appendix/field-maps/index.qmd
+  user-guide/appendix/autophase/index.qmd
+]
+dual_pages.each do |relative|
+  text = (ROOT / relative).read
+  errors += error("dual page is missing OPALX content: #{relative}") unless text.include?("feature-opalx")
+  errors += error("dual page is missing OPAL content: #{relative}") unless text.match?(/feature-opal(?:\}|\s)/)
+end
+
+shared_pages = %w[
+  user-guide/introduction/index.qmd
+  user-guide/conventions/index.qmd
+  user-guide/input-language.qmd
+  user-guide/command-format/index.qmd
+  user-guide/control-statements/index.qmd
+  user-guide/beam-lines/index.qmd
+  user-guide/structures/index.qmd
+  user-guide/appendix/language-syntax/index.qmd
+  user-guide/appendix/opal-madx/index.qmd
+]
+shared_pages.each do |relative|
+  text = (ROOT / relative).read
+  if text.include?("feature-opalx") || text.match?(/feature-opal(?:\}|\s)/)
+    errors += error("shared page unexpectedly contains a version block: #{relative}")
+  end
+end
+
+{
+  "user-guide/wakefields/index.qmd" => "not registered by the current OPALX executable",
+  "user-guide/geometry/index.qmd" => "not registered by the current OPALX executable",
+  "user-guide/particle-matter/index.qmd" => "not registered by the current OPALX executable",
+  "user-guide/optimization/index.qmd" => "not yet available in OPALX",
+  "user-guide/sampler/index.qmd" => "not registered by the current OPALX executable"
+}.each do |relative, notice|
+  errors += error("#{relative} is missing its OPALX unavailable notice") unless (ROOT / relative).read.include?(notice)
+end
+
+field_maps_text = (ROOT / "user-guide/appendix/field-maps/index.qmd").read
+%w[2DMagnetoStatic 2DDynamic AstraDynamic AstraMagnetoStatic].each do |map_type|
+  errors += error("field-map appendix is missing current OPALX type #{map_type}") unless field_maps_text.include?("`#{map_type}`")
+end
+unless field_maps_text.include?("Recognition is not support") && field_maps_text.include?("d1e762f15")
+  errors += error("field-map appendix must distinguish recognized headers from constructible OPALX maps")
+end
+
+version_init = (ROOT / "includes/version-selector-init.html").read
+version_script = (ROOT / "assets/scripts/version-selector.html").read
+version_filter = (ROOT / "filters/version-block-labels.lua").read
+%w[opalx opal both].each do |mode|
+  errors += error("version selector is missing mode #{mode}") unless version_script.include?(%(["#{mode}",))
+end
+unless version_init.include?("opalx-documentation-version-v1") &&
+       version_script.include?("opalx-documentation-version-v1")
+  errors += error("version selector is missing its stable local-storage key")
+end
+errors += error("version selector does not reveal hidden direct anchors") unless version_script.include?("revealHashTarget")
+errors += error("version selector does not tag version-aware navigation") unless version_script.include?("tagNavigation")
+errors += error("PDF filter is missing static OPAL/OPALX labels") unless
+  version_filter.include?("feature-opalx") && version_filter.include?("feature-opal")
+
+inventory = YAML.safe_load(File.read(ROOT / "migration/content-inventory.yml"), permitted_classes: [], aliases: false)
+manual_inventory = inventory.fetch("sources").find { |source| source["source"] == "Manual" }
+if manual_inventory.nil?
+  errors += error("migration inventory is missing the legacy Manual source")
+else
+  chapter_ids = manual_inventory.fetch("chapters", []).map { |entry| entry["id"] }
+  appendix_ids = manual_inventory.fetch("appendices", []).map { |entry| entry["id"] }
+  errors += error("migration inventory must decide legacy chapters 1 through 25 exactly once") unless
+    chapter_ids == (1..25).to_a
+  errors += error("migration inventory must decide appendices A through G exactly once") unless
+    appendix_ids == %w[A B C D E F G]
+  errors += error("migration inventory has the wrong Manual revision") unless
+    manual_inventory["revision"] == "91aa0183863191df7dc54252bfb43195a17a2e86"
+end
+
+temp_repository_pattern = %r{https://github\.com/aliemen/(?:Manual-Redesign|opalx-manual-new|opalx-documents)}i
+ROOT.glob("**/*.{qmd,yml,yaml,md,html,rb}").each do |path|
+  next if path.each_filename.any? { |part| %w[.git _site].include?(part) }
+  errors += error("temporary aliemen repository URL remains in #{path.relative_path_from(ROOT)}") if
+    path.read.match?(temp_repository_pattern)
 end
 
 if ENV["DOCUMENTS_CHECKOUT"] && !ENV["DOCUMENTS_CHECKOUT"].empty?

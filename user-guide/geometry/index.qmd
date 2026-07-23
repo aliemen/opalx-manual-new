@@ -1,0 +1,85 @@
+---
+title: "Geometry"
+description: "Legacy OPAL boundary-geometry input and the current OPALX availability boundary."
+audience: user
+status: planned
+last-reviewed: "2026-07-23"
+---
+
+
+::: {.feature-opalx}
+`GEOMETRY` is not registered by the current OPALX executable. Internal
+boundary-geometry classes remain in the source, but they do not provide a
+usable OPALX input definition. The OPAL view preserves the complete legacy
+interface.
+:::
+
+::: {.feature-opal}
+At present the `GEOMETRY` command is treated as an experimental feature. It has
+two roles:
+
+1. terminate particles that cross a boundary surface
+2. provide boundary information to geometry-aware field solvers such as `SAAMG`
+
+The command supports two usage modes:
+
+1. import a surface mesh from an H5hut geometry file
+2. construct a predefined analytic shape: `ELLIPTIC`, `RECTANGULAR`, or
+   `BOXCORNER`
+
+## Geometry Command
+
+General form:
+
+```text
+name: GEOMETRY, TOPO=ELLIPTIC, LENGTH=1.0, A=0.005, B=0.005;
+```
+
+### Command attributes
+
+| Attribute | Meaning | Default |
+|---|---|---|
+| `FGEOM` | H5hut file containing a surface mesh | none |
+| `LENGTH` | Geometry length in meters | `1.0` |
+| `TOPO` | Analytic topology: `ELLIPTIC`, `RECTANGULAR`, `BOXCORNER` | `ELLIPTIC` |
+| `S` | Start position of the geometry in meters | `1.0` |
+| `A` | Semi-major axis or horizontal half aperture | `0.025` |
+| `B` | Semi-minor axis or vertical half aperture | `0.025` |
+| `C` | Corner height for `BOXCORNER` | `0.01` |
+| `L1` | First section length for `BOXCORNER` | `0.5` |
+| `L2` | Second section length for `BOXCORNER` | `0.2` |
+| `ZSHIFT` | Longitudinal shift for imported H5hut geometry | `0.0` |
+| `XYZSCALE` | Uniform scaling factor for imported geometry | `1.0` |
+| `XSCALE` | Scaling factor for imported `x` coordinates | `1.0` |
+| `YSCALE` | Scaling factor for imported `y` coordinates | `1.0` |
+| `ZSCALE` | Scaling factor for imported `z` coordinates | `1.0` |
+| `INSIDEPOINT` | A point known to lie inside the imported geometry | none |
+
+### Analytic and file-based modes
+
+If `FGEOM` is provided, the file-based surface mesh is used and the analytic
+`TOPO` selection is effectively overridden.
+
+The analytic topologies are:
+
+- `ELLIPTIC`
+- `RECTANGULAR`
+- `BOXCORNER`
+
+The last one is intended for piecewise box-like apertures with a corner
+transition controlled by `C`, `L1`, and `L2`.
+
+### Interaction with field solving and tracking
+
+If the geometry is used only as a particle terminator, any field solver can be
+used and it is not necessary to attach the geometry to the `FIELDSOLVER`
+command.
+
+If the geometry should also define field-solver boundary conditions, it must be:
+
+1. referenced by `FIELDSOLVER`
+2. selected again on `RUN` via `BOUNDARYGEOMETRY`
+
+In all cases where particle termination is desired, the boundary geometry must
+be named on `RUN` so it is loaded and applied during tracking.
+:::

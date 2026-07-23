@@ -1,12 +1,13 @@
 ---
 title: "Tracking"
-description: "Select beams and a lattice, schedule time steps, and run the current OPALX parallel tracker."
+description: "Configure TRACK, RUN, and ENDTRACK for current OPALX or retained legacy OPAL behavior."
 audience: user
 status: current
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-23"
 ---
 
-An OPALX tracking block has three statements:
+A tracking block selects a lattice and beam, defines its step schedule, starts
+the tracker, and returns to normal input processing:
 
 ```opal
 TRACK, LINE=Line1, BEAM=Beam1,
@@ -15,11 +16,12 @@ TRACK, LINE=Line1, BEAM=Beam1,
 ENDTRACK;
 ```
 
-`TRACK` selects the lattice, beam containers, and stopping schedule. `RUN`
-selects the executable tracking method and field solver.
+## `TRACK` {#track-command}
 
-## `TRACK`
+`TRACK` enters tracking mode. Only tracking commands such as `RUN` and
+`ENDTRACK` are accepted until the block closes.
 
+::: {.feature-opalx}
 | Parameter | Default | Current behavior |
 |---|---:|---|
 | `LINE` | required | Name of the `LINE` to track. |
@@ -41,7 +43,7 @@ selects the executable tracking method and field solver.
 extends each shorter array by repeating its final value until all three have
 the same length. This defines consecutive tracking segments.
 
-## Beam selection
+### Beam selection {#opalx-track-beam-selection}
 
 ```opal
 TRACK, LINE=Line1, BEAMS={ElectronBeam, PositronBeam},
@@ -55,9 +57,35 @@ tracking block. Photon beams are rejected when `RUN` starts.
 
 See [Beam Definitions](beam.qmd) for per-container properties and source
 selection.
+:::
 
-## `RUN`
+::: {.feature-opal}
+Before tracking starts, a `LINE` and a `BEAM` must be selected. The compact
+legacy form is:
 
+```opal
+TRACK, LINE=name, BEAM=name, DT={...}, MAXSTEPS={...}, ZSTOP={...};
+```
+
+| Parameter | Legacy OPAL behavior |
+|---|---|
+| `LINE` | Beamline or sequence to track. |
+| `BEAM` | Beam definition providing particle mass, charge, and reference momentum. |
+| `T0` | Initial simulation time in seconds; default `0`. |
+| `DT` | Time-step array; default `{1e-12}` s. |
+| `MAXSTEPS` | Maximum-step array; default `{10}`. |
+| `ZSTART` | Starting reference-particle position in metres. |
+| `ZSTOP` | Longitudinal thresholds at which the next schedule segment becomes active. |
+
+If the schedule arrays have different lengths, the final supplied value is
+reused for the remaining segments.
+:::
+
+## `RUN` {#run-command}
+
+`RUN` starts or continues particle tracking with the current bunch state.
+
+::: {.feature-opalx}
 | Parameter | Default | Current behavior |
 |---|---:|---|
 | `METHOD` | required | Only `PARALLEL` is accepted. |
@@ -69,8 +97,47 @@ selection.
 `RUN` does not register `BEAM`, `BEAMS`, `SOURCES`, or `DISTRIBUTION`.
 Selection belongs on `TRACK` and each `BEAM`; distribution objects are reached
 through the beam's emission-source list.
+:::
 
-## Current step sequence
+::: {.feature-opal}
+The retained non-CYCL OPAL form is:
+
+```opal
+RUN, METHOD="PARALLEL-T", BEAM=beam1, FIELDSOLVER=Fs1,
+     BOUNDARYGEOMETRY=Geometry1, TRACKBACK=FALSE,
+     DISTRIBUTION=Dist1;
+```
+
+| Parameter | Legacy OPAL behavior |
+|---|---|
+| `METHOD` | `PARALLEL-T` selects OPAL-T tracking. |
+| `FIELDSOLVER` | Field-solver definition used for the run. |
+| `DISTRIBUTION` | One distribution or a distribution list. |
+| `BEAM` | Beam definition used for the run. |
+| `BOUNDARYGEOMETRY` | Boundary geometry used for particle termination. |
+| `TRACKBACK` | Selects OPAL-T reverse-time tracking. |
+
+A later `RUN` continues from the current bunch state unless the input
+explicitly reinitializes the bunch.
+:::
+
+## `ENDTRACK` {#endtrack-command}
+
+```opal
+ENDTRACK;
+```
+
+::: {.feature-opalx}
+`ENDTRACK` closes the tracking parser after `RUN` and releases the temporary
+tracking communication object.
+:::
+
+::: {.feature-opal}
+`ENDTRACK` leaves track mode and returns the parser to ordinary command mode.
+:::
+
+::: {.feature-opalx}
+## Current OPALX step sequence {#opalx-step-sequence}
 
 At each step `ParallelTracker` performs a half position push, assembles
 space-charge and external fields, emits particles, applies the Boris momentum
@@ -80,9 +147,12 @@ The [Physics Overview](../physics/overview/index.qmd) describes this split.
 The time step must resolve the shortest relevant field, geometry, emission,
 and collective-effect scale. Establish convergence by repeating a calculation
 with smaller steps and comparing physical observables.
+:::
 
-## Parallel execution
+::: {.feature-opalx}
+## Current OPALX parallel execution {#opalx-parallel-execution}
 
 OPALX combines MPI with the selected Kokkos backend. GPU runs normally use one
 MPI rank per GPU and pass `--kokkos-map-device-id-by=mpi_rank` so ranks select
 distinct devices.
+:::
