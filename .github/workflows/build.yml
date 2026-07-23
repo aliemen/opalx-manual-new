@@ -16,7 +16,7 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  QUARTO_PROFILE: ${{ vars.QUARTO_PROFILE || 'personal' }}
+  QUARTO_PROFILE: opalx
 
 jobs:
   build:
@@ -39,7 +39,7 @@ jobs:
       - name: Check out documents
         uses: actions/checkout@v4
         with:
-          repository: ${{ vars.DOCUMENTS_REPOSITORY || 'aliemen/opalx-documents' }}
+          repository: OPALX-project/opalx-documents
           lfs: true
           path: _external/opalx-documents
 

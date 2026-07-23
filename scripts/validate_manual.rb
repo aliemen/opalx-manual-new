@@ -78,7 +78,7 @@ ROOT.glob("**/*", File::FNM_DOTMATCH).select(&:file?).each do |path|
   next unless suffix == ".qmd"
 
   text = path.read
-  if text.match?(%r{https://github\.com/(aliemen|OPALX-project)/opalx-documents})
+  if text.match?(%r{https://github\.com/OPALX-project/opalx-documents})
     errors += error("hard-coded documents repository URL in #{relative}; use documents-base-url metadata")
   end
 end

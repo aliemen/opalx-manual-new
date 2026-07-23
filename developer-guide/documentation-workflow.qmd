@@ -1,9 +1,9 @@
 ---
 title: "Documentation Workflow"
-description: "Maintain one text-first Quarto manual with configurable private and organization links."
+description: "Maintain the text-first Quarto manual and its separately hosted supporting documents."
 audience: developer
 status: current
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-23"
 ---
 
 Every substantive page declares `title`, `description`, `audience`, `status`,
@@ -13,16 +13,12 @@ gap by copying an unverified historical OPAL chapter.
 ## Local preview
 
 ```bash
-quarto preview --profile personal
+quarto preview --profile opalx
 ```
 
-The future organization URLs can be tested before repository transfer:
-
-```bash
-quarto render --profile opalx --to html
-```
-
-For a one-off private fork, copy `_quarto.yml.local.example` to
+The `opalx` profile targets the production `OPALX-project/opalx-manual` and
+`OPALX-project/opalx-documents` repositories. For a one-off private fork, copy
+`_quarto.yml.local.example` to
 `_quarto.yml.local` and set its `documents-base-url`. The local file is ignored
 by Git.
 
@@ -35,8 +31,8 @@ Place OPALX presentations, reports, examples, and datasets in the category-first
 [OPALX overview]({{< meta documents-base-url >}}/presentations/2026/features/2026-04-06-opalx-overview.pdf)
 ```
 
-The personal and organization profiles override `documents-base-url`, so page
-content does not change when the repositories move.
+Project metadata supplies `documents-base-url`, so page content does not embed
+repository locations directly.
 
 Report summaries live in the nested `resources/reports/` Quarto project. Add a
 detail page beneath its year directory and link it from

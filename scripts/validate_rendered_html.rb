@@ -8,7 +8,7 @@ require "yaml"
 
 ROOT = Pathname.new(__dir__).parent.expand_path
 SITE = ROOT / "_site"
-PROFILE = ENV.fetch("QUARTO_PROFILE", "personal")
+PROFILE = ENV.fetch("QUARTO_PROFILE", "opalx")
 PROFILE_FILE = ROOT / "_quarto-#{PROFILE}.yml"
 
 abort "error: rendered site is missing: #{SITE}" unless SITE.directory?

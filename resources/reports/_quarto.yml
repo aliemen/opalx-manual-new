@@ -29,6 +29,6 @@ format:
     html-math-method: mathjax
     link-external-newwindow: true
 
-documents-base-url: "https://github.com/aliemen/opalx-documents/blob/main"
-manual-repository-url: "https://github.com/aliemen/opalx-manual-new"
-deployment-profile: "personal"
+documents-base-url: "https://github.com/OPALX-project/opalx-documents/blob/main"
+manual-repository-url: "https://github.com/OPALX-project/opalx-manual"
+deployment-profile: "opalx"

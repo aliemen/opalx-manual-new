@@ -477,7 +477,7 @@ spectrum.](figures/reference-data/linear-breit-wheeler-overlap-positron-theta-co
 The preferred one-shot workflow is run from the docs tree:
 
 ``` bash
-cd Manual-Redesign/physics/gamma-gamma/scripts
+cd opalx-manual/physics/gamma-gamma/scripts
 ./generate-gamma-gamma-results.sh \
   --opalx-build ~/git/opalx-laser/build_openmp
 ```

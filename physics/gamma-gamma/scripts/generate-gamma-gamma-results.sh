@@ -102,7 +102,7 @@ main() {
   "${CAIN_DIR}/generate-linear-breit-wheeler-results.sh"     --opalx-root "${OPALX_SOURCE_DIR}"     --opalx-build "${OPALX_BUILD_DIR}"     --cain-bin "${CAIN_BIN}"
 
   echo "[6/6] Rendering Quarto manual pages"
-  quarto render "${MANUAL_DIR}" --to html --profile personal
+  quarto render "${MANUAL_DIR}" --to html --profile opalx
 }
 
 main "$@"
