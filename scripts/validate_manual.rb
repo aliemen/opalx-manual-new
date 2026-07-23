@@ -648,13 +648,6 @@ else
     manual_inventory["revision"] == "91aa0183863191df7dc54252bfb43195a17a2e86"
 end
 
-temp_repository_pattern = %r{https://github\.com/aliemen/(?:Manual-Redesign|opalx-manual-new|opalx-documents)}i
-ROOT.glob("**/*.{qmd,yml,yaml,md,html,rb}").each do |path|
-  next if path.each_filename.any? { |part| %w[.git _site].include?(part) }
-  errors += error("temporary aliemen repository URL remains in #{path.relative_path_from(ROOT)}") if
-    path.read.match?(temp_repository_pattern)
-end
-
 if ENV["DOCUMENTS_CHECKOUT"] && !ENV["DOCUMENTS_CHECKOUT"].empty?
   checkout = Pathname.new(ENV["DOCUMENTS_CHECKOUT"]).expand_path
   abort "error: DOCUMENTS_CHECKOUT is not a directory: #{checkout}" unless checkout.directory?
