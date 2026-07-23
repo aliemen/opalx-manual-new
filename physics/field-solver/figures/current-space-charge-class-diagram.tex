@@ -1,0 +1,267 @@
+% Embeddable PGF/TikZ fragment adapted from current-space-charge-class-diagram.tex.
+% The standalone document wrapper lives outside the manual; Quarto inputs this file for PDF.
+\definecolor{PASCBlue}{HTML}{004B76}
+\definecolor{PASCTeal}{HTML}{00A3AE}
+\definecolor{PASCBlack}{HTML}{333333}
+\definecolor{PASCGrey}{HTML}{F5F5F5}
+\definecolor{PASCLightGrey}{HTML}{CCCCCC}
+\definecolor{PASCMediumGrey}{HTML}{777777}
+\definecolor{Warning}{HTML}{C86400}
+\definecolor{RefreshRed}{HTML}{B02A37}
+
+\tikzset{
+  cls/.style={draw=PASCBlue, fill=white, rounded corners=1.1mm, line width=0.75pt,
+              align=left, inner sep=2.35mm, font=\fontsize{6.8}{7.8}\selectfont},
+  ippl/.style={cls, draw=PASCTeal, fill=PASCTeal!7},
+  shared/.style={cls, draw=Warning, fill=orange!8},
+  flow/.style={cls, align=center, inner sep=2.1mm, font=\fontsize{6.95}{7.95}\selectfont},
+  inherit/.style={-{Triangle[open,length=2.8mm,width=2.8mm]}, line width=0.7pt, draw=PASCMediumGrey},
+  owns/.style={-{Stealth[length=2.15mm]}, line width=0.8pt, draw=PASCBlue},
+  ownbus/.style={line width=0.8pt, draw=PASCBlue},
+  calls/.style={-{Stealth[length=2.05mm]}, dashed, line width=0.75pt, draw=PASCTeal!90!black},
+  refresh/.style={-{Stealth[length=2.25mm]}, line width=1.05pt, draw=RefreshRed},
+  edgelabel/.style={fill=white, draw=PASCMediumGrey, rounded corners=0.55mm,
+                   inner xsep=1.4mm, inner ysep=0.75mm,
+                   font=\bfseries\fontsize{7.0}{8.0}\selectfont, text=PASCBlack}
+}
+
+\newcommand{\sepLine}{\par\vspace{0.75mm}{\color{PASCLightGrey}\hrule}\vspace{0.75mm}}
+\newcommand{\titleline}[1]{{\bfseries\fontsize{7.85}{8.95}\selectfont\color{PASCBlue}#1}}
+
+\begin{center}
+  {\fontsize{23}{26}\selectfont\bfseries\color{PASCBlue} Current OPALX space-charge class diagram}\par
+  \vspace{0.7mm}
+  {\fontsize{9.8}{11.3}\selectfont\color{PASCMediumGrey}
+   Production \texttt{master}: ownership, calls, stored references, and the separate repartition refresh order}
+\end{center}
+\vspace{-3mm}
+
+\centering
+\resizebox{\textwidth}{!}{%
+\begin{tikzpicture}[x=1cm,y=1cm]
+  % Run and top-level solver ownership.
+  \node[cls, text width=4.4cm] (trackrun) at (2.8,21.0) {
+    {\titleline TrackRun}\sepLine
+    \texttt{unique\_ptr<PartBunch>}\\
+    \texttt{unique\_ptr<ParallelTracker>}\\
+    constructs run-time objects
+  };
+
+  \node[cls, text width=4.4cm] (tracker) at (2.8,16.4) {
+    {\titleline ParallelTracker : Tracker}\sepLine
+    \texttt{computeSpaceChargeFields(step)}\\
+    \texttt{doBinaryRepartition()}\\
+    frame transforms and step order
+  };
+
+  \node[cls, text width=4.4cm] (commands) at (2.8,11.4) {
+    {\titleline Input/configuration}\sepLine
+    \texttt{FieldSolverCmd} + \texttt{BinningCmd}\\
+    source image/shifted-Green settings\\
+    borrowed by \texttt{PartBunch}
+  };
+
+  \node[ippl, text width=4.8cm] (picmanager) at (9.2,23.5) {
+    {\titleline ippl::PicManager}\sepLine
+    shared ownership slots for fields, particles, solver, and load balancer
+  };
+
+  \node[cls, text width=5.0cm] (bunch) at (9.2,20.2) {
+    {\titleline PartBunch<T,Dim>}\sepLine
+    inherits \texttt{ippl::PicManager}\\
+    \texttt{setSolver()}, \texttt{setBins()}\\
+    owns bunch state and the objects below
+  };
+
+  \node[cls, text width=5.0cm] (binned) at (16.6,20.2) {
+    {\titleline BinnedFieldSolver}\sepLine
+    inherits \texttt{FieldSolver}\\
+    \texttt{computeSelfFields(PartBunch\&)}\\
+    bins, transforms, corrections, diagnostics
+  };
+
+  \node[cls, text width=4.7cm] (fieldsolver) at (23.5,20.2) {
+    {\titleline FieldSolver}\sepLine
+    inherits \texttt{ippl::FieldSolverBase}\\
+    stores pointers to $\rho$, $\mathbf{E}$, $\phi$\\
+    initializes, runs, and refreshes backend
+  };
+
+  \node[ippl, text width=4.5cm] (solverbase) at (29.8,20.2) {
+    {\titleline ippl::FieldSolverBase}\sepLine
+    owns \texttt{Solver\_t} variant\\
+    virtual initialize/run API
+  };
+
+  \node[ippl, text width=5.0cm] (poisson) at (36.5,20.2) {
+    {\titleline IPPL Poisson solvers}\sepLine
+    FFT / FFTOpen / CG / Null alternatives\\
+    store RHS/LHS field pointers\\
+    FFT variants own cached work arrays
+  };
+
+  % PartBunch-owned state. Stored-reference details stay inside the nodes.
+  \node[cls, text width=4.8cm] (fieldcontainer) at (9.2,14.1) {
+    {\titleline FieldContainer}\sepLine
+    mesh and one \texttt{FieldLayout}\\
+    $\rho$, $\mathbf{E}$, $\phi$ and scratch fields\\
+    updates local field layouts in place
+  };
+
+  \node[cls, text width=4.8cm] (particlecontainer) at (15.1,14.1) {
+    {\titleline ParticleContainer}\sepLine
+    owns \texttt{ParticleSpatialLayout}\\
+    attributes $R,P,dt,E,B,bin,\ldots$\\
+    \texttt{update()} migrates every attribute
+  };
+
+  \node[cls, text width=4.3cm] (bins) at (20.8,14.1) {
+    {\titleline AdaptBins / Histogram}\sepLine
+    borrowed primary container\\
+    rebin, merge, sort, selections\\
+    optional object
+  };
+
+  \node[cls, text width=4.6cm] (loadbalancer) at (26.2,14.1) {
+    {\titleline LoadBalancer}\sepLine
+    stored refs to fields, particles, solver\\
+    owns IPPL ORB\\
+    applies the refresh order below
+  };
+
+  \node[cls, text width=4.2cm] (scatter) at (20.7,9.55) {
+    {\titleline ImageChargeScatterController}\sepLine
+    IPPL scatter needs a \texttt{ParticleAttrib}\\
+    scale/restore \texttt{dt} for $Q\Delta t$\\
+    primary and image-position scatter
+  };
+
+  \node[cls, text width=4.2cm] (bcdiag) at (25.9,9.55) {
+    {\titleline BCHandler + diagnostics}\sepLine
+    potential boundary conditions\\
+    field dumps, plane checks, call count\\
+    output reached through solver/bunch
+  };
+
+  % IPPL data objects that share one mutable FieldLayout.
+  \node[ippl, text width=4.4cm] (fields) at (31.7,15.0) {
+    {\titleline ippl::Field / BareField}\sepLine
+    owned by \texttt{FieldContainer}\\
+    mesh/layout pointers, local views, halo data
+  };
+
+  \node[shared, text width=4.5cm] (fieldlayout) at (36.8,12.4) {
+    {\titleline ippl::FieldLayout}\sepLine
+    one mutable Cartesian rank decomposition\\
+    shared by fields and particle layout
+  };
+
+  \node[ippl, text width=4.4cm] (playout) at (31.7,9.3) {
+    {\titleline ippl::ParticleSpatialLayout}\sepLine
+    owned by \texttt{ParticleContainer}\\
+    region lookup and particle migration
+  };
+
+  \node[ippl, text width=4.5cm] (orb) at (36.8,8.25) {
+    {\titleline ippl::OrthogonalRecursiveBisection}\sepLine
+    owned by \texttt{LoadBalancer}\\
+    weight field, cuts, layout update
+  };
+
+  % Repartition sequence is intentionally separate from the class arrows.
+  \node[flow, text width=5.2cm] (r1) at (3.4,3.55) {
+    {\titleline 1. ORB repartition}\sepLine
+    scatter positions to the weight field\\compute recursive cuts
+  };
+  \node[flow, text width=5.2cm] (r2) at (10.5,3.55) {
+    {\titleline 2. Change FieldLayout}\sepLine
+    install the new Cartesian\\rank decomposition
+  };
+  \node[flow, text width=5.5cm] (r3) at (18.0,3.55) {
+    {\titleline 3. Refresh fields}\sepLine
+    update $\rho$, $\mathbf{E}$, $\phi$, scratch fields\\and their local/halo views
+  };
+  \node[flow, text width=5.7cm] (r4) at (26.0,3.55) {
+    {\titleline 4. Migrate particles}\sepLine
+    update \texttt{ParticleSpatialLayout}\\move all registered attributes
+  };
+  \node[flow, text width=5.8cm] (r5) at (34.3,3.55) {
+    {\titleline 5. Refresh backend}\sepLine
+    update stored field references\\and layout-derived work arrays
+  };
+
+  \begin{pgfonlayer}{background}
+    % Panel backgrounds.
+    \fill[PASCGrey] (-0.2,7.0) rectangle (5.8,24.7);
+    \fill[PASCBlue!3] (6.1,18.3) rectangle (28.5,24.7);
+    \fill[PASCBlue!2] (6.1,7.0) rectangle (28.5,17.95);
+    \fill[PASCTeal!4] (28.8,18.3) rectangle (40.0,24.7);
+    \fill[PASCTeal!3] (28.8,7.0) rectangle (40.0,17.95);
+    \fill[RefreshRed!3] (-0.2,0.35) rectangle (40.0,6.6);
+    \draw[PASCLightGrey] (-0.2,7.0) rectangle (5.8,24.7);
+    \draw[PASCLightGrey] (6.1,18.3) rectangle (28.5,24.7);
+    \draw[PASCLightGrey] (6.1,7.0) rectangle (28.5,17.95);
+    \draw[PASCLightGrey] (28.8,18.3) rectangle (40.0,24.7);
+    \draw[PASCLightGrey] (28.8,7.0) rectangle (40.0,17.95);
+    \draw[PASCLightGrey] (-0.2,0.35) rectangle (40.0,6.6);
+    \node[anchor=west,font=\bfseries\fontsize{8.0}{9.1}\selectfont,text=PASCMediumGrey] at (0.2,24.25) {Run and tracking};
+    \node[anchor=west,font=\bfseries\fontsize{8.0}{9.1}\selectfont,text=PASCBlue] at (6.5,24.25) {Solver ownership and inheritance};
+    \node[anchor=west,font=\bfseries\fontsize{8.0}{9.1}\selectfont,text=PASCBlue] at (6.5,17.5) {PartBunch-owned state};
+    \node[anchor=west,font=\bfseries\fontsize{8.0}{9.1}\selectfont,text=PASCTeal!80!black] at (29.2,24.25) {IPPL solver backend};
+    \node[anchor=west,font=\bfseries\fontsize{8.0}{9.1}\selectfont,text=PASCTeal!80!black] at (29.2,17.5) {IPPL data objects};
+    \node[anchor=west,font=\bfseries\fontsize{8.4}{9.5}\selectfont,text=RefreshRed] at (0.2,6.15) {Repartition refresh order};
+
+    % Clear top-level ownership and inheritance lines.
+    \draw[owns] (trackrun.south) -- (tracker.north);
+    \draw[owns] (trackrun.east) -- (bunch.west);
+    \draw[calls] (tracker.east) -- ++(0.45,0) |- (bunch.west);
+    \draw[calls] (commands.east) -- ++(0.72,0) |- (bunch.south west);
+    \draw[inherit] (bunch.north) -- (picmanager.south);
+    \draw[owns] (bunch.east) -- (binned.west);
+    \draw[inherit] (binned.east) -- (fieldsolver.west);
+    \draw[inherit] (fieldsolver.east) -- (solverbase.west);
+    \draw[owns] (solverbase.east) -- (poisson.west);
+
+    % An ownership bus keeps the state arrows ordered.
+    \draw[ownbus] (bunch.south) -- (9.2,18.0) -- (26.2,18.0);
+    \draw[owns] (9.2,18.0) -- (fieldcontainer.north);
+    \draw[owns] (15.1,18.0) -- (particlecontainer.north);
+    \draw[owns] (20.8,18.0) -- (bins.north);
+    \draw[owns] (26.2,18.0) -- (loadbalancer.north);
+    \draw[owns] (binned.south) -- (16.6,18.45) -- (18.0,18.45) -- (18.0,9.55) -- (scatter.west);
+    \draw[calls] (fieldsolver.south) -- (23.5,10.85) -- (bcdiag.north west);
+
+    % Short IPPL data relationships only.
+    \draw[calls] (fields.east) -- (fieldlayout.north west);
+    \draw[calls] (playout.east) -- (fieldlayout.south west);
+    \draw[calls] (orb.north) -- (fieldlayout.south);
+
+    % Separate refresh sequence.
+    \draw[refresh] (r1) -- (r2);
+    \draw[refresh] (r2) -- (r3);
+    \draw[refresh] (r3) -- (r4);
+    \draw[refresh] (r4) -- (r5);
+  \end{pgfonlayer}
+
+  % Foreground labels remain readable even when an arrow ends close to a class box.
+  \node[edgelabel] at (2.35,18.7) {owns};
+  \node[edgelabel] at (5.85,20.72) {owns};
+  \node[edgelabel,rotate=90] at (5.63,18.08) {solve / repartition};
+  \node[edgelabel,rotate=90] at (5.92,14.05) {configuration};
+  \node[edgelabel] at (12.9,20.65) {constructs};
+  \node[edgelabel] at (33.15,20.65) {owns one};
+  \node[edgelabel] at (13.2,18.0) {owns state};
+  \node[edgelabel,rotate=90] at (17.55,11.85) {owns scatter controller};
+  \node[edgelabel,rotate=90] at (23.5,12.7) {uses BC + diagnostics};
+  \node[edgelabel] at (37.8,10.25) {updates layout};
+
+  \node[anchor=west,font=\fontsize{6.3}{7.2}\selectfont,text=PASCMediumGrey] at (0.3,0.72) {
+    Solid blue: ownership / construction\qquad dashed teal: call / use\qquad open triangle: inheritance\qquad red: ordered repartition update
+  };
+\end{tikzpicture}%
+}
+
+{\fontsize{7.3}{8.4}\selectfont\color{PASCMediumGrey}
+Source trace: \texttt{ParallelTracker}, \texttt{PartBunch}, \texttt{FieldContainer}, \texttt{BinnedFieldSolver},
+\texttt{FieldSolver}, \texttt{LoadBalancer}, and the referenced IPPL manager, field, particle-layout, Poisson, and ORB classes.}
+

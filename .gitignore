@@ -12,6 +12,7 @@
 *.run.xml
 *.tex
 !includes/tikz-preamble.tex
+!physics/field-solver/figures/current-space-charge-class-diagram.tex
 !*.tikz.tex
 *.toc
 
