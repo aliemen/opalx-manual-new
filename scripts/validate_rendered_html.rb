@@ -140,6 +140,48 @@ else
   errors << "render is missing getting-started/worked-inputs.html"
 end
 
+input_language_html_path = SITE / "user-guide/input-language.html"
+if input_language_html_path.file?
+  input_language_html = File.read(input_language_html_path)
+  %w[
+    simulation-at-a-glance core-syntax parser-native-structures simulation-definitions
+    beamline-definitions time-dependence-definitions tracking-block-structures executable-actions
+    execution-order
+  ].each do |anchor|
+    errors << "input-language render is missing ##{anchor}" unless input_language_html.match?(/\bid=["']#{Regexp.escape(anchor)}["']/)
+  end
+  errors << "input-language render is missing its overview cards" unless input_language_html.include?("doc-grid")
+else
+  errors << "render is missing user-guide/input-language.html"
+end
+
+physics_field_solver_html_path = SITE / "physics/field-solver/index.html"
+if physics_field_solver_html_path.file?
+  physics_field_solver_html = File.read(physics_field_solver_html_path)
+  %w[
+    field-solver-scope governing-electrostatic-model particle-mesh-discretization
+    frames-transformations physics-boundary-conditions solver-formulations
+    physics-binned-space-charge physics-emission-boundaries numerical-accuracy-convergence
+    domain-decomposition field-solver-architecture field-solver-verification field-solver-limitations
+  ].each do |anchor|
+    errors << "physics field-solver render is missing ##{anchor}" unless physics_field_solver_html.match?(/\bid=["']#{Regexp.escape(anchor)}["']/)
+  end
+  errors << "physics field-solver HTML is missing its PNG diagram" unless physics_field_solver_html.include?("current-space-charge-class-diagram.png")
+  errors << "physics field-solver HTML unexpectedly exposes the PDF TikZ source" if physics_field_solver_html.include?("current-space-charge-class-diagram.tex")
+else
+  errors << "render is missing physics/field-solver/index.html"
+end
+
+reports_html_path = SITE / "resources/presentations-reports.html"
+if reports_html_path.file?
+  reports_html = File.read(reports_html_path)
+  year_section = reports_html[/<section\s+id=["']2026["'][^>]*>/]
+  errors << "Presentations and Reports render is missing the 2026 section" unless year_section
+  errors << "Presentations and Reports still numbers the 2026 section" if year_section&.include?("data-number=")
+else
+  errors << "render is missing resources/presentations-reports.html"
+end
+
 structures_html_path = SITE / "user-guide/structures/index.html"
 if structures_html_path.file?
   structures_html = File.read(structures_html_path)
@@ -149,6 +191,7 @@ if structures_html_path.file?
   errors << "structures does not suppress its duplicate margin TOC" unless structures_html.include?("opalx-sidebar-page-toc")
   errors << "structures sidebar lacks an accessible chapter toggle" unless structures_html.include?("Toggle Structures sections")
   errors << "structures sidebar state key is not rendered" unless structures_html.include?("page-toc:structures")
+  errors << "structures sidebar does not label subsection 1 as Binning" unless structures_html.include?('text: "Binning"')
 else
   errors << "render is missing user-guide/structures/index.html"
 end

@@ -1,14 +1,98 @@
 ---
 title: "Input Language and Execution"
-description: "Understand the statement-oriented OPALX input language and execution model."
+description: "Understand every statement form and registered object available in a current OPALX input file."
 audience: user
-status: experimental
-last-reviewed: "2026-07-22"
+status: current
+last-reviewed: "2026-07-23"
+toc-depth: 3
 ---
 
-OPALX reads a MAD-inspired, statement-oriented language. Statements end with a
-semicolon, names bind commands or objects, and expressions may use constants
-and variables.
+OPALX reads a MAD-inspired, statement-oriented language. This page is the
+overview: it explains what can appear in an input file and directs readers to
+the maintained guide for each interface. Attribute-level details belong on the
+linked pages and in the [Command Reference](../reference/commands.qmd).
+
+The catalog was checked against the parser and the registrations in
+`opalx/src/OpalConfigure/Configure.cpp` at OPALX revision `d1e762f15a2a`.
+
+## A simulation at a glance {#simulation-at-a-glance}
+
+Like the NumPy user guide, the manual first groups concepts by what readers are
+trying to accomplish and then provides a complete lookup catalog.
+
+:::: {.doc-grid}
+::: {.doc-card}
+<span class="eyebrow">Reuse expressions</span>
+
+### Values and variables {.unnumbered .unlisted}
+
+Define named real, Boolean, string, and vector values before using them in
+later attributes.
+:::
+
+::: {.doc-card}
+<span class="eyebrow">Create particles</span>
+
+### Beam and sources {.unnumbered .unlisted}
+
+Combine a [distribution](beam-distributions.qmd#distribution), one or more
+[emission sources](beam-distributions.qmd#emissionsource), and a
+[beam definition](beam.qmd).
+:::
+
+::: {.doc-card}
+<span class="eyebrow">Build the machine</span>
+
+### Elements and lines {.unnumbered .unlisted}
+
+Create named [elements](elements.qmd), then assemble them into a `LINE` in
+tracking order.
+:::
+
+::: {.doc-card}
+<span class="eyebrow">Choose self-fields</span>
+
+### Solver structures {.unnumbered .unlisted}
+
+Configure a [field solver](field-solver/index.qmd) and, when needed, a reusable
+[binning definition](structures/index.qmd#binning).
+:::
+
+::: {.doc-card}
+<span class="eyebrow">Run the model</span>
+
+### Tracking block {.unnumbered .unlisted}
+
+Use [`TRACK`, `RUN`, and `ENDTRACK`](tracking.qmd) to bind the line, beam,
+sources, time step, and solver to one execution.
+:::
+
+::: {.doc-card}
+<span class="eyebrow">Control the run</span>
+
+### Actions and options {.unnumbered .unlisted}
+
+Set global [runtime options](options.qmd), compose input files, inspect values,
+and terminate parsing explicitly.
+:::
+::::
+
+## Core syntax {#core-syntax}
+
+Statements normally end with a semicolon. Names are case-insensitive in normal
+OPALX input, while string values and file paths retain their contents.
+
+| Form | Example | Meaning |
+|---|---|---|
+| Action | `OPTION, INFO=TRUE;` | Execute a registered command immediately. |
+| Named definition | `Beam1: BEAM, PARTICLE=ELECTRON, ...;` | Clone a registered class, assign attributes, and store it under a name. |
+| Typed value | `REAL length = 0.5;` | Define a scalar, string, Boolean, or vector value for later expressions. |
+| Immediate assignment | `length = 0.5;` | Evaluate the right-hand expression when the assignment is parsed. |
+| Expression assignment | `momentum := beta * gamma;` | Store an expression that can be reevaluated when its dependencies change. |
+| Attribute assignment | `Beam1->BCURRENT = 0.1;` | Update an existing object's attribute; `name->ATTR[n]` updates an array component. |
+| Beamline | `L1: LINE=(D1, Q1, D2);` | Assemble named elements in traversal order. |
+| Tracking block | `TRACK, ...; RUN, ...; ENDTRACK;` | Enter the tracking parser, execute a run, and return to the main parser. |
+| Compound block | `{ statement; statement; }` | Group statements for `IF`, `WHILE`, or a macro body. |
 
 ```opal
 TITLE, STRING="Minimal beamline study";
@@ -23,18 +107,125 @@ ENDTRACK;
 QUIT;
 ```
 
-The example shows the language shape, not a complete runnable model: a beam,
-distribution, source list, and field solver must also be defined. Use a current
-regression input as the starting point for an executable case.
+This fragment illustrates ordering and syntax, not a complete runnable model.
+The [Worked Input Files](../getting-started/worked-inputs.qmd) contain complete
+examples with beam, distribution, source, and field-solver definitions.
 
-## Statement classes
+## Parser-native structures {#parser-native-structures}
 
-- **Actions** perform work, change parser state, or end execution.
-- **Definitions** create beams, distributions, field solvers, values, and
-  related objects.
-- **Elements** describe fields, diagnostics, markers, and beamline geometry.
-- **Lines** assemble named elements into the tracked lattice.
-- **Tracking blocks** select a line and beam and execute the parallel tracker.
+These forms are implemented directly by the parser rather than registered as
+simulation objects.
 
-The [Command Reference](../reference/commands.qmd) lists objects registered by
-the current executable.
+| Structure | Short explanation |
+|---|---|
+| `BOOL name = expression;` | Define a Boolean value. `CONSTANT BOOL` and `CONST BOOL` are accepted equivalent forms. |
+| `REAL name = expression;` | Define or update a real scalar variable. Omitting `REAL` is allowed only when the name already exists. |
+| `CONST name = expression;`, `CONSTANT REAL name = expression;` | Define a real constant that cannot be redefined. `CONST` and `CONSTANT` are synonyms. |
+| `STRING name = expression;` | Define a string value. `CONSTANT STRING` and `CONST STRING` are also accepted. |
+| `VECTOR name = {...};`, `REAL VECTOR name = {...};` | Define a real-valued array. `CONSTANT VECTOR` and `CONSTANT REAL VECTOR` are also accepted. |
+| `name->ATTRIBUTE = expression;` | Assign an existing object's attribute; use `:=` to retain a non-constant expression. |
+| `SHARED name: CLASS, ...;` | Set the defined object's shared flag. This is an advanced ownership feature whose effect depends on the object class. |
+| `name(arguments): MACRO { ... }` | Define a parameter-substitution macro; `name(actuals);` expands and executes it. |
+| `IF (condition) statement ELSE statement` | Execute one of two statements. Use compound blocks for more than one statement per branch. |
+| `WHILE (condition) statement` | Re-evaluate a Boolean condition and repeat one statement or compound block. |
+| `{ ... }` | Group multiple statements into one compound statement. |
+
+## Reusable simulation definitions {#simulation-definitions}
+
+These named objects describe the bunch and the numerical structures used by a
+run. Define dependencies before the object that refers to them.
+
+| Definition | Short explanation | Maintained guide |
+|---|---|---|
+| `BEAM` | Defines particle species, reference energy or momentum, current, frequency, allocation, source list, and global processes. | [Beam](beam.qmd) |
+| `DISTRIBUTION` | Defines how initial positions, momenta, or emission times are sampled or read from a file. | [Distribution](beam-distributions.qmd#distribution) |
+| `EMISSIONSOURCE` | Couples one distribution to offsets, timing, emission energy, and image-charge settings. | [Emission source](beam-distributions.qmd#emissionsource) |
+| `EMISSIONSOURCELIST` | Stores an ordered, non-empty list of named emission sources for `BEAM.SOURCES` or `TRACK.SOURCES`. | [Emission-source list](beam-distributions.qmd#emissionsourcelist) |
+| `FIELDSOLVER` | Selects the Poisson backend, mesh, decomposition, boundary conditions, optional binning, and image-charge mode. | [Field solver](field-solver/index.qmd) |
+| `BINNING` | Configures the longitudinal histogram used by binned space charge. | [Binning](structures/index.qmd#binning) |
+
+## Beamline definitions {#beamline-definitions}
+
+`LINE` is the lattice container. The remaining entries are every element class
+registered by the current executable. Only source-audited element pages are
+linked; plain-text entries are registered but do not yet have a maintained
+user-guide section.
+
+| Definition | Short explanation | Maintained guide |
+|---|---|---|
+| `LINE` | Orders named elements into the lattice selected by `TRACK.LINE`. |  |
+| `DRIFT` | Field-free propagation over a finite length. | [DRIFT](elements.qmd#drift) |
+| `CONSTANTEFIELDCAVITY` | Applies a spatially uniform, constant electric field inside the element. | [CONSTANTEFIELDCAVITY](elements.qmd#constant-electric-field-cavity) |
+| `QUADRUPOLE` | Defines a thick normal or skew quadrupole. | [QUADRUPOLE](elements.qmd#quadrupole) |
+| `MULTIPOLE` | Defines a thick hard-edge multipole from normal and skew strength arrays. | [MULTIPOLE](elements.qmd#multipole) |
+| `MULTIPOLET` | Defines a combined-function multipole with fringe and placement controls. | [MULTIPOLET](elements.qmd#multipolet) |
+| `SOLENOID` | Defines a solenoid from normalized strength or a field map. | [SOLENOID](elements.qmd#solenoid) |
+| `RFCAVITY` | Defines a standing-wave or single-gap RF cavity, normally from a field map. | [RFCAVITY](elements.qmd#rfcavity) |
+| `TRAVELINGWAVE` | Defines a traveling-wave RF structure with cell and phase-advance controls. | [TRAVELINGWAVE](elements.qmd#travelingwave) |
+| `RBEND` | Defines a rectangular bending magnet. |  |
+| `SBEND` | Defines a sector bending magnet. |  |
+| `VERTICALFFAMAGNET` | Defines a vertical fixed-field alternating-gradient magnet. |  |
+| `VARIABLE_RF_CAVITY` | Defines an RF cavity whose phase, amplitude, and frequency are provided by named time models. |  |
+| `LASER` | Defines a passive analytic laser pulse with direction and polarization. |  |
+| `MONITOR` | Records beam diagnostics at an element location. | [Diagnostics and output](diagnostics-output.qmd) |
+| `PROBE` | Records particle crossings over a configured probe span and accumulates peak diagnostics. | [Diagnostics and output](diagnostics-output.qmd) |
+| `MARKER` | Marks a named lattice location without applying a field. |  |
+
+## Time-dependence definitions {#time-dependence-definitions}
+
+These registered definitions provide named functions used by time-dependent RF
+and scaling attributes. Dedicated parameter pages have not yet been written.
+
+| Definition | Short explanation |
+|---|---|
+| `POLYNOMIAL_TIME_DEPENDENCE` | Defines a polynomial in time from coefficients. |
+| `SINUSOIDAL_TIME_DEPENDENCE` | Defines a sum of sinusoidal components with frequency, phase, amplitude, and offset arrays. |
+| `SPLINE_TIME_DEPENDENCE` | Defines linear or smoothed cubic interpolation through time-value samples. |
+
+## Tracking-block structures {#tracking-block-structures}
+
+The `TRACK` action switches to a small nested command set. `RUN` and
+`ENDTRACK` are valid only inside that block.
+
+| Structure | Short explanation | Maintained guide |
+|---|---|---|
+| `TRACK` | Selects the lattice, beam or beams, source list, stepping limits, time integrator, and tracking interval. | [Tracking](tracking.qmd) |
+| `RUN` | Constructs and executes the selected parallel tracking method and field solver. | [Tracking](tracking.qmd#run) |
+| `ENDTRACK` | Leaves tracking mode and returns input processing to the main parser. | [Tracking](tracking.qmd) |
+
+## Executable actions {#executable-actions}
+
+Actions run when the parser encounters them; unlike named definitions, they do
+not merely describe a later simulation object.
+
+| Action | Short explanation | Maintained guide |
+|---|---|---|
+| `OPTION` | Sets global logging, output, random-number, space-charge, load-balancing, and synchronization behavior. | [Runtime options](options.qmd) |
+| `TITLE` | Sets the calculation title. |  |
+| `CALL` | Temporarily reads and executes another input file, then resumes the caller. |  |
+| `ECHO` | Writes a message to the OPALX echo stream. |  |
+| `HELP` or `CLASS?` | Prints parser help for a registered class or object. |  |
+| `VALUE` | Evaluates and prints one or more real expressions. |  |
+| `SELECT` | Selects lattice positions by range, class, type, or name pattern for subsequent selection-aware commands. |  |
+| `DUMPEMFIELDS` | Schedules electromagnetic-field sampling on a Cartesian or cylindrical space-time grid. | [Diagnostics and output](diagnostics-output.qmd) |
+| `SYSTEM` | Runs an operating-system command on rank zero. |  |
+| `PSYSTEM` | Runs an operating-system command on every rank. Use with particular care in MPI jobs. |  |
+| `STOP` | Stops further input processing. |  |
+| `QUIT` | Stops input processing; conventionally the final statement in an input file. |  |
+
+## Execution order and name resolution {#execution-order}
+
+OPALX processes input in order. Values, objects, and macros must normally be
+defined before a later statement refers to them. Named definitions are stored
+in the main object directory; actions are cloned, parsed, and executed
+immediately. Before an action executes, OPALX updates objects whose expression
+dependencies changed.
+
+Within a normal simulation the practical order is:
+
+1. Set `OPTION` and define reusable values.
+2. Define distributions, emission sources, an emission-source list, and a beam.
+3. Define elements and assemble a `LINE`.
+4. Define optional `BINNING` and the selected `FIELDSOLVER`.
+5. Enter `TRACK`, issue `RUN`, and close the block with `ENDTRACK`.
+6. Finish with `QUIT`.

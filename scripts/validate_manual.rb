@@ -176,6 +176,134 @@ if field_solver_page.file?
   end
 end
 
+physics_field_solver_page = ROOT / "physics/field-solver/index.qmd"
+physics_field_solver_sections = [
+  "## Scope and notation {#field-solver-scope}",
+  "## Governing electrostatic model {#governing-electrostatic-model}",
+  "### Poisson equation {#poisson-equation}",
+  "### Self-field force {#self-field-force}",
+  "## Particle-mesh discretization {#particle-mesh-discretization}",
+  "### Charge deposition {#charge-deposition}",
+  "### Mesh solve {#mesh-solve}",
+  "### Field reconstruction and interpolation {#field-reconstruction}",
+  "## Frames and relativistic transformations {#frames-transformations}",
+  "## Boundary conditions and Green functions {#physics-boundary-conditions}",
+  "### Periodic boundaries {#physics-periodic-boundaries}",
+  "### Open boundaries {#physics-open-boundaries}",
+  "### Dirichlet and image-charge boundaries {#physics-dirichlet-boundaries}",
+  "## Solver formulations {#solver-formulations}",
+  "### Periodic FFT solver {#physics-fft-solver}",
+  "### Hockney open-boundary solver {#physics-open-solver}",
+  "### Iterative solvers {#physics-iterative-solvers}",
+  "## Binned rest-frame space charge {#physics-binned-space-charge}",
+  "## Emission and conducting boundaries {#physics-emission-boundaries}",
+  "## Numerical accuracy and convergence {#numerical-accuracy-convergence}",
+  "### Mesh resolution {#mesh-resolution}",
+  "### Particle noise and deposition order {#particle-noise}",
+  "### Time-step coupling {#time-step-coupling}",
+  "## Domain decomposition and load balancing {#domain-decomposition}",
+  "## Current implementation architecture {#field-solver-architecture}",
+  "## Verification and benchmarks {#field-solver-verification}",
+  "## Assumptions and known limitations {#field-solver-limitations}"
+]
+
+if physics_field_solver_page.file?
+  physics_field_solver_text = physics_field_solver_page.read
+  previous_position = -1
+  physics_field_solver_sections.each do |heading|
+    position = physics_field_solver_text.index(heading)
+    if position.nil?
+      errors += error("physics field-solver skeleton is missing heading: #{heading}")
+    elsif position <= previous_position
+      errors += error("physics field-solver headings are out of order at: #{heading}")
+    else
+      previous_position = position
+    end
+  end
+  {
+    "HTML diagram fallback" => "current-space-charge-class-diagram.png",
+    "PDF TikZ diagram" => "current-space-charge-class-diagram.tex",
+    "HTML conditional" => 'when-format="html"',
+    "PDF conditional" => 'when-format="pdf"',
+    "user-guide boundary" => "Field Solver user guide"
+  }.each do |description, required_text|
+    unless physics_field_solver_text.include?(required_text)
+      errors += error("physics field-solver skeleton is missing #{description}")
+    end
+  end
+end
+
+physics_diagram_tex = ROOT / "physics/field-solver/figures/current-space-charge-class-diagram.tex"
+physics_diagram_png = ROOT / "physics/field-solver/figures/current-space-charge-class-diagram.png"
+if physics_diagram_tex.file?
+  diagram_text = physics_diagram_tex.read
+  errors += error("embedded field-solver TikZ must not contain a document class") if diagram_text.include?("\\documentclass")
+  errors += error("embedded field-solver TikZ must not contain a document wrapper") if diagram_text.include?("\\begin{document}")
+  errors += error("embedded field-solver TikZ is missing its tikzpicture") unless diagram_text.include?("\\begin{tikzpicture}")
+else
+  errors += error("missing embedded field-solver TikZ source")
+end
+errors += error("missing field-solver HTML diagram fallback") unless physics_diagram_png.file?
+unless (ROOT / "includes/tikz-preamble.tex").read.include?("backgrounds")
+  errors += error("TikZ preamble is missing the backgrounds library required by the field-solver diagram")
+end
+
+input_language_page = ROOT / "user-guide/input-language.qmd"
+if input_language_page.file?
+  input_language_text = input_language_page.read
+  input_language_sections = %w[
+    simulation-at-a-glance core-syntax parser-native-structures simulation-definitions
+    beamline-definitions time-dependence-definitions tracking-block-structures executable-actions
+    execution-order
+  ]
+  input_language_sections.each do |anchor|
+    unless input_language_text.match?(/\{##{Regexp.escape(anchor)}\}/)
+      errors += error("input-language is missing ##{anchor}")
+    end
+  end
+
+  %w[
+    BEAM DISTRIBUTION EMISSIONSOURCE EMISSIONSOURCELIST FIELDSOLVER BINNING LINE
+    DRIFT CONSTANTEFIELDCAVITY QUADRUPOLE MULTIPOLE MULTIPOLET SOLENOID RFCAVITY
+    TRAVELINGWAVE RBEND SBEND VERTICALFFAMAGNET VARIABLE_RF_CAVITY LASER MONITOR
+    PROBE MARKER POLYNOMIAL_TIME_DEPENDENCE SINUSOIDAL_TIME_DEPENDENCE
+    SPLINE_TIME_DEPENDENCE TRACK RUN ENDTRACK OPTION TITLE CALL ECHO HELP VALUE SELECT
+    DUMPEMFIELDS SYSTEM PSYSTEM STOP QUIT
+  ].each do |statement|
+    unless input_language_text.include?("| `#{statement}`")
+      errors += error("input-language catalog is missing registered statement: #{statement}")
+    end
+  end
+
+  %w[BOOL REAL CONST CONSTANT STRING VECTOR SHARED MACRO IF ELSE WHILE].each do |parser_form|
+    unless input_language_text.match?(/`[^`\n]*\b#{Regexp.escape(parser_form)}\b[^`\n]*`/)
+      errors += error("input-language catalog is missing parser form: #{parser_form}")
+    end
+  end
+
+  {
+    "source revision" => "d1e762f15a2a",
+    "overview cards" => "{.doc-grid}",
+    "beam guide" => "[Beam](beam.qmd)",
+    "distribution guide" => "beam-distributions.qmd#distribution",
+    "element guide" => "elements.qmd#drift",
+    "field-solver guide" => "field-solver/index.qmd",
+    "binning guide" => "structures/index.qmd#binning",
+    "tracking guide" => "[Tracking](tracking.qmd)",
+    "options guide" => "[Runtime options](options.qmd)"
+  }.each do |description, required_text|
+    unless input_language_text.include?(required_text)
+      errors += error("input-language is missing #{description}")
+    end
+  end
+end
+
+reports_catalog = ROOT / "resources/presentations-reports.qmd"
+if reports_catalog.file?
+  reports_text = reports_catalog.read
+  errors += error("Presentations and Reports year heading must be unnumbered") unless reports_text.include?("## 2026 {.unnumbered}")
+end
+
 elements_page = ROOT / "user-guide/elements.qmd"
 element_sections = [
   ["## Common element syntax {#common-element-syntax}", "common-element-syntax"],
@@ -303,6 +431,9 @@ if distribution_toc.file?
   end
   unless toc_text.match?(/path:\s*["']\/user-guide\/structures\/index\.html["'][\s\S]*?id:\s*["']binning["']/)
     errors += error("structures sidebar manifest is missing the BINNING anchor")
+  end
+  unless toc_text.match?(/id:\s*["']binning["'],\s*text:\s*["']Binning["'],\s*suffix:\s*["']1["']/)
+    errors += error("structures sidebar manifest must label BINNING as automatic subsection 1")
   end
   unless toc_text.include?("page-toc:structures")
     errors += error("structures sidebar manifest is missing its stable key")

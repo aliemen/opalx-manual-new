@@ -15,7 +15,7 @@ The detail pages are deliberately outside the numbered book structure. Adding
 reports therefore does not expand the manual sidebar, renumber its chapters,
 or add an unbounded archive to the downloadable PDF.
 
-## 2026
+## 2026 {.unnumbered}
 
 | Date | Entry | Kind | Status |
 |---|---|---|---|

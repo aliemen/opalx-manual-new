@@ -41,6 +41,7 @@ book:
         - physics/coordinate-systems/index.qmd
         - physics/elements/index.qmd
         - physics/collective-effects.qmd
+        - physics/field-solver/index.qmd
         - physics/beam-beam/index.qmd
         - physics/decay-processes/index.qmd
         - physics/spin-tracking/index.qmd
