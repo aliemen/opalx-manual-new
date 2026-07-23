@@ -27,6 +27,7 @@ test("defaults to OPALX and switches among all modes", async ({ page }) => {
 
 test("persists independently of theme and sidebar state", async ({ page }) => {
   await page.goto(dualPage);
+  await expect(page.locator("html")).toHaveAttribute("data-opalx-sidebar-state-ready", "true");
   await page.getByRole("radio", { name: "OPAL", exact: true }).check();
 
   const chapterToggle = page.getByRole("button", {
@@ -34,14 +35,20 @@ test("persists independently of theme and sidebar state", async ({ page }) => {
   });
   await chapterToggle.click();
   await expect(chapterToggle).toHaveAttribute("aria-expanded", "true");
+  await expect.poll(() => page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem("opalx-sidebar-state-v1"));
+    return state["page-toc:beam-distributions"];
+  })).toBe(true);
 
   await page.evaluate(() => localStorage.setItem("quarto-color-scheme", "alternate"));
   await page.goto("/user-guide/field-solver/index.html");
+  await expect(page.locator("html")).toHaveAttribute("data-opalx-sidebar-state-ready", "true");
   await expect(page.getByRole("radio", { name: "OPAL", exact: true })).toBeChecked();
   await expect.poll(() => page.evaluate(() => localStorage.getItem("quarto-color-scheme")))
     .toBe("alternate");
 
   await page.goto(dualPage);
+  await expect(page.locator("html")).toHaveAttribute("data-opalx-sidebar-state-ready", "true");
   await expect(chapterToggle).toHaveAttribute("aria-expanded", "true");
   const stored = await page.evaluate(() => JSON.parse(localStorage.getItem("opalx-sidebar-state-v1")));
   expect(stored["page-toc:beam-distributions"]).toBe(true);

@@ -25,6 +25,7 @@ errors << "render does not contain the profile's document base URL" unless combi
 errors << "render does not contain the profile's manual repository URL" unless combined_html.include?(expected_repository)
 errors << "render does not contain Quarto's color-scheme persistence" unless combined_html.include?("quarto-color-scheme")
 errors << "render does not contain OPALX sidebar-state persistence" unless combined_html.include?("opalx-sidebar-state-v1")
+errors << "sidebar persistence does not wait for Quarto initialization" unless combined_html.include?("opalxSidebarStateReady")
 errors << "render does not contain documentation-version persistence" unless combined_html.include?("opalx-documentation-version-v1")
 errors << "render does not contain the accessible documentation-version selector" unless combined_html.include?("Select documentation version")
 errors << "render does not contain direct-anchor version handling" unless combined_html.include?("revealHashTarget")

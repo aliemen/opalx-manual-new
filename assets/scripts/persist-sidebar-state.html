@@ -33,6 +33,16 @@
     });
   };
 
+  const restoreState = () => {
+    const state = readState();
+    document.querySelectorAll(".sidebar-section[id]").forEach((section) => {
+      const key = sectionKey(section);
+      if (Object.prototype.hasOwnProperty.call(state, key)) {
+        setExpanded(section, Boolean(state[key]));
+      }
+    });
+  };
+
   const initialize = () => {
     const state = readState();
     let stateChanged = false;
@@ -62,12 +72,18 @@
     if (stateChanged) {
       writeState(state);
     }
+
+    document.documentElement.dataset.opalxSidebarStateReady = "true";
   };
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initialize, { once: true });
-  } else {
+  // Quarto finalizes the book sidebar after DOMContentLoaded. Restoring before
+  // that step lets its collapse initialization overwrite the saved state.
+  if (document.readyState === "complete") {
     initialize();
+  } else {
+    window.addEventListener("load", initialize, { once: true });
   }
+
+  window.addEventListener("pageshow", restoreState);
 })();
 </script>
