@@ -301,7 +301,9 @@ end
 reports_catalog = ROOT / "resources/presentations-reports.qmd"
 if reports_catalog.file?
   reports_text = reports_catalog.read
-  errors += error("Presentations and Reports year heading must be unnumbered") unless reports_text.include?("## 2026 {.unnumbered}")
+  unless reports_text.include?("## 2026 {#reports-2026 .unnumbered}")
+    errors += error("Presentations and Reports year heading must have a stable anchor and be unnumbered")
+  end
 end
 
 elements_page = ROOT / "user-guide/elements.qmd"

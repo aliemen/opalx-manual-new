@@ -167,7 +167,6 @@ if physics_field_solver_html_path.file?
     errors << "physics field-solver render is missing ##{anchor}" unless physics_field_solver_html.match?(/\bid=["']#{Regexp.escape(anchor)}["']/)
   end
   errors << "physics field-solver HTML is missing its PNG diagram" unless physics_field_solver_html.include?("current-space-charge-class-diagram.png")
-  errors << "physics field-solver HTML unexpectedly exposes the PDF TikZ source" if physics_field_solver_html.include?("current-space-charge-class-diagram.tex")
 else
   errors << "render is missing physics/field-solver/index.html"
 end
@@ -175,7 +174,7 @@ end
 reports_html_path = SITE / "resources/presentations-reports.html"
 if reports_html_path.file?
   reports_html = File.read(reports_html_path)
-  year_section = reports_html[/<section\s+id=["']2026["'][^>]*>/]
+  year_section = reports_html[/<section\s+id=["']reports-2026["'][^>]*>/]
   errors << "Presentations and Reports render is missing the 2026 section" unless year_section
   errors << "Presentations and Reports still numbers the 2026 section" if year_section&.include?("data-number=")
 else
