@@ -1,9 +1,9 @@
 ---
 title: "Publications and Citation"
-description: "Physics references used by the OPALX manual and initial citation guidance."
+description: "Physics references, citation guidance, and student contributions related to OPAL and OPALX."
 audience: physics
 status: experimental
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-24"
 nocite: '@*'
 ---
 
@@ -14,6 +14,48 @@ documentation is published as the canonical manual.
 When reporting results today, record the exact OPALX revision and cite both the
 software repository and the publications associated with the physical model
 being used.
+
+## Student Projects and Contributions
+
+All projects and associated resources in the following table are published in
+the [AMAS completed-projects archive](https://amas.pages.psi.ch/ETH/completed-projects/).
+The list includes projects that used OPAL or OPALX directly, or contributed
+models, algorithms, and software components incorporated into them.
+
+| Year | Title | Student |
+|---:|---|---|
+| 2025 | Adaptive Energy Binning in OPALX | Alexander Liemen |
+| 2024 | A Dual-Space Multilevel Kernel-Splitting Algorithm for the Open Poisson Equation | Ryan Ammann |
+| 2023 | Accelerator Net | Pranas Juknevicius |
+| 2022 | On understanding the differences in measured and calculated energy spread in the SwissFEL injector | Garðar Árni Skarphéðinsson |
+| 2021 | A Performance Portable Poisson Solver for the Hose Instability | Sonali Mayani |
+| 2020 | Accelerating accelerators: Fast surrogate models for beam prediction | Renato Bellotti |
+| 2020 | On the Modelling of Collisions in Cold Particle Electron Sources | Tim Wyssling |
+| 2020 | Start-to-End Modelling of the AWA Microbunched Electron Cooling POP-Experiment | Arnau Albà |
+| 2020 | Precise Simulations of Multibunches in High Intensity Cyclotrons | Matthias Frey |
+| 2018 | Limitations of a linear transfer map method for finding matched distributions in high intensity cyclotrons | Edgar Cristopher Cortés García |
+| 2018 | Precise Beam Dynamics Models for Transport Lines in a Cyclotron-based Proton Therapy Facility | Valeria Rizzoglio |
+| 2017 | Future Processor Hardware Architectures for the Benefit of Precise Particle Accelerator Modeling | Uldis Locans |
+| 2016 | Central Region Design of a Compact High Intensity Cyclotron | Jakob Jonnerby |
+| 2016 | The P3M Model on Emerging Computer Architectures with Application to Microbunching | Benjamin Ulmer |
+| 2016 | Improving Single Core Performance in OPAL | Lionel Miserez |
+| 2016 | Space Charge Aspects of Particle Transport | A. Kolano |
+| 2015 | Performance Analysis of MKL Fast Fourier Transform on Intel Xeon Phi | Benjamin Ulmer et al. |
+| 2015 | Performance Analysis of MKL Fast Fourier Transform and FFT-based Poisson Solver on Intel Xeon Phi | Benjamin Ulmer et al. |
+| 2015 | Matched Distributions in Cyclotrons with Higher Order Moments of the Charge Distribution | Matthias Frey |
+| 2014 | Matched Distributions in Cyclotrons | Matthias Frey |
+| 2014 | A Self-Consistent Particle-In-Cell Time-Domain Solver Incorporating Radiative Interaction | Christof Metzger-Kraus |
+| 2013 | Double Degrader for Proton Therapy | Helene Stachel |
+| 2013 | Modeling of the COMET Cyclotron in OPAL and Switching Improvements of the Beam Intensity | Jeroen Anthonius Veenendaal |
+| 2013 | Parallelization of a Differential Algebra Framework | Matthias Frey |
+| 2013 | A Homotopy Method for Large-Scale Multi-Objective Optimization | Andrew Foster |
+| 2013 | Toward Massively Parallel Multi-Objective Optimization with Application to Particle Accelerators | Yves Ineichen |
+| 2012 | Towards Large-Scale Simulation-Based Multi-Objective Optimization | Andrew Foster |
+| 2011 | An Adaptive Time Integration Method for more Efficient Simulation of Particle Accelerators | Matthias Toggweiler |
+| 2011 | Towards quantitative simulations of high power proton cyclotrons | Yuanjie Bi |
+| 2010 | Beam dynamics in high intensity cyclotrons including neighboring bunch effects | Jianjun Yang |
+| 2008 | A Parallel Multigrid Solver for Beam Dynamics | Yves Ineichen |
+| 2008 | Short-range Wakefield Model Implementation in OPAL | Stefan Pauli |
 
 ## References {.unnumbered}
 
