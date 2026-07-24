@@ -3,7 +3,7 @@ title: "OPALX Documentation"
 description: "The unified entry point for OPALX users, physics researchers, and developers."
 audience: user
 status: current
-last-reviewed: "2026-07-22"
+last-reviewed: "2026-07-24"
 page-layout: full
 toc: false
 format:
@@ -118,3 +118,23 @@ international accelerator-science partners. Use the
 [publications and citation guidance](resources/publications.qmd) when citing
 the software. The original OPAL manual remains available as a
 [separate historical resource]({{< meta legacy-opal-manual-url >}}).
+
+### Contributors and partner institutions {.unnumbered}
+
+Andreas Adelmann (PSI); Pedro Calvo (CIEMAT); Achim Gsell (PSI); Sriramkrishnan
+Muralikrishnan (JSC); Philippe Piot (NIU); Chris Rogers (RAL); Mohsen Sadr
+(PSI/MIT); Jochem Snuverink (PSI); Jonathan Thompson (RAL); Daniel Winklehner
+(MIT); Yuanjie Bi (Sun Yat-sen University); John Biddiscombe (CSCS/ETH)
+
+```{=html}
+<div class="institution-grid" aria-label="Contributing institutions">
+  <div><img src="logos/psi_logo.png" alt="Paul Scherrer Institute (PSI)"></div>
+  <div><img src="logos/ciemat_logo.jpg" alt="CIEMAT"></div>
+  <div><img src="logos/UKRI_STF_logo.png" alt="UK Research and Innovation Science and Technology Facilities Council"></div>
+  <div><img src="logos/MIT-logo-with-spelling-design1-large-black-red.svg" alt="Massachusetts Institute of Technology (MIT)"></div>
+  <div><img src="logos/Logo_FZ_Juelich_1561x454_rgb_jpg.jpg" alt="Forschungszentrum Jülich"></div>
+  <div><img src="logos/NIU_horz_3Clr.png" alt="Northern Illinois University (NIU)"></div>
+  <div><img src="logos/sunyat.png" alt="Sun Yat-sen University"></div>
+  <div><img src="logos/cscs.png" alt="Swiss National Supercomputing Centre (CSCS)"></div>
+</div>
+```

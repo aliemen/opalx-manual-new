@@ -142,6 +142,32 @@ body.quarto-dark .doc-card:hover {
   box-shadow: 0 16px 38px rgb(0 0 0 / 28%);
 }
 
+.institution-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+  margin: 1.5rem 0 0;
+}
+
+.institution-grid > div {
+  display: flex;
+  min-height: 96px;
+  padding: 0.8rem;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--opalx-line);
+  border-radius: 0.65rem;
+  background: white;
+}
+
+.institution-grid img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 72px;
+  object-fit: contain;
+}
+
 .page-columns .content {
   max-width: 920px;
 }
@@ -282,6 +308,10 @@ html[data-opal-documentation-version="both"] .feature-opalx::before {
   .doc-grid {
     grid-template-columns: 1fr 1fr;
   }
+
+  .institution-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 620px) {
@@ -291,6 +321,10 @@ html[data-opal-documentation-version="both"] .feature-opalx::before {
   }
 
   .doc-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .institution-grid {
     grid-template-columns: 1fr;
   }
 }
