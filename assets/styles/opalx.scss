@@ -172,6 +172,19 @@ body.quarto-dark .doc-card:hover {
   max-width: 920px;
 }
 
+// Pandoc derives percentage widths for pipe-table columns from the number of
+// dashes in the Markdown separator row. Let the browser size documentation
+// columns from their actual content instead. This keeps short columns such as
+// years, flags, and defaults compact while leaving room for descriptive text.
+// Authors can retain explicit widths by adding `.opalx-fixed-columns`.
+#quarto-document-content table.table:not(.opalx-fixed-columns) {
+  table-layout: auto;
+}
+
+#quarto-document-content table.table:not(.opalx-fixed-columns) colgroup col {
+  width: auto !important;
+}
+
 .opalx-page-toc-toggle {
   flex: 0 0 auto;
   padding: 0.25rem 0.35rem;
